@@ -31,6 +31,18 @@ describe("assembleMarkdown", () => {
   it("falls back to a default title", () => {
     expect(assembleMarkdown("   ", []).startsWith("# Artigo científico")).toBe(true);
   });
+
+  it("does not duplicate the title when the first page already has the H1", () => {
+    const withHeading = [
+      {
+        page_number: 1,
+        content: "# Meu artigo\n\n## Introdução\n\nTexto.",
+        status: "approved",
+      },
+    ];
+    const md = assembleMarkdown("Meu artigo", withHeading);
+    expect(md.match(/^#\s+Meu artigo$/gm) ?? []).toHaveLength(1);
+  });
 });
 
 describe("markdownToPlainText", () => {

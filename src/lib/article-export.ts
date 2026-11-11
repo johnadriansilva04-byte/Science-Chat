@@ -8,8 +8,11 @@ export function assembleMarkdown(title: string, pages: ExportPage[]): string {
     .filter((p) => p.status === "approved")
     .sort((a, b) => a.page_number - b.page_number);
   const body = approved.map((p) => stripMarkers(p.content)).join("\n\n");
-  const header = `# ${title.trim() || "Artigo científico"}\n`;
-  return `${header}\n${body}`.trim() + "\n";
+  // A primeira página aprovada normalmente já traz o H1 com o título; nesse caso
+  // não repetir o cabeçalho para não duplicar o título no documento mestre.
+  const startsWithHeading = /^#\s+\S/.test(body.trimStart());
+  const header = startsWithHeading ? "" : `# ${title.trim() || "Artigo científico"}\n\n`;
+  return `${header}${body}`.trim() + "\n";
 }
 
 /** Remove the most common Markdown syntax for plain-text export. */
