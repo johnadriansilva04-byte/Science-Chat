@@ -2,8 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { FilePlus2, MessageSquareText, ListChecks, FileText, Play } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { listArticles } from "@/lib/article.functions";
 import { Button } from "@/components/ui/button";
 import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
 import logo from "@/assets/sciencechat-logo.png";
@@ -37,17 +37,13 @@ function Index() {
   if (!user) return <div className="min-h-screen bg-background" />;
 
   async function continueResearch() {
-    const { data, error } = await supabase
-      .from("articles")
-      .select("id")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error || !data) {
+    const rows = await listArticles();
+    const first = rows[0];
+    if (!first) {
       toast.error("Você ainda não tem artigos. Comece um novo.");
       return;
     }
-    navigate({ to: "/a/$articleId", params: { articleId: data.id } });
+    navigate({ to: "/a/$articleId", params: { articleId: first.id } });
   }
 
   const steps = [

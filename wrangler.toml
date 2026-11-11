@@ -1,0 +1,33 @@
+name = "sciencechat"
+main = ".output/server/index.mjs"
+compatibility_date = "2026-11-11"
+compatibility_flags = ["nodejs_compat"]
+
+# Build do TanStack Start via nitro (preset cloudflare). `npm run build` gera .output/.
+# Deploy: `npx wrangler deploy` (usa este arquivo).
+[assets]
+binding = "ASSETS"
+directory = ".output/public"
+
+# Banco relacional (SQLite distribuído) — substitui o Supabase Postgres.
+[[d1_databases]]
+binding = "DB"
+database_name = "sciencechat"
+database_id = "PREENCHER_APOS_wrangler_d1_create"
+
+# Arquivos enviados pelo pesquisador (documentos do dossiê).
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "sciencechat-files"
+
+# Cache/estado efêmero (sessões, rate limit).
+[[kv_namespaces]]
+binding = "KV"
+id = "PREENCHER_APOS_wrangler_kv_namespace_create"
+
+# Inferência de IA (Workers AI).
+[ai]
+binding = "AI"
+
+[vars]
+APP_ENV = "production"

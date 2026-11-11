@@ -3,7 +3,6 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Conversation,
   ConversationContent,
@@ -43,10 +42,6 @@ export function InterviewChat({
       new DefaultChatTransport({
         api: "/api/chat",
         body: { articleId },
-        headers: async (): Promise<Record<string, string>> => {
-          const { data } = await supabase.auth.getSession();
-          return data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {};
-        },
       }),
     [articleId],
   );

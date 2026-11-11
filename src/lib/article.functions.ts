@@ -1,11 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage } from "@/lib/article-marker";
+import * as repo from "@/lib/cf/repo.server";
 
 type Part = { type: string; text?: string };
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Sb = any;
 
 export type WorkspaceMessage = { id: string; role: string; parts: Part[] };
 export type WorkspacePage = {
@@ -23,66 +21,97 @@ export type WorkspaceArticle = {
   updated_at: string;
 };
 
-async function loadContext(supabase: Sb, articleId: string) {
-  const { data: article, error } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("id", articleId)
-    .maybeSingle();
-  if (error || !article) throw new Error("Artigo não encontrado");
-  const { data: msgs } = await supabase
-    .from("chat_messages")
-    .select("role, parts")
-    .eq("article_id", articleId)
-    .order("created_at");
-  const transcript = (msgs ?? [])
-    .map(
-      (m: { role: string; parts: Part[] }) =>
-        `${m.role === "user" ? "PESQUISADOR" : "SCIENCECHAT"}: ${m.parts.map((p) => p.text ?? "").join("")}`,
-    )
-    .join("\n\n");
-  return { article, transcript };
+export type ArticleListItem = { id: string; title: string; phase: string; updated_at: string };
+
+function parseParts(raw: string): Part[] {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Part[]) : [];
+  } catch {
+    return [{ type: "text", text: raw }];
+  }
 }
 
-export const getWorkspace = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string }) => d)
-  .handler(async ({ data, context }) => {
-    const sb = context.supabase as Sb;
-    const { data: article, error } = await sb
-      .from("articles")
-      .select("id, title, phase, plan, updated_at")
-      .eq("id", data.articleId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!article) throw new Error("Artigo não encontrado");
+async function loadTranscript(userId: string, articleId: string): Promise<string> {
+  const msgs = await repo.listMessages(userId, articleId);
+  return msgs
+    .map((m) => {
+      const text = parseParts(m.parts)
+        .map((p) => p.text ?? "")
+        .join("");
+      return `${m.role === "user" ? "PESQUISADOR" : "SCIENCECHAT"}: ${text}`;
+    })
+    .join("\n\n");
+}
 
-    const { data: msgs } = await sb
-      .from("chat_messages")
-      .select("id, role, parts")
-      .eq("article_id", data.articleId)
-      .order("created_at");
-    const { data: pages } = await sb
-      .from("article_pages")
-      .select("id, page_number, content, status, created_at")
-      .eq("article_id", data.articleId)
-      .order("page_number");
+export const listArticles = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .handler(async ({ context }) => {
+    const rows = await repo.listArticles(context.user.id);
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      phase: r.phase,
+      updated_at: r.updated_at,
+    }));
+  });
+
+export const createArticle = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .handler(async ({ context }) => {
+    const article = await repo.createArticle(context.user.id);
+    return { id: article.id };
+  });
+
+export const deleteArticle = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string }) => d)
+  .handler(async ({ data, context }) => {
+    await repo.deleteArticle(context.user.id, data.articleId);
+    return { ok: true };
+  });
+
+export const getWorkspace = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const article = await repo.getArticle(context.user.id, data.articleId);
+    if (!article) throw new Error("Artigo não encontrado");
+    const messages = await repo.listMessages(context.user.id, data.articleId);
+    const pages = await repo.listPages(context.user.id, data.articleId);
 
     return {
-      article: article as WorkspaceArticle,
-      messages: (msgs ?? []) as WorkspaceMessage[],
-      pages: (pages ?? []) as WorkspacePage[],
+      article: {
+        id: article.id,
+        title: article.title,
+        phase: article.phase,
+        plan: article.plan,
+        updated_at: article.updated_at,
+      } as WorkspaceArticle,
+      messages: messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        parts: parseParts(m.parts),
+      })) as WorkspaceMessage[],
+      pages: pages.map((p) => ({
+        id: p.id,
+        page_number: p.page_number,
+        content: p.content,
+        status: p.status,
+        created_at: p.created_at,
+      })) as WorkspacePage[],
     };
   });
 
 export const generatePlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; feedback?: string }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; feedback?: string }) => d)
   .handler(async ({ data, context }) => {
     const { generateFinalText } = await import("@/lib/ai/gateway.server");
     const { PLAN_INSTRUCTIONS } = await import("@/lib/ai/prompts");
-    const sb = context.supabase as Sb;
-    const { article, transcript } = await loadContext(sb, data.articleId);
+    const article = await repo.getArticle(context.user.id, data.articleId);
+    if (!article) throw new Error("Artigo não encontrado");
+    const transcript = await loadTranscript(context.user.id, data.articleId);
     const prompt = `ENTREVISTA:\n${transcript}\n\n${
       article.plan && data.feedback
         ? `PLANO ANTERIOR:\n${article.plan}\n\nAJUSTE PEDIDO PELO PESQUISADOR: ${data.feedback}\n\nRefaça o plano aplicando o ajuste.`
@@ -94,70 +123,42 @@ export const generatePlan = createServerFn({ method: "POST" })
         .match(/^#\s+(.+)$/m)?.[1]
         ?.trim()
         .slice(0, 160) ?? article.title;
-    const { error } = await sb
-      .from("articles")
-      .update({ plan, title, phase: "plan", updated_at: new Date().toISOString() })
-      .eq("id", data.articleId);
-    if (error) throw new Error(error.message);
+    await repo.updateArticle(context.user.id, data.articleId, { plan, title, phase: "plan" });
     return { ok: true, plan, title };
   });
 
 export const setPhase = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; phase: string }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; phase: string }) => d)
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as Sb)
-      .from("articles")
-      .update({ phase: data.phase, updated_at: new Date().toISOString() })
-      .eq("id", data.articleId);
-    if (error) throw new Error(error.message);
+    await repo.updateArticle(context.user.id, data.articleId, { phase: data.phase });
     return { ok: true };
   });
 
 export const updateTitle = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; title: string }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; title: string }) => d)
   .handler(async ({ data, context }) => {
     const title = data.title.trim().slice(0, 200) || "Novo artigo";
-    const { error } = await (context.supabase as Sb)
-      .from("articles")
-      .update({ title, updated_at: new Date().toISOString() })
-      .eq("id", data.articleId);
-    if (error) throw new Error(error.message);
+    await repo.updateArticle(context.user.id, data.articleId, { title });
     return { ok: true, title };
   });
 
-async function nextPageNumber(sb: Sb, articleId: string): Promise<number> {
-  const { data } = await sb
-    .from("article_pages")
-    .select("page_number")
-    .eq("article_id", articleId)
-    .order("page_number", { ascending: false })
-    .limit(1);
-  return ((data?.[0]?.page_number as number | undefined) ?? 0) + 1;
-}
-
 export const generatePage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; pageNumber?: number; feedback?: string }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; pageNumber?: number; feedback?: string }) => d)
   .handler(async ({ data, context }) => {
     const { generateFinalText } = await import("@/lib/ai/gateway.server");
     const { PAGE_INSTRUCTIONS } = await import("@/lib/ai/prompts");
-    const sb = context.supabase as Sb;
-    const { article, transcript } = await loadContext(sb, data.articleId);
+    const userId = context.user.id;
+    const article = await repo.getArticle(userId, data.articleId);
+    if (!article) throw new Error("Artigo não encontrado");
     if (!article.plan) throw new Error("Plano ainda não foi criado");
 
-    const { data: pages } = await sb
-      .from("article_pages")
-      .select("page_number, content, status")
-      .eq("article_id", data.articleId)
-      .order("page_number");
-    const all = (pages ?? []) as { page_number: number; content: string; status: string }[];
-
-    // Target page: explicit, else the single draft, else the next number.
+    const all = await repo.listPages(userId, data.articleId);
     const draft = all.find((p) => p.status === "draft");
-    const number =
-      data.pageNumber ?? draft?.page_number ?? (await nextPageNumber(sb, data.articleId));
+    const maxNumber = all.reduce((max, p) => Math.max(max, p.page_number), 0);
+    const number = data.pageNumber ?? draft?.page_number ?? maxNumber + 1;
     const current = all.find((p) => p.page_number === number);
     const approvedBefore = all
       .filter((p) => p.status === "approved" && p.page_number < number)
@@ -165,6 +166,7 @@ export const generatePage = createServerFn({ method: "POST" })
     const prev = approvedBefore[approvedBefore.length - 1];
     const nextApproved = all.find((p) => p.status === "approved" && p.page_number === number + 1);
 
+    const transcript = await loadTranscript(userId, data.articleId);
     const prompt = [
       `PLANO APROVADO:\n${article.plan}`,
       `ENTREVISTA:\n${transcript}`,
@@ -180,88 +182,45 @@ export const generatePage = createServerFn({ method: "POST" })
       .join("\n\n");
 
     const content = await generateFinalText(prompt, PAGE_INSTRUCTIONS);
-    const { error } = await sb
-      .from("article_pages")
-      .upsert(
-        { article_id: data.articleId, page_number: number, content, status: "draft" },
-        { onConflict: "article_id,page_number" },
-      );
-    if (error) throw new Error(error.message);
+    await repo.upsertPage(userId, data.articleId, number, content, "draft");
     return { ok: true, pageNumber: number };
   });
 
 export const savePage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; pageNumber: number; content: string }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; pageNumber: number; content: string }) => d)
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as Sb).from("article_pages").upsert(
-      {
-        article_id: data.articleId,
-        page_number: data.pageNumber,
-        content: data.content,
-        status: "draft",
-      },
-      { onConflict: "article_id,page_number" },
-    );
-    if (error) throw new Error(error.message);
+    await repo.upsertPage(context.user.id, data.articleId, data.pageNumber, data.content, "draft");
     return { ok: true };
   });
 
 export const approvePage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; pageNumber: number }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; pageNumber: number }) => d)
   .handler(async ({ data, context }) => {
-    const sb = context.supabase as Sb;
-    const { data: page, error } = await sb
-      .from("article_pages")
-      .select("content")
-      .eq("article_id", data.articleId)
-      .eq("page_number", data.pageNumber)
-      .maybeSingle();
-    if (error || !page) throw new Error("Página não encontrada");
-    const up = await sb
-      .from("article_pages")
-      .update({ status: "approved" })
-      .eq("article_id", data.articleId)
-      .eq("page_number", data.pageNumber);
-    if (up.error) throw new Error(up.error.message);
-    const done = isLastPage(page.content as string);
-    if (done) {
-      await sb
-        .from("articles")
-        .update({ phase: "done", updated_at: new Date().toISOString() })
-        .eq("id", data.articleId);
-    }
+    const userId = context.user.id;
+    const page = await repo.getPage(userId, data.articleId, data.pageNumber);
+    if (!page) throw new Error("Página não encontrada");
+    await repo.setPageStatus(userId, data.articleId, data.pageNumber, "approved");
+    const done = isLastPage(page.content);
+    if (done) await repo.updateArticle(userId, data.articleId, { phase: "done" });
     return { ok: true, done };
   });
 
 export const reopenPage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; pageNumber: number }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; pageNumber: number }) => d)
   .handler(async ({ data, context }) => {
-    const sb = context.supabase as Sb;
-    const { error } = await sb
-      .from("article_pages")
-      .update({ status: "draft" })
-      .eq("article_id", data.articleId)
-      .eq("page_number", data.pageNumber);
-    if (error) throw new Error(error.message);
-    await sb
-      .from("articles")
-      .update({ phase: "writing", updated_at: new Date().toISOString() })
-      .eq("id", data.articleId);
+    const userId = context.user.id;
+    await repo.setPageStatus(userId, data.articleId, data.pageNumber, "draft");
+    await repo.updateArticle(userId, data.articleId, { phase: "writing" });
     return { ok: true };
   });
 
 export const deletePage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { articleId: string; pageNumber: number }) => d)
+  .middleware([requireUser])
+  .validator((d: { articleId: string; pageNumber: number }) => d)
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as Sb)
-      .from("article_pages")
-      .delete()
-      .eq("article_id", data.articleId)
-      .eq("page_number", data.pageNumber);
-    if (error) throw new Error(error.message);
+    await repo.deletePage(context.user.id, data.articleId, data.pageNumber);
     return { ok: true };
   });
