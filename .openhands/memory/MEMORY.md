@@ -19,6 +19,16 @@ Plataforma de produção científica independente (pt-BR). Stack: **TypeScript +
 - Schema D1 em `migrations/0001_init.sql`. Aplicar local: `npm run db:migrate:local`; remoto: `npm run db:migrate:remote`.
 - Usar `npm` (não há bun). `package-lock.json` não é versionado (removido).
 
+## Deploy no Vercel (mesmo código, backends REST)
+Alvo duplo: Cloudflare (padrão) e Vercel. No Vercel não há bindings, então o app fala com a Cloudflare por REST.
+- `src/lib/cf/d1-rest.server.ts`: adaptador D1 sobre a API REST da Cloudflare (mesma interface de `prepare/bind/first/all/run/batch`). `bindings.server.ts` o usa quando falta o binding `DB` e há `CLOUDFLARE_ACCOUNT_ID`+`D1_DATABASE_ID`+`CLOUDFLARE_API_TOKEN`.
+- `gateway.server.ts`: sem binding `AI`, usa o modo credenciais do `workers-ai-provider` (REST) com o mesmo filtro de dedup de SSE.
+- `vite.config.ts`: preset nitro `vercel` quando `BUILD_TARGET=vercel`/`VERCEL=1`; senão `cloudflare-module`.
+- Projeto Vercel: `sciencechat` (team `team_uCst7CAEh18U0FR1kPrEcDHJ`), domínio `sciencechat.vercel.app`. Push na `main` dispara deploy de produção.
+- ARMADILHA: o Vercel usa Node 22 (npm 10), que CRASHA no `npm install` deste projeto (`Cannot read properties of null (reading 'edgesOut')`, bug do arborist com `vitest`). Fixado Node 24 (`nodeVersion: "24.x"`, `engines.node >=24`, `packageManager: npm@11.21.0`). NÃO reverter para Node 22.
+- ARMADILHA: projeto novo vem com SSO de deployment ligado (302 para o login da Vercel). Desativar com `PATCH /v9/projects/{p}` `{"ssoProtection":null}`. Framework deve ser `null` (não `tanstack-start-lovable`).
+- Segredo: o `$GITHUB_TOKEN` do ambiente NÃO tem acesso ao repo; usar o PAT do usuário para push.
+
 ## Fluxo do produto (regra central)
 Primeiro investigar (entrevista adaptativa) → depois documentar → depois auditar → depois plano aprovado → depois gerar **PÁGINA POR PÁGINA** com aprovação humana → montar documento mestre sem reescrever o aprovado. Nunca gerar o artigo inteiro de uma vez. Não exigir instituição/diploma/orientador.
 
@@ -29,5 +39,5 @@ Primeiro investigar (entrevista adaptativa) → depois documentar → depois aud
 - `wrangler deploy --dry-run` valida a config sem token.
 
 ## Estado (2026-11-11)
-Migração Cloudflare completa no código: build verde, 17 testes (inclui integração real com SQLite via `node:sqlite` em `src/test/cf-data.test.ts`), `src/` 100% limpo de Supabase/Lovable. Falta apenas o DEPLOY real: o token Cloudflare do usuário NÃO está no ambiente (`CLOUDFLARE_API_TOKEN` ausente). Roteiro de deploy pronto em `scripts/cf-setup.sh` / `npm run cf:setup`.
+Migração Cloudflare completa no código: build verde, 20 testes (inclui integração real com SQLite via `node:sqlite` em `src/test/cf-data.test.ts`), `src/` 100% limpo de Supabase/Lovable. Publicado no Vercel (`sciencechat.vercel.app`) com backends REST da Cloudflare — fluxo validado em produção (cadastro, entrevista com IA, plano, página por página, documento mestre). O deploy Cloudflare nativo continua pronto mas depende do `CLOUDFLARE_API_TOKEN` do usuário no ambiente (`npm run cf:setup`).
 Pendências de produto (pós-migração): dossiê documental (R2), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
