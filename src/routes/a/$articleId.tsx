@@ -54,6 +54,7 @@ function ArticleWorkspace() {
   const [selectedPage, setSelectedPage] = useState<number>(1);
   const [autoBuild, setAutoBuild] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
 
@@ -73,6 +74,7 @@ function ArticleWorkspace() {
     if (!user) return;
     let active = true;
     setLoadingData(true);
+    setLoadError(null);
     getWorkspace({ data: { articleId } })
       .then((data) => {
         if (!active) return;
@@ -81,9 +83,10 @@ function ArticleWorkspace() {
         setPages(data.pages);
         setTab(initialTab(data.article.phase));
       })
-      .catch((e) =>
-        toast.error(e instanceof Error ? e.message : "Não foi possível carregar o artigo"),
-      )
+      .catch((e) => {
+        if (!active) return;
+        setLoadError(e instanceof Error ? e.message : "Não foi possível carregar o artigo");
+      })
       .finally(() => {
         if (active) setLoadingData(false);
       });
@@ -129,6 +132,25 @@ function ArticleWorkspace() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar o título");
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <header className="flex items-center gap-2 border-b p-3">
+          <ArticlesMenu activeId={articleId} />
+          <span className="font-serif text-lg font-semibold">ScienceChat</span>
+        </header>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <p className="text-sm text-muted-foreground">{loadError}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate({ to: "/" })}>
+              Voltar ao início
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (loading || loadingData || !article) {

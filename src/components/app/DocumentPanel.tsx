@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { Download, FileDown, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
+import { BookOpen, Download, FileDown, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { BookReader } from "@/components/app/BookReader";
 import { stripMarkers } from "@/lib/article-marker";
 import {
   ARTICLE_SIGNATURE,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/article-export";
 
 export function DocumentPanel({ title, pages }: { title: string; pages: ExportPage[] }) {
+  const [reading, setReading] = useState(false);
   const approved = useMemo(
     () =>
       pages.filter((p) => p.status === "approved").sort((a, b) => a.page_number - b.page_number),
@@ -44,6 +46,10 @@ export function DocumentPanel({ title, pages }: { title: string; pages: ExportPa
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setReading(true)} disabled={approved.length === 0}>
+              <BookOpen />
+              Ler como livro
+            </Button>
             <Button
               onClick={() =>
                 downloadFile(`${filename}.md`, markdown, "text/markdown;charset=utf-8")
@@ -85,6 +91,8 @@ export function DocumentPanel({ title, pages }: { title: string; pages: ExportPa
           )}
         </CardContent>
       </Card>
+
+      {reading && <BookReader title={title} pages={pages} onClose={() => setReading(false)} />}
     </div>
   );
 }
