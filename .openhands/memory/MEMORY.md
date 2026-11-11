@@ -19,12 +19,18 @@ Plataforma de produção científica independente (pt-BR). Stack: **TypeScript +
 - Schema D1 em `migrations/0001_init.sql`. Aplicar local: `npm run db:migrate:local`; remoto: `npm run db:migrate:remote`.
 - Usar `npm` (não há bun). `package-lock.json` não é versionado (removido).
 
-## Deploy no Vercel (mesmo código, backends REST)
-Alvo duplo: Cloudflare (padrão) e Vercel. No Vercel não há bindings, então o app fala com a Cloudflare por REST.
-- `src/lib/cf/d1-rest.server.ts`: adaptador D1 sobre a API REST da Cloudflare (mesma interface de `prepare/bind/first/all/run/batch`). `bindings.server.ts` o usa quando falta o binding `DB` e há `CLOUDFLARE_ACCOUNT_ID`+`D1_DATABASE_ID`+`CLOUDFLARE_API_TOKEN`.
+## Deploy (Cloudflare = alvo principal; Vercel = alternativo)
+**Cloudflare é o alvo do usuário.** Deploy real feito e validado (2026-11-11):
+- `npm run build` (preset `cloudflare-module`) + `npx wrangler deploy` → **https://sciencechat.sciencechat.workers.dev**. Bindings ativos: `DB` (D1), `AI` (Workers AI), `ASSETS`. Fluxo E2E validado em produção (cadastro→D1, entrevista com IA, plano, página por página, documento mestre).
+- Credenciais usadas: `CLOUDFLARE_API_TOKEN` (token `cfut_...`, escopo Workers/D1/AI) + `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`. D1 `sciencechat` = `b8793250-696e-4538-aa50-03796ff8635f`.
+- **R2 não habilitado** na conta (erro 10042 "enable R2 through the Dashboard"). O token NÃO tem escrita em KV (só leitura). KV/R2 estão declarados em `wrangler.toml` (comentados) mas AINDA não são usados no código — sessões ficam no D1. Só serão necessários para o dossiê documental (upload em R2).
+- Vercel (alternativo) também funciona: projeto `sciencechat`, domínio `sciencechat.vercel.app`. Push na `main` dispara deploy. Detalhes e armadilhas (Node 24, SSO) abaixo.
+
+### Vercel (caminho alternativo, mesmo código)
+O Vercel não tem bindings, então o app fala com a Cloudflare por REST.
+- `src/lib/cf/d1-rest.server.ts`: adaptador D1 sobre a API REST (mesma interface de `prepare/bind/first/all/run/batch`). `bindings.server.ts` o usa quando falta o binding `DB` e há `CLOUDFLARE_ACCOUNT_ID`+`D1_DATABASE_ID`+`CLOUDFLARE_API_TOKEN`.
 - `gateway.server.ts`: sem binding `AI`, usa o modo credenciais do `workers-ai-provider` (REST) com o mesmo filtro de dedup de SSE.
 - `vite.config.ts`: preset nitro `vercel` quando `BUILD_TARGET=vercel`/`VERCEL=1`; senão `cloudflare-module`.
-- Projeto Vercel: `sciencechat` (team `team_uCst7CAEh18U0FR1kPrEcDHJ`), domínio `sciencechat.vercel.app`. Push na `main` dispara deploy de produção.
 - ARMADILHA: o Vercel usa Node 22 (npm 10), que CRASHA no `npm install` deste projeto (`Cannot read properties of null (reading 'edgesOut')`, bug do arborist com `vitest`). Fixado Node 24 (`nodeVersion: "24.x"`, `engines.node >=24`, `packageManager: npm@11.21.0`). NÃO reverter para Node 22.
 - ARMADILHA: projeto novo vem com SSO de deployment ligado (302 para o login da Vercel). Desativar com `PATCH /v9/projects/{p}` `{"ssoProtection":null}`. Framework deve ser `null` (não `tanstack-start-lovable`).
 - Segredo: o `$GITHUB_TOKEN` do ambiente NÃO tem acesso ao repo; usar o PAT do usuário para push.
@@ -39,5 +45,5 @@ Primeiro investigar (entrevista adaptativa) → depois documentar → depois aud
 - `wrangler deploy --dry-run` valida a config sem token.
 
 ## Estado (2026-11-11)
-Migração Cloudflare completa no código: build verde, 20 testes (inclui integração real com SQLite via `node:sqlite` em `src/test/cf-data.test.ts`), `src/` 100% limpo de Supabase/Lovable. Publicado no Vercel (`sciencechat.vercel.app`) com backends REST da Cloudflare — fluxo validado em produção (cadastro, entrevista com IA, plano, página por página, documento mestre). O deploy Cloudflare nativo continua pronto mas depende do `CLOUDFLARE_API_TOKEN` do usuário no ambiente (`npm run cf:setup`).
-Pendências de produto (pós-migração): dossiê documental (R2), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
+Migração Cloudflare completa no código e **publicada na Cloudflare**: build verde, 21 testes, `src/` 100% limpo de Supabase/Lovable. Produção em **https://sciencechat.sciencechat.workers.dev** (D1 + Workers AI por binding). Fluxo E2E validado em produção. Também publicável no Vercel (`sciencechat.vercel.app`) via backends REST.
+Pendências de produto (pós-migração): dossiê documental (precisa habilitar R2 no painel Cloudflare), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
