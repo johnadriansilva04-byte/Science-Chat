@@ -9,6 +9,7 @@ import {
   downloadFile,
   markdownToPlainText,
   slugify,
+  startsWithTitleHeading,
   type ExportPage,
 } from "@/lib/article-export";
 
@@ -20,6 +21,11 @@ export function DocumentPanel({ title, pages }: { title: string; pages: ExportPa
   );
   const markdown = useMemo(() => assembleMarkdown(title, approved), [title, approved]);
   const filename = slugify(title);
+  // A primeira página costuma trazer o H1 com o título; só exibimos o cabeçalho
+  // quando nenhuma página aprovada já o contém, para não duplicar o título.
+  const firstPage = approved[0];
+  const showTitleHeading =
+    firstPage !== undefined && !startsWithTitleHeading(stripMarkers(firstPage.content));
 
   function printPdf() {
     window.print();
@@ -67,7 +73,7 @@ export function DocumentPanel({ title, pages }: { title: string; pages: ExportPa
             </p>
           ) : (
             <div className="paper-sheet rounded-lg border" id="documento-mestre">
-              <h1>{title}</h1>
+              {showTitleHeading ? <h1>{title}</h1> : null}
               {approved.map((p) => (
                 <section key={p.page_number}>
                   <MessageResponse>{stripMarkers(p.content)}</MessageResponse>

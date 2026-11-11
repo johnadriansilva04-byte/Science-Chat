@@ -2,6 +2,11 @@ import { stripMarkers } from "@/lib/article-marker";
 
 export type ExportPage = { page_number: number; content: string; status: string };
 
+/** True when the content already begins with a Markdown H1 (the article title). */
+export function startsWithTitleHeading(content: string): boolean {
+  return /^#\s+\S/.test(content.trimStart());
+}
+
 /** Assemble approved pages, in order, into the master document (Markdown). */
 export function assembleMarkdown(title: string, pages: ExportPage[]): string {
   const approved = pages
@@ -10,8 +15,7 @@ export function assembleMarkdown(title: string, pages: ExportPage[]): string {
   const body = approved.map((p) => stripMarkers(p.content)).join("\n\n");
   // A primeira página aprovada normalmente já traz o H1 com o título; nesse caso
   // não repetir o cabeçalho para não duplicar o título no documento mestre.
-  const startsWithHeading = /^#\s+\S/.test(body.trimStart());
-  const header = startsWithHeading ? "" : `# ${title.trim() || "Artigo científico"}\n\n`;
+  const header = startsWithTitleHeading(body) ? "" : `# ${title.trim() || "Artigo científico"}\n\n`;
   return `${header}${body}`.trim() + "\n";
 }
 
