@@ -13,17 +13,21 @@ directory = ".output/public"
 [[d1_databases]]
 binding = "DB"
 database_name = "sciencechat"
-database_id = "PREENCHER_APOS_wrangler_d1_create"
+database_id = "b8793250-696e-4538-aa50-03796ff8635f"
 
 # Arquivos enviados pelo pesquisador (documentos do dossiê).
-[[r2_buckets]]
-binding = "FILES"
-bucket_name = "sciencechat-files"
+# Descomentar depois de habilitar o R2 no painel Cloudflare e criar o bucket:
+#   npx wrangler r2 bucket create sciencechat-files
+# [[r2_buckets]]
+# binding = "FILES"
+# bucket_name = "sciencechat-files"
 
 # Cache/estado efêmero (sessões, rate limit).
-[[kv_namespaces]]
-binding = "KV"
-id = "PREENCHER_APOS_wrangler_kv_namespace_create"
+# Descomentar depois de criar o namespace (precisa de permissão de escrita em KV):
+#   npx wrangler kv namespace create sciencechat_kv
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "PREENCHER_APOS_wrangler_kv_namespace_create"
 
 # Inferência de IA (Workers AI).
 [ai]

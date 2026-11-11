@@ -43,7 +43,11 @@ export interface KVNamespace {
 }
 
 export interface AiBinding {
-  run(model: string, inputs: Record<string, unknown>): Promise<unknown>;
+  run(
+    model: string,
+    inputs: Record<string, unknown>,
+    options?: unknown,
+  ): Promise<unknown>;
 }
 
 export interface Env {
