@@ -2,6 +2,9 @@ import { stripMarkers } from "@/lib/article-marker";
 
 export type ExportPage = { page_number: number; content: string; status: string };
 
+/** Assinatura da Variant impressa ao final de cada artigo. */
+export const ARTICLE_SIGNATURE = "Criado com ScienceChat · Variant · CEO John Adrian";
+
 /** True when the content already begins with a Markdown H1 (the article title). */
 export function startsWithTitleHeading(content: string): boolean {
   return /^#\s+\S/.test(content.trimStart());
@@ -16,7 +19,8 @@ export function assembleMarkdown(title: string, pages: ExportPage[]): string {
   // A primeira página aprovada normalmente já traz o H1 com o título; nesse caso
   // não repetir o cabeçalho para não duplicar o título no documento mestre.
   const header = startsWithTitleHeading(body) ? "" : `# ${title.trim() || "Artigo científico"}\n\n`;
-  return `${header}${body}`.trim() + "\n";
+  const footer = approved.length > 0 ? `\n\n---\n\n${ARTICLE_SIGNATURE}` : "";
+  return `${header}${body}${footer}`.trim() + "\n";
 }
 
 /** Remove the most common Markdown syntax for plain-text export. */

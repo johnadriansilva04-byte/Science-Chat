@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
 import { Button } from "@/components/ui/button";
 import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
+import { BrandFooter } from "@/components/app/BrandFooter";
 import logo from "@/assets/sciencechat-logo.png";
 
 export const Route = createFileRoute("/")({
@@ -105,6 +106,7 @@ function Index() {
           Seus artigos ficam no menu ⋮ no canto superior esquerdo.
         </p>
       </main>
+      <BrandFooter />
     </div>
   );
 }

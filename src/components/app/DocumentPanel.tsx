@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MessageResponse } from "@/components/ai-elements/message";
 import { stripMarkers } from "@/lib/article-marker";
 import {
+  ARTICLE_SIGNATURE,
   assembleMarkdown,
   downloadFile,
   markdownToPlainText,
@@ -79,6 +80,7 @@ export function DocumentPanel({ title, pages }: { title: string; pages: ExportPa
                   <MessageResponse>{stripMarkers(p.content)}</MessageResponse>
                 </section>
               ))}
+              <p className="variant-signature">{ARTICLE_SIGNATURE}</p>
             </div>
           )}
         </CardContent>

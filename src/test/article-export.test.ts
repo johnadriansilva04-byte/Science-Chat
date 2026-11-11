@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
-import { assembleMarkdown, markdownToPlainText, slugify } from "@/lib/article-export";
+import {
+  ARTICLE_SIGNATURE,
+  assembleMarkdown,
+  markdownToPlainText,
+  slugify,
+} from "@/lib/article-export";
 
 describe("article markers", () => {
   it("detects the last-page marker", () => {
@@ -42,6 +47,15 @@ describe("assembleMarkdown", () => {
     ];
     const md = assembleMarkdown("Meu artigo", withHeading);
     expect(md.match(/^#\s+Meu artigo$/gm) ?? []).toHaveLength(1);
+  });
+
+  it("appends the Variant signature at the end of the assembled document", () => {
+    const md = assembleMarkdown("Meu artigo", pages);
+    expect(md.trimEnd().endsWith(ARTICLE_SIGNATURE)).toBe(true);
+  });
+
+  it("omits the signature when there is no approved page", () => {
+    expect(assembleMarkdown("Meu artigo", [])).not.toContain(ARTICLE_SIGNATURE);
   });
 });
 
