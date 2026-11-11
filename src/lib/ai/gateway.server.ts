@@ -1,6 +1,6 @@
 import { createWorkersAI } from "workers-ai-provider";
 import { streamText, type ModelMessage } from "ai";
-import { requireAi, type AiBinding } from "@/lib/cf/bindings.server";
+import { getEnv, requireAi, type AiBinding } from "@/lib/cf/bindings.server";
 
 /**
  * Inferência via Cloudflare Workers AI (binding `AI`), no lugar de um gateway externo.
@@ -47,6 +47,21 @@ function fixEvent(event: string): string {
   }
 }
 
+/**
+ * `fetch` que aplica o mesmo filtro de duplicação nas respostas SSE. Usado no
+ * modo credenciais (Vercel), onde o provider fala direto com a API REST.
+ */
+async function dedupingFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const response = await fetch(input, init);
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("event-stream") || !response.body) return response;
+  return new Response(dedupeSseStream(response.body), {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
+
 /** Binding `AI` com a correção de stream aplicada. */
 function aiBinding(): AiBinding {
   const ai = requireAi();
@@ -62,8 +77,21 @@ function aiBinding(): AiBinding {
 }
 
 function model() {
-  const workersai = createWorkersAI({ binding: aiBinding() as never });
   const modelId = process.env["AI_MODEL"] || DEFAULT_MODEL;
+  // Fora do Cloudflare (ex.: Vercel) não existe binding `AI`; usamos o modo
+  // credenciais do provider, que fala com a API REST da Cloudflare.
+  if (!getEnv().AI) {
+    const accountId = process.env["CLOUDFLARE_ACCOUNT_ID"];
+    const apiKey = process.env["CLOUDFLARE_API_TOKEN"];
+    if (!accountId || !apiKey) {
+      throw new Error(
+        "Binding 'AI' ausente e credenciais CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_API_TOKEN não configuradas.",
+      );
+    }
+    const workersai = createWorkersAI({ accountId, apiKey, fetch: dedupingFetch });
+    return workersai(modelId as never);
+  }
+  const workersai = createWorkersAI({ binding: aiBinding() as never });
   return workersai(modelId as never);
 }
 

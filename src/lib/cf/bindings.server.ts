@@ -6,6 +6,8 @@
  * Em desenvolvimento local sem wrangler usamos `process.env` como fallback.
  */
 
+import { createD1Rest } from "@/lib/cf/d1-rest.server";
+
 export interface D1Result<T = unknown> {
   results: T[];
   success: boolean;
@@ -43,11 +45,7 @@ export interface KVNamespace {
 }
 
 export interface AiBinding {
-  run(
-    model: string,
-    inputs: Record<string, unknown>,
-    options?: unknown,
-  ): Promise<unknown>;
+  run(model: string, inputs: Record<string, unknown>, options?: unknown): Promise<unknown>;
 }
 
 export interface Env {
@@ -62,6 +60,24 @@ export interface Env {
 
 type GlobalWithEnv = typeof globalThis & { __env__?: Partial<Env> };
 
+let restDb: D1Database | undefined;
+
+/**
+ * Fora do Cloudflare (ex.: Vercel) não existe binding `DB`. Quando as
+ * credenciais estão no ambiente, criamos um D1 sobre a API REST uma única vez
+ * e reaproveitamos a instância (o fetch é stateless, mas evita recriar).
+ */
+function restDbFromEnv(env: Record<string, unknown>): D1Database | undefined {
+  const pick = (key: string) =>
+    (env[key] as string | undefined) ?? (process.env[key] as string | undefined);
+  const accountId = pick("CLOUDFLARE_ACCOUNT_ID");
+  const databaseId = pick("D1_DATABASE_ID");
+  const apiToken = pick("CLOUDFLARE_API_TOKEN");
+  if (!accountId || !databaseId || !apiToken) return undefined;
+  restDb ??= createD1Rest({ accountId, databaseId, apiToken });
+  return restDb;
+}
+
 /** Retorna os bindings do Worker, com fallback para desenvolvimento local. */
 export function getEnv(): Env {
   const g = globalThis as GlobalWithEnv;
@@ -69,7 +85,7 @@ export function getEnv(): Env {
   const pick = (key: keyof Env) => env[key] ?? process.env[key as string];
 
   return {
-    DB: pick("DB"),
+    DB: pick("DB") ?? restDbFromEnv(env),
     FILES: pick("FILES"),
     KV: pick("KV"),
     AI: pick("AI"),
