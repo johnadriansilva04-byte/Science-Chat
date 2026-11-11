@@ -1,23 +1,55 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { FilePlus2, MessageSquareText, ListChecks, FileText } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
+import logo from "@/assets/sciencechat-logo.png";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "ScienceChat — seu artigo científico, página por página" },
+      { name: "description", content: "Converse, responda às perguntas e veja seu artigo científico nascer página por página." },
+      { property: "og:title", content: "ScienceChat — seu artigo científico, página por página" },
+      { property: "og:description", content: "Converse, responda às perguntas e veja seu artigo científico nascer página por página." },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth" });
+  }, [loading, user, navigate]);
+  if (!user) return <div className="min-h-screen bg-background" />;
+
+  const steps = [
+    { icon: MessageSquareText, t: "1. Conversa", d: "Respondo às perguntas sobre a sua pesquisa. Pode pular o que não souber." },
+    { icon: ListChecks, t: "2. Plano", d: "Mostro como o artigo vai ficar, página por página. Você aprova." },
+    { icon: FileText, t: "3. Páginas", d: "Escrevo uma página por vez. Você aprova ou pede correção." },
+  ];
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <header className="flex items-center gap-2 p-3"><ArticlesMenu /><span className="font-serif text-lg font-semibold">ScienceChat</span></header>
+      <main className="mx-auto max-w-2xl px-6 pb-16 pt-12 text-center">
+        <img src={logo} alt="" width={72} height={72} className="mx-auto mb-6" />
+        <h1 className="font-serif text-4xl font-semibold leading-tight md:text-5xl">Construa o seu artigo científico conversando.</h1>
+        <p className="mx-auto mt-4 max-w-lg text-muted-foreground">Primeiro investigamos. Depois planejamos. Depois escrevemos página por página — e a autoria é sempre sua.</p>
+        <Button size="lg" className="mt-8" onClick={() => createArticle(navigate)}><FilePlus2 />Começar novo artigo</Button>
+        <div className="mt-14 grid gap-4 text-left md:grid-cols-3">
+          {steps.map((s) => (
+            <div key={s.t} className="rounded-lg border bg-card p-5">
+              <s.icon className="mb-3 size-5 text-primary" />
+              <div className="font-medium">{s.t}</div>
+              <p className="mt-1 text-sm text-muted-foreground">{s.d}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-8 text-xs text-muted-foreground">Seus artigos ficam no menu ⋮ no canto superior esquerdo.</p>
+      </main>
     </div>
   );
 }
