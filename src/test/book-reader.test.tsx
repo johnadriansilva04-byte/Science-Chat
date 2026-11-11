@@ -31,7 +31,9 @@ describe("BookReader", () => {
     render(<BookReader title="Meu artigo" pages={pages} onClose={onClose} />);
 
     const dots = screen.getAllByLabelText(/Ir para a folha/);
-    fireEvent.click(dots[dots.length - 1]);
+    const lastDot = dots[dots.length - 1];
+    expect(lastDot).toBeDefined();
+    if (lastDot) fireEvent.click(lastDot);
     expect(screen.getByText(ARTICLE_SIGNATURE)).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "Escape" });
