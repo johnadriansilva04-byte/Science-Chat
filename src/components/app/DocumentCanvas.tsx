@@ -33,7 +33,7 @@ import {
   startsWithTitleHeading,
 } from "@/lib/article-export";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
-import { interviewNotes, type InterviewNote } from "@/lib/interview-notes";
+import { groupNotesBySection, interviewNotes, type InterviewNote } from "@/lib/interview-notes";
 import {
   savePage,
   updateTitle,
@@ -77,25 +77,34 @@ function preliminaryDocument(title: string, plan: string | null, notes: Intervie
   const blocks: Block[] = [{ type: "heading", level: 1, text: title }];
   blocks.push({
     type: "paragraph",
-    text: "_Estrutura preliminar — em construção ao vivo. Nada aqui é texto científico final: as seções são preenchidas conforme você responde à entrevista._",
+    text: "_Documento em construção ao vivo — organizado por seção conforme o Pracinha entende suas respostas. Ainda não é o texto final: a redação página por página começa após você aprovar o plano._",
   });
-  if (notes.length) {
-    blocks.push({ type: "heading", level: 2, text: "Informações coletadas na entrevista" });
-    for (const note of notes) {
-      blocks.push({ type: "paragraph", text: `**${note.question}**` });
-      blocks.push({ type: "paragraph", text: note.answer });
-    }
-  }
-  const sections = plan
+
+  // Seções do plano (se houver) ou a estrutura científica padrão.
+  const planSections = plan
     ? plan
         .split("\n")
         .map((l) => l.match(/^[-*]\s+(?:\*\*)?([^*—:-]+)/)?.[1]?.trim())
         .filter((s): s is string => Boolean(s) && s!.length < 60)
     : [];
-  const list = sections.length >= 3 ? sections : PRELIMINARY_SECTIONS;
-  for (const s of list) {
-    blocks.push({ type: "heading", level: 2, text: s });
-    blocks.push({ type: "paragraph", text: "[A preencher durante a produção.]" });
+  const template = planSections.length >= 3 ? planSections : PRELIMINARY_SECTIONS;
+
+  const grouped = groupNotesBySection(notes);
+  const bySection = new Map(grouped.map((g) => [g.section, g.notes]));
+
+  // Mostra primeiro as seções já alimentadas, depois o restante da estrutura.
+  const ordered = [...grouped.map((g) => g.section), ...template.filter((s) => !bySection.has(s))];
+
+  for (const section of ordered) {
+    blocks.push({ type: "heading", level: 2, text: section });
+    const sectionNotes = bySection.get(section);
+    if (sectionNotes?.length) {
+      for (const note of sectionNotes) {
+        blocks.push({ type: "paragraph", text: note.answer });
+      }
+    } else {
+      blocks.push({ type: "paragraph", text: "[A preencher durante a entrevista.]" });
+    }
   }
   return blocks;
 }

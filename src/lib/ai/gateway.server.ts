@@ -127,13 +127,32 @@ export function startResponses(
   instructions: string,
   maxOutputTokens: number = DEFAULT_MAX_OUTPUT_TOKENS,
   tools?: ToolSet,
+  forcedTool?: string | null,
 ) {
   const result = streamText({
     model: model(),
     system: instructions,
     messages,
     maxOutputTokens,
-    ...(tools ? { tools, stopWhen: stepCountIs(5) } : {}),
+    ...(tools
+      ? {
+          tools,
+          stopWhen: stepCountIs(5),
+          // Força a ferramenta pedida APENAS no primeiro passo. Sem isso, com
+          // histórico longo o modelo narra a chamada como texto e a ferramenta
+          // nunca executa; o provider só recupera chamadas "vazadas" quando a
+          // escolha é forçada. Nos passos seguintes voltamos a "auto" para o
+          // modelo escrever a confirmação.
+          ...(forcedTool
+            ? {
+                prepareStep: ({ stepNumber }: { stepNumber: number }) =>
+                  stepNumber === 0
+                    ? { toolChoice: { type: "tool" as const, toolName: forcedTool } as never }
+                    : {},
+              }
+            : {}),
+        }
+      : {}),
     ...(request?.signal ? { abortSignal: request.signal } : {}),
   });
   return { result };

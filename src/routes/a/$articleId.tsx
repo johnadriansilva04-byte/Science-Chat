@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookUp, Pencil } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BookUp, FileText, MessageSquare, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,15 @@ function ArticleWorkspace() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [publishOpen, setPublishOpen] = useState(false);
+  const isMobile = useIsMobile();
+  // No celular o chat e o documento ocupam a tela inteira, alternáveis por abas.
+  const [mobileTab, setMobileTab] = useState<"doc" | "chat">("chat");
+  const prevBusy = useRef(false);
+  // Ao terminar de escrever, traz o chat para a frente para o pesquisador revisar.
+  useEffect(() => {
+    if (isMobile && busy && !prevBusy.current) setMobileTab("chat");
+    prevBusy.current = busy;
+  }, [busy, isMobile]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -214,7 +224,11 @@ function ArticleWorkspace() {
         </Button>
       </header>
 
-      <main className="min-h-0 flex-1">
+      <main
+        className={`min-h-0 flex-1 ${isMobile && mobileTab !== "doc" ? "hidden" : ""} ${
+          isMobile ? "pb-14" : ""
+        }`}
+      >
         <DocumentCanvas
           articleId={articleId}
           title={article.title}
@@ -256,8 +270,36 @@ function ArticleWorkspace() {
             setAutoBuild(true);
             setPanelOpen(true);
           }}
+          isMobile={isMobile}
+          mobileVisible={mobileTab === "chat"}
+          onMobileClose={() => setMobileTab("doc")}
         />
       </div>
+
+      {isMobile && (
+        <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t bg-card pb-[env(safe-area-inset-bottom)]">
+          <button
+            type="button"
+            onClick={() => setMobileTab("chat")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] ${
+              mobileTab === "chat" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <MessageSquare className="size-5" />
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("doc")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] ${
+              mobileTab === "doc" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <FileText className="size-5" />
+            Documento
+          </button>
+        </nav>
+      )}
 
       <PublishDialog
         articleId={articleId}

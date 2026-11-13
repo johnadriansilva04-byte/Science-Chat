@@ -6,6 +6,17 @@ import { insertAnexoMarker } from "@/lib/anexo";
 
 export type ToolContext = { userId: string; articleId: string };
 
+/** Nomes das ferramentas, para detecção de chamadas vazadas como texto. */
+export const TOOL_NAMES = [
+  "pesquisar_bases",
+  "listar_anexos",
+  "ler_anexo",
+  "atualizar_titulo",
+  "editar_pagina",
+  "acrescentar_na_pagina",
+  "anexar_documento_em_pagina",
+] as const;
+
 /**
  * Ferramentas que dão ao Pracinha PODER REAL sobre o artigo: alterar o título e
  * editar/acrescentar texto nas páginas A4 (mesmo caminho do banco usado pela UI).

@@ -2,9 +2,26 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { startResponses } from "@/lib/ai/gateway.server";
 import { INTERVIEW_INSTRUCTIONS, WRITING_CHAT_INSTRUCTIONS } from "@/lib/ai/prompts";
-import { buildTools } from "@/lib/ai/tools.server";
+import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
+import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
+import { pickForcedTool } from "@/lib/ai/tool-intent";
 import { getSessionUser } from "@/lib/cf/auth.server";
 import * as repo from "@/lib/cf/repo.server";
+
+/**
+ * Remove do texto o JSON de chamadas de ferramenta que o modelo tenha vazado
+ * como prosa. Histórico com esse texto "envenena" as respostas seguintes,
+ * fazendo o modelo repetir o vazamento em vez de chamar a ferramenta.
+ */
+function sanitizeMessages(messages: UIMessage[]): UIMessage[] {
+  return messages.map((message) => {
+    if (message.role !== "assistant") return message;
+    const parts = message.parts.map((part) =>
+      part.type === "text" ? { ...part, text: stripLeakedToolCalls(part.text, TOOL_NAMES) } : part,
+    );
+    return { ...message, parts };
+  });
+}
 
 async function handle(request: Request) {
   const user = await getSessionUser(request);
@@ -29,18 +46,30 @@ async function handle(request: Request) {
       ? INTERVIEW_INSTRUCTIONS
       : `${WRITING_CHAT_INSTRUCTIONS}\n\nPLANO:\n${article.plan ?? ""}`;
 
+  const sanitized = sanitizeMessages(body.messages);
+  const lastUserText = [...sanitized]
+    .reverse()
+    .find((m) => m.role === "user")
+    ?.parts.filter((p) => p.type === "text")
+    .map((p) => (p as { text: string }).text)
+    .join(" ");
+  const forcedTool = article.phase === "interview" ? null : pickForcedTool(lastUserText ?? "");
   const { result } = startResponses(
     request,
-    await convertToModelMessages(body.messages),
+    await convertToModelMessages(sanitized),
     instructions,
     undefined,
     buildTools({ userId: user.id, articleId: article.id }),
+    forcedTool,
   );
   return result.toUIMessageStreamResponse({
-    originalMessages: body.messages,
+    originalMessages: sanitized,
     sendReasoning: true,
     onFinish: async ({ responseMessage }) => {
-      const parts = responseMessage.parts.filter((p) => p.type === "text");
+      const parts = responseMessage.parts
+        .filter((p) => p.type === "text")
+        .map((p) => ({ ...p, text: stripLeakedToolCalls(p.text, TOOL_NAMES) }))
+        .filter((p) => p.text.trim().length > 0);
       if (!parts.length) return;
       await repo.addMessage(user.id, article.id, "assistant", parts);
       await repo.updateArticle(user.id, article.id, {});

@@ -9,6 +9,7 @@ import {
   Mic,
   MicOff,
   Minus,
+  PanelRight,
   Search,
   Sparkles,
   Square,
@@ -66,6 +67,9 @@ export function ChatDock({
   onLiveMessages,
   onBusyChange,
   onRequestPlan,
+  isMobile = false,
+  mobileVisible = true,
+  onMobileClose,
 }: {
   articleId: string;
   initialMessages: UIMessage[];
@@ -74,6 +78,10 @@ export function ChatDock({
   onLiveMessages?: (messages: UIMessage[]) => void;
   onBusyChange?: (busy: boolean) => void;
   onRequestPlan: () => void;
+  /** No celular o chat vira uma tela cheia, alternável com o documento. */
+  isMobile?: boolean;
+  mobileVisible?: boolean;
+  onMobileClose?: () => void;
 }) {
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
@@ -81,6 +89,7 @@ export function ChatDock({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wasBusy = useRef(false);
   const voice = useVoice("pt-BR");
+  const visible = isMobile ? mobileVisible : open;
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { articleId } }),
@@ -191,7 +200,8 @@ export function ChatDock({
       .join(" ")
       .trim();
 
-  if (!open) {
+  if (!visible) {
+    if (isMobile) return null;
     return (
       <button
         type="button"
@@ -213,7 +223,13 @@ export function ChatDock({
   }
 
   return (
-    <aside className="dock-enter fixed bottom-4 left-4 z-40 flex h-[min(72vh,600px)] w-[min(92vw,344px)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl">
+    <aside
+      className={
+        isMobile
+          ? "dock-enter fixed inset-0 z-40 flex flex-col overflow-hidden bg-card"
+          : "dock-enter fixed bottom-4 left-4 z-40 flex h-[min(72vh,600px)] w-[min(92vw,344px)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl"
+      }
+    >
       <header className="flex items-center gap-2 border-b bg-gradient-to-r from-accent/50 to-transparent px-3 py-2">
         <PracinhaAvatar state={avatarState} size={34} />
         <div className="min-w-0 flex-1">
@@ -256,10 +272,11 @@ export function ChatDock({
           size="icon"
           variant="ghost"
           className="size-7"
-          onClick={() => setOpen(false)}
-          aria-label="Minimizar chat"
+          onClick={() => (isMobile ? onMobileClose?.() : setOpen(false))}
+          aria-label={isMobile ? "Ver o documento" : "Minimizar chat"}
+          title={isMobile ? "Ver o documento" : "Minimizar chat"}
         >
-          <Minus className="size-4" />
+          {isMobile ? <PanelRight className="size-4" /> : <Minus className="size-4" />}
         </Button>
       </header>
 
