@@ -16,15 +16,15 @@ Detalhes longos, histórico e armadilhas completas: `.openhands/memory/2026-11-1
 ## Convenções
 - Rotas em `src/routes/` (file-based TanStack). `routeTree.gen.ts` é gerado — nunca editar.
 - Server functions em `src/lib/*.functions.ts` com `createServerFn({ method: "POST" }).validator(...)`. NÃO usar `inputValidator` (depreciado).
-- Schema D1 em `migrations/` (`0001_init`, `0002_documents`, `0003_publications`). `npm run db:migrate:local|remote`.
+- Schema D1 em `migrations/` (`0001_init`, `0002_documents`, `0003_publications`, `0004_documents_r2`). `npm run db:migrate:local|remote`.
 - Usar `npm` (sem bun). `package-lock.json` não é versionado.
 
 ## Deploy
-**Cloudflare é o alvo.** `npm run build` + `npx wrangler deploy` → **https://sciencechat.sciencechat.workers.dev**. Bindings ativos: `DB`, `AI`, `ASSETS`. E2E validado em produção.
-- `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`; D1 `sciencechat` = `b8793250-696e-4538-aa50-03796ff8635f`. R2 não habilitado na conta (erro 10042); KV só leitura. Sessões ficam no D1.
-- **Push GitHub**: `$GITHUB_TOKEN`/`OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` dão 403 (sem write). Só funciona com o PAT do usuário (`GH_PAT` no ambiente):
-  `export GH_PAT && git -c credential.helper='' -c credential.helper='!f() { echo username=x-access-token; echo password="$GH_PAT"; }; f' push origin HEAD:main`
-  Antes: `git fetch origin main` + confirmar fast-forward (`git merge-base --is-ancestor origin/main HEAD`). Repo é **shallow**; NUNCA rebase/force-push.
+**Cloudflare é o alvo.** `npm run build` + `npx wrangler deploy` → **https://sciencechat.sciencechat.workers.dev**. Bindings ativos: `DB`, `AI`, `FILES` (R2), `ASSETS`. E2E validado em produção.
+- `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`; D1 `sciencechat` = `b8793250-696e-4538-aa50-03796ff8635f`. **R2 habilitado** (o usuário ativou no painel); bucket `sciencechat-files` (binding `FILES`). KV só leitura. Sessões ficam no D1.
+- **Push GitHub**: `$GITHUB_TOKEN` (`ghu_`) e `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` dão **403 mesmo com admin via API** — o token ativo não escreve. O único que funciona é `GH_PAT` (`ghp_`, no ambiente):
+  `git -c credential.helper= push "https://${GH_PAT}@github.com/johnadriansilva04-byte/Science-Chat.git" main`
+  Antes: `git fetch origin -q` + confirmar fast-forward. Repo é **shallow**; NUNCA rebase/force-push.
 - Vercel é caminho alternativo (mesmo código, via REST): detalhes no log diário (Node 24 obrigatório, desligar SSO).
 
 ## Fluxo do produto (regra central)
@@ -36,7 +36,7 @@ Investigar (entrevista adaptativa) → documentar → auditar → plano aprovado
 - **SSE da Workers AI duplica conteúdo** em dois campos (nativo e OpenAI) → texto/tool_calls duplicados → tool-error. Fix `fixEvent`+`dedupeSseStream` em `gateway.server.ts`.
 - **Tool calling:** `tool()` usa `inputSchema` (não `parameters`); `stopWhen: stepCountIs(n)`. O provider só recupera chamadas "vazadas como texto" com `toolChoice` FORÇADO — forçar só no passo 0 via `prepareStep` (quem escolhe: `src/lib/ai/tool-intent.ts` `pickForcedTool`; sanitiza histórico: `leaked-tool-call.ts`).
 - 4 erros de tsc PRÉ-EXISTENTES em `src/components/ai-elements/{message,shimmer}.tsx` (build passa mesmo assim).
-- **Documentos primários** em base64 no D1 (tabela `documents`), "Anexo N" estável. R2 não habilitado.
+- **Documentos primários (dossiê):** arquivo bruto no **R2** (`documents.storage_key`, bucket `sciencechat-files`), base64 no D1 apenas como fallback. Camada `src/lib/cf/storage.server.ts` (`putDocumentBytes`/`readDocumentBytes`/`deleteDocumentBytes`), "Anexo N" estável. `getDocumentFile` devolve o original em base64 (abrir/baixar).
 - Dev: `npm run dev` (porta **3000**) emula bindings via wrangler; sem `CLOUDFLARE_API_TOKEN` cai no stub (IA/D1 não funcionam, SSR 200). `wrangler dev` serve `.output/` → rodar `npx vite build` antes. `wrangler deploy --dry-run` valida config sem token.
 - **Cota Workers AI:** 10.000 neurônios/dia; esgotar → erro `4006` + stream vazio. Reset à meia-noite UTC. UX: Pracinha "cansa" (`src/lib/ai/quota.ts` + `PracinhaRest.tsx`).
 
@@ -48,7 +48,8 @@ Autor só aparece após revisão por pares favorável: `draft → submitted → 
 - Rotas client-rendered (verificar no browser). Gestão: `PublishDialog.tsx`.
 
 ## Estado (2026-11-11)
-Prod: **https://sciencechat.sciencechat.workers.dev**. **122 testes** (19 arquivos) verdes. tsc limpo (fora os 4 pré-existentes), build nitro OK.
+Prod: **https://sciencechat.sciencechat.workers.dev**. **126 testes** (20 arquivos) verdes. tsc limpo (fora os 4 pré-existentes), build nitro OK.
 - UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora com advogado do diabo fundamentado, mural de publicações (`PublishedShelf.tsx`), museu curado (`museum.ts` + `/museu`).
 - Chat: voz fluida (`useVoice` + `src/lib/speech.ts`), gaveta de anexos (`ChatAttachments.tsx`), roteamento de anexo pela IA.
-- Pendências: habilitar R2 (dossiê em R2), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
+- **R2 do dossiê:** feito e validado em produção (upload→R2, download, delete). Ver log `2026-11-11.md`.
+- Pendências: matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
