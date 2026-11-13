@@ -773,6 +773,143 @@
   opacity: 0.7;
 }
 
+/* ===== Museu de Artigos Científicos ===== */
+.museum-chip {
+  padding: 0.35rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  font-size: 0.8rem;
+  color: var(--color-muted-foreground);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.museum-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-foreground);
+}
+.museum-chip--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+.museum-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.05rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(color-mix(in oklab, var(--color-border) 40%, transparent) 1px, transparent 1px)
+      0 0 / 100% 22px,
+    var(--color-card);
+  box-shadow: var(--paper-shadow);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+.museum-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--color-primary) 45%, var(--color-border));
+  box-shadow: 0 16px 34px -20px color-mix(in oklab, var(--color-primary) 55%, transparent);
+}
+.museum-card__year {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.museum-card__wing {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  text-align: right;
+  max-width: 60%;
+}
+.museum-card__title {
+  font-family: var(--font-serif);
+  font-size: 1.06rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.museum-card__orig {
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+}
+.museum-card__authors {
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.museum-card__venue {
+  font-size: 0.72rem;
+  color: var(--color-muted-foreground);
+}
+.museum-card__note {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-foreground);
+}
+.museum-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.museum-tag {
+  padding: 0.05rem 0.45rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  font-size: 0.66rem;
+  color: color-mix(in oklab, var(--color-primary) 80%, var(--color-foreground));
+}
+.museum-card__doi {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.7rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  color: var(--color-primary);
+}
+.museum-card__doi:hover {
+  text-decoration: underline;
+}
+
+/* Convite ao Museu, na home. */
+.museum-invite {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 30%, var(--color-border));
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      circle at 12% 20%,
+      color-mix(in oklab, var(--color-primary) 12%, transparent),
+      transparent 55%
+    ),
+    var(--color-card);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.museum-invite:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px -22px color-mix(in oklab, var(--color-primary) 60%, transparent);
+}
+
 /* ===== Vida no painel de produção ===== */
 /* A página "chega" como texto recém-escrito; o selo marca a aprovação. */
 .page-reveal {

@@ -4,6 +4,7 @@ import {
   BookMarked,
   BookOpenText,
   FilePlus2,
+  Landmark,
   MessageSquareText,
   ListChecks,
   FileText,
@@ -92,6 +93,13 @@ function Index() {
         <span className="font-serif text-lg font-semibold">ScienceChat</span>
         <nav className="ml-auto flex items-center gap-3 text-sm">
           <Link
+            to="/museu"
+            className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Landmark className="size-4" />
+            Museu
+          </Link>
+          <Link
             to="/publicacoes"
             className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
           >
@@ -155,6 +163,20 @@ function Index() {
             autor. É a sua marca registrada — o conhecimento fica protegido e creditado.
           </p>
         </div>
+
+        <Link to="/museu" className="museum-invite group mt-6 block text-left">
+          <Landmark className="size-6 text-primary" />
+          <div className="min-w-0">
+            <div className="font-serif text-lg font-semibold">Museu de Artigos Científicos</div>
+            <p className="text-sm text-muted-foreground">
+              De Einstein a Turing; do poder e da violência institucional à psicologia e à
+              metacognição. Metadados reais, com DOI — para estudar a fonte primária.
+            </p>
+          </div>
+          <span className="ml-auto shrink-0 self-center text-sm font-medium text-primary">
+            Entrar no museu →
+          </span>
+        </Link>
 
         <div className="mt-12 grid gap-4 text-left md:grid-cols-3">
           {steps.map((s) => (
