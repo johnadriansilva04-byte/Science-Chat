@@ -52,8 +52,23 @@ const EDIT_VERBS = [
   "exclua",
   "delete",
 ];
-const RESEARCH_VERBS = ["pesquis", "busque", "buscar", "procure", "procurar", "encontre"];
+const RESEARCH_VERBS = ["pesquis", "busque", "buscar", "procure", "procurar", "encontre", "provoc"];
 const ATTACH_VERBS = ["anexe", "anexar", "referencie", "cite o anexo"];
+/** Pedidos de provocação/advogado do diabo: exigem busca de evidência contrária. */
+const CHALLENGE_HINTS = [
+  "advogado do diabo",
+  "objeç",
+  "objec",
+  "refut",
+  "contra-argument",
+  "contraargument",
+  "contradiz",
+  "contrária",
+  "contraria",
+  "explicação alternativa",
+  "explicacao alternativa",
+  "provocar minha tese",
+];
 
 const TITLE_OBJECTS = ["título", "titulo"];
 const PAGE_OBJECTS = [
@@ -86,6 +101,9 @@ export function pickForcedTool(text: string): string | null {
   const wantsEdit = has(t, EDIT_VERBS);
   const wantsResearch = has(t, RESEARCH_VERBS);
   const wantsAttach = has(t, ATTACH_VERBS);
+
+  // Provocação/advogado do diabo: precisa buscar evidência real na base.
+  if (has(t, CHALLENGE_HINTS)) return "pesquisar_bases";
 
   // Título: só quando há verbo de edição/renomeação.
   if (wantsEdit && has(t, TITLE_OBJECTS)) return "atualizar_titulo";

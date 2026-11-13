@@ -29,3 +29,12 @@ describe("pickForcedTool", () => {
     expect(pickForcedTool("tenho uma ideia sobre burocracia")).toBeNull();
   });
 });
+
+describe("pickForcedTool — provocação/advogado do diabo", () => {
+  it("roteia pedidos de objeção para pesquisar_bases", () => {
+    expect(pickForcedTool("seja advogado do diabo e aponte objeções")).toBe("pesquisar_bases");
+    expect(pickForcedTool("qual a explicação alternativa para isso?")).toBe("pesquisar_bases");
+    expect(pickForcedTool("provocar minha tese")).toBe("pesquisar_bases");
+    expect(pickForcedTool("existe evidência que contradiz a tese?")).toBe("pesquisar_bases");
+  });
+});

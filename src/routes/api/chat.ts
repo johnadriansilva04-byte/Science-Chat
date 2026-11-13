@@ -53,7 +53,11 @@ async function handle(request: Request) {
     ?.parts.filter((p) => p.type === "text")
     .map((p) => (p as { text: string }).text)
     .join(" ");
-  const forcedTool = article.phase === "interview" ? null : pickForcedTool(lastUserText ?? "");
+  const forced = pickForcedTool(lastUserText ?? "");
+  // Na entrevista o documento ainda é preliminar: só forçamos a BUSCA (provocação/
+  // evidência). Edições de título/página só são forçadas na fase de produção.
+  const forcedTool =
+    article.phase === "interview" ? (forced === "pesquisar_bases" ? forced : null) : forced;
   const { result } = startResponses(
     request,
     await convertToModelMessages(sanitized),
