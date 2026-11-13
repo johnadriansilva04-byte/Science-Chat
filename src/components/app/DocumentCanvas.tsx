@@ -4,7 +4,9 @@ import {
   Check,
   Download,
   FileDown,
+  ListChecks,
   Minus,
+  PanelRight,
   Pencil,
   Plus,
   Printer,
@@ -15,6 +17,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { A4Measure, A4Sheet } from "@/components/app/A4Sheet";
 import { BookReader } from "@/components/app/BookReader";
+import { PagePanel } from "@/components/app/PagePanel";
+import { PlanPanel } from "@/components/app/PlanPanel";
 import { documentSections, parseBlocks, serializeBlocks, type Block } from "@/lib/article-blocks";
 import { useA4Pagination } from "@/lib/a4";
 import { stripMarkers } from "@/lib/article-marker";
@@ -96,7 +100,17 @@ export function DocumentCanvas({
   pages,
   messages,
   liveWriting = false,
+  phase,
+  currentPage,
+  currentNumber,
+  isVirtualNext,
+  autoBuild,
+  panelOpen,
+  onPanelOpenChange,
   onPagesChanged,
+  onPlanChanged,
+  onPlanApproved,
+  onPageApproved,
 }: {
   articleId: string;
   title: string;
@@ -104,16 +118,43 @@ export function DocumentCanvas({
   pages: WorkspacePage[];
   messages: { role: string; parts: { type: string; text?: string }[] }[];
   liveWriting?: boolean;
+  phase: string;
+  currentPage: WorkspacePage | null;
+  currentNumber: number;
+  isVirtualNext: boolean;
+  autoBuild: boolean;
+  panelOpen: boolean;
+  onPanelOpenChange: (open: boolean) => void;
   onPagesChanged: () => void;
+  onPlanChanged: () => void;
+  onPlanApproved: () => void;
+  onPageApproved: (pageNumber: number) => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [editing, setEditing] = useState(false);
   const [reading, setReading] = useState(false);
+  const [panelTab, setPanelTab] = useState<"plan" | "pages">(
+    phase === "interview" ? "plan" : "pages",
+  );
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [highlight, setHighlight] = useState<string | null>(null);
   const [activeSheet, setActiveSheet] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
   const sheetRefs = useRef<Record<number, HTMLElement | null>>({});
+
+  // Abre o painel contextual quando o pesquisador pede o plano (ou já está escrevendo),
+  // mantendo plano e produção fora do chat.
+  useEffect(() => {
+    if (autoBuild) {
+      setPanelTab("plan");
+      onPanelOpenChange(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoBuild]);
+
+  useEffect(() => {
+    if (phase === "writing" || phase === "done") setPanelTab("pages");
+  }, [phase]);
 
   const isPreliminary = pages.length === 0;
 
@@ -143,6 +184,27 @@ export function DocumentCanvas({
   const measureBlocks = isPreliminary ? prelimBlocks : flatBlocks;
   const { pages: sheets, overflowing, measureRef } = useA4Pagination(measureBlocks, revision);
   const sections = useMemo(() => documentSections(sheets), [sheets]);
+  // Sumário sem ruído: remove o título do artigo (já está no topo) e headings
+  // repetidos consecutivos (a IA às vezes repete o nome da seção em cada folha).
+  const outline = useMemo(() => {
+    const titleKey = title.trim().toLowerCase();
+    const seen = new Set<string>();
+    const out: typeof sections = [];
+    for (const s of sections) {
+      const key = s.title.trim().toLowerCase();
+      if (key === titleKey || seen.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+    }
+    return out;
+  }, [sections, title]);
+
+  // Seção "atual" conforme a folha visível, para o sumário acompanhar a rolagem.
+  const activeSection = useMemo(() => {
+    const visible = outline.filter((s) => s.page - 1 <= activeSheet);
+    const last = visible[visible.length - 1];
+    return last ? last.title : null;
+  }, [outline, activeSheet]);
 
   const wordTotal = useMemo(
     () => pages.reduce((sum, p) => sum + countWords(stripMarkers(p.content)), 0),
@@ -334,6 +396,19 @@ export function DocumentCanvas({
             <FileDown className="size-3.5" />
             .txt
           </Button>
+          <Button
+            size="sm"
+            variant={panelOpen ? "secondary" : "outline"}
+            className="h-7 gap-1 text-xs"
+            onClick={() => {
+              setPanelTab(isPreliminary ? "plan" : "pages");
+              onPanelOpenChange(!panelOpen);
+            }}
+            title={isPreliminary ? "Plano de produção" : "Produção página por página"}
+          >
+            <PanelRight className="size-3.5" />
+            {isPreliminary ? "Plano" : "Produção"}
+          </Button>
           <div className="flex items-center gap-0.5 rounded-md border">
             <Button
               size="icon"
@@ -387,67 +462,48 @@ export function DocumentCanvas({
       )}
 
       <div className="flex min-h-0 flex-1">
-        <nav className="hidden w-60 shrink-0 flex-col overflow-y-auto border-r bg-card p-2 lg:flex">
-          <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Folhas
+        <nav className="dock-scroll hidden w-56 shrink-0 flex-col overflow-y-auto border-r bg-card px-2 py-2 lg:flex">
+          <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Sumário
           </p>
-          <div className="mb-3 space-y-1">
-            {sheets.map((sheet, i) => {
-              const heading = sheet.find((b) => b.block.type === "heading");
-              const label =
-                heading && heading.block.type === "heading" ? heading.block.text : `Folha ${i + 1}`;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    setActiveSheet(i);
-                    scrollToSheet(i);
-                  }}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors ${
-                    activeSheet === i
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-muted"
+          {outline.length === 0 && (
+            <p className="px-2 py-1 text-xs text-muted-foreground">Sem seções ainda.</p>
+          )}
+          {outline.map((s, i) => {
+            const isActive = highlight ? highlight === s.title : activeSection === s.title;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setHighlight(s.title);
+                  setActiveSheet(s.page - 1);
+                  scrollToSheet(s.page - 1);
+                }}
+                className={`group flex w-full items-baseline gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors ${
+                  isActive ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+                }`}
+                title={`${s.title} — folha ${s.page}`}
+              >
+                <span
+                  className={`shrink-0 tabular-nums text-[11px] ${
+                    isActive ? "text-primary" : "text-muted-foreground/70"
                   }`}
-                  title={label}
                 >
-                  <span
-                    className={`flex size-5 shrink-0 items-center justify-center rounded-[3px] border text-[10px] tabular-nums ${
-                      activeSheet === i ? "border-primary text-primary" : "border-border"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="truncate">{label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {sections.length > 0 && (
-            <>
-              <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Seções
-              </p>
-              {sections.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    setHighlight(s.title);
-                    setActiveSheet(s.page - 1);
-                    scrollToSheet(s.page - 1);
-                  }}
-                  className={`block w-full truncate rounded-md px-2 py-1 text-left text-sm hover:bg-muted ${
-                    s.level === 1 ? "font-semibold" : "pl-4"
+                  {s.page}
+                </span>
+                <span
+                  className={`min-w-0 flex-1 truncate ${
+                    s.level === 1
+                      ? "font-semibold"
+                      : "text-muted-foreground group-hover:text-foreground"
                   }`}
-                  title={s.title}
                 >
                   {s.title}
-                </button>
-              ))}
-            </>
-          )}
+                </span>
+              </button>
+            );
+          })}
         </nav>
 
         <div ref={scroller} className="min-h-0 flex-1 overflow-auto p-4 md:p-8">
@@ -477,6 +533,67 @@ export function DocumentCanvas({
           </div>
           <A4Measure blocks={measureBlocks} measureRef={measureRef} />
         </div>
+
+        {panelOpen && (
+          <aside className="dock-enter flex w-[min(92vw,420px)] shrink-0 flex-col border-l bg-card">
+            <div className="flex items-center gap-1 border-b px-2 py-1.5">
+              <button
+                type="button"
+                onClick={() => setPanelTab("plan")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  panelTab === "plan"
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <ListChecks className="size-3.5" />
+                Plano
+              </button>
+              <button
+                type="button"
+                onClick={() => setPanelTab("pages")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  panelTab === "pages"
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <FileDown className="size-3.5" />
+                Produção
+              </button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                onClick={() => onPanelOpenChange(false)}
+                aria-label="Fechar painel"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            <div className="dock-scroll min-h-0 flex-1 overflow-y-auto">
+              {panelTab === "plan" ? (
+                <PlanPanel
+                  articleId={articleId}
+                  plan={plan}
+                  currentTitle={title}
+                  autoBuild={autoBuild}
+                  onChanged={onPlanChanged}
+                  onApproved={onPlanApproved}
+                />
+              ) : (
+                <PagePanel
+                  articleId={articleId}
+                  page={currentPage}
+                  pageNumber={currentNumber}
+                  isVirtualNext={isVirtualNext}
+                  onChanged={onPagesChanged}
+                  onApproved={onPageApproved}
+                />
+              )}
+            </div>
+          </aside>
+        )}
       </div>
 
       {editing && (

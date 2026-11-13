@@ -43,6 +43,7 @@ function ArticleWorkspace() {
   const [pages, setPages] = useState<WorkspacePage[]>([]);
   const [selectedPage, setSelectedPage] = useState<number>(1);
   const [autoBuild, setAutoBuild] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -205,28 +206,15 @@ function ArticleWorkspace() {
           plan={article.plan}
           pages={pages}
           messages={canvasMessages}
-          onPagesChanged={() => void reload()}
-        />
-      </main>
-
-      <div className="print:hidden">
-        <ChatDock
-          articleId={articleId}
-          initialMessages={initialMessages}
-          plan={article.plan}
-          title={article.title}
+          liveWriting={busy && pages.length === 0}
           phase={article.phase}
           currentPage={currentPage}
           currentNumber={currentNumber}
           isVirtualNext={isVirtualNext}
           autoBuild={autoBuild}
-          onActivity={() => void reload()}
-          onLiveMessages={setLiveMessages}
-          onBusyChange={setBusy}
-          onRequestPlan={() => {
-            setAutoBuild(true);
-            void reload();
-          }}
+          panelOpen={panelOpen}
+          onPanelOpenChange={setPanelOpen}
+          onPagesChanged={() => void reload()}
           onPlanChanged={() => {
             setAutoBuild(false);
             void reload();
@@ -236,8 +224,23 @@ function ArticleWorkspace() {
             setSelectedPage(1);
             void reload();
           }}
-          onPageChanged={() => void reload()}
           onPageApproved={(n) => setSelectedPage(n + 1)}
+        />
+      </main>
+
+      <div className="print:hidden">
+        <ChatDock
+          articleId={articleId}
+          initialMessages={initialMessages}
+          phase={article.phase}
+          shiftLeft={panelOpen}
+          onActivity={() => void reload()}
+          onLiveMessages={setLiveMessages}
+          onBusyChange={setBusy}
+          onRequestPlan={() => {
+            setAutoBuild(true);
+            setPanelOpen(true);
+          }}
         />
       </div>
     </div>

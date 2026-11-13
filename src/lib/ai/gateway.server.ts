@@ -95,23 +95,41 @@ function model() {
   return workersai(modelId as never);
 }
 
+/**
+ * Teto de tokens de saída. A Workers AI usa um padrão baixo quando `max_tokens`
+ * não é enviado, o que cortava as páginas no meio de uma frase (~1000 caracteres).
+ * 2048 tokens cobrem com folga uma página A4 cheia (~650 palavras) e o plano.
+ */
+export const DEFAULT_MAX_OUTPUT_TOKENS = 2048;
+
 export function startResponses(
   request: Request | undefined,
   messages: ModelMessage[],
   instructions: string,
+  maxOutputTokens: number = DEFAULT_MAX_OUTPUT_TOKENS,
 ) {
   const result = streamText({
     model: model(),
     system: instructions,
     messages,
+    maxOutputTokens,
     ...(request?.signal ? { abortSignal: request.signal } : {}),
   });
   return { result };
 }
 
 /** Gera e aguarda o texto final (para o plano e as páginas). */
-export async function generateFinalText(prompt: string, instructions: string) {
-  const { result } = startResponses(undefined, [{ role: "user", content: prompt }], instructions);
+export async function generateFinalText(
+  prompt: string,
+  instructions: string,
+  maxOutputTokens?: number,
+) {
+  const { result } = startResponses(
+    undefined,
+    [{ role: "user", content: prompt }],
+    instructions,
+    maxOutputTokens,
+  );
   const text = await result.text;
   if (!text.trim()) throw new Error("A IA não retornou texto. Tente novamente.");
   return text.trim();
