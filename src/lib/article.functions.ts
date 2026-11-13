@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
-import { isLastPage } from "@/lib/article-marker";
+import { isLastPage, stripMarkers } from "@/lib/article-marker";
+import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
 import * as repo from "@/lib/cf/repo.server";
 
 type Part = { type: string; text?: string };
@@ -118,13 +119,15 @@ export const generatePlan = createServerFn({ method: "POST" })
         : "Monte o plano."
     }`;
     const plan = await generateFinalText(prompt, PLAN_INSTRUCTIONS);
-    const title =
+    // O título pertence ao pesquisador: o plano apenas o propõe. Nunca sobrescrevemos
+    // o título do artigo aqui — a aplicação é um ato explícito do usuário.
+    const proposedTitle =
       plan
         .match(/^#\s+(.+)$/m)?.[1]
         ?.trim()
-        .slice(0, 160) ?? article.title;
-    await repo.updateArticle(context.user.id, data.articleId, { plan, title, phase: "plan" });
-    return { ok: true, plan, title };
+        .slice(0, 160) || null;
+    await repo.updateArticle(context.user.id, data.articleId, { plan, phase: "plan" });
+    return { ok: true, plan, proposedTitle };
   });
 
 export const setPhase = createServerFn({ method: "POST" })
@@ -182,7 +185,14 @@ export const generatePage = createServerFn({ method: "POST" })
       .join("\n\n");
 
     const content = await generateFinalText(prompt, PAGE_INSTRUCTIONS);
-    await repo.upsertPage(userId, data.articleId, number, content, "draft");
+    // A página precisa preencher uma folha A4; uma resposta curta demais indica corte
+    // ou omissão da IA. Reforçamos o pedido uma vez antes de aceitar.
+    let finalContent = content;
+    if (countWords(stripMarkers(content)) < MIN_PAGE_WORDS) {
+      const retryPrompt = `${prompt}\n\nATENÇÃO: a versão anterior ficou curta demais (menos de ${MIN_PAGE_WORDS} palavras). Escreva novamente a PÁGINA ${number} com pelo menos ${MIN_PAGE_WORDS} palavras, em 3 a 5 parágrafos desenvolvidos, sem repetir ideias.`;
+      finalContent = await generateFinalText(retryPrompt, PAGE_INSTRUCTIONS);
+    }
+    await repo.upsertPage(userId, data.articleId, number, finalContent, "draft");
     return { ok: true, pageNumber: number };
   });
 

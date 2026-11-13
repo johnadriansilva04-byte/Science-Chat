@@ -171,6 +171,34 @@
     text-align: center;
     color: var(--color-muted-foreground);
   }
+
+  /* Folha A4 real: largura/altura vêm do componente (mm); aqui só o acabamento. */
+  .a4-sheet {
+    padding: 0;
+    font-size: 1.02rem;
+    line-height: 1.55;
+    overflow: hidden;
+  }
+  .a4-sheet .a4-block {
+    text-align: initial;
+  }
+  .a4-sheet p {
+    margin: 0;
+  }
+  .a4-block--active {
+    background: color-mix(in oklab, var(--accent) 55%, transparent);
+    border-radius: 2px;
+    outline: 1px solid var(--accent);
+  }
+  .a4-page-number {
+    position: absolute;
+    bottom: 8mm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--color-muted-foreground);
+  }
 }
 
 /* Leitor tipo livro */
@@ -228,20 +256,35 @@
   text-align: center;
 }
 
+@page {
+  size: A4;
+  margin: 0;
+}
+
 @media print {
-  /* Ao imprimir/exportar PDF, imprime apenas o documento mestre com o rodapé. */
-  body * {
-    visibility: hidden;
+  /* Ao imprimir/exportar PDF, imprime as folhas A4 do editor, uma por página. */
+  html,
+  body {
+    background: #fff;
   }
-  #documento-mestre,
-  #documento-mestre * {
-    visibility: visible;
+  .print\:hidden {
+    display: none !important;
   }
-  #documento-mestre {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 100%;
-    border: 0;
+  .a4-sheet {
     box-shadow: none;
+    border: 0;
+    margin: 0;
+    page-break-after: always;
+    break-after: page;
+  }
+  .a4-sheet:last-of-type {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .a4-page-number {
+    display: none;
+  }
+  .variant-signature {
+    border: 0;
   }
 }

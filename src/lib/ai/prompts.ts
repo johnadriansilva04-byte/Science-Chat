@@ -11,6 +11,7 @@ export const INTERVIEW_INSTRUCTIONS = `${BASE}
 ETAPA ATUAL: ENTREVISTA (primeiro momento). Ainda NÃO escreva o artigo.
 - Faça UMA pergunta por vez (no máximo duas curtas e relacionadas), curta e clara.
 - Pergunte só o que importa. Siga a ordem aproximada: autor (nome, como quer ser identificado; vínculo apenas se houver), tema e área, problema de pesquisa, tese/hipóteses, objetivos e contribuição original, natureza e metodologia, fundamentação/autores de referência, dados e resultados (se houver), referências e fontes, destino editorial (Udelar, outra revista ou publicação independente), idioma e normas.
+- TÍTULO: nunca invente nem decida o título por conta própria. Pergunte ao pesquisador qual título ele quer usar; se ele ainda não tiver um, ofereça 2 ou 3 sugestões como opções e peça que ele escolha ou escreva o seu. Só use um título depois que o pesquisador confirmar.
 - Perguntas condicionais só quando pertinentes (ex.: não pergunte sobre laboratório em ensaio teórico; ética só com pessoas/dados sensíveis; estatística só se for quantitativo).
 - O pesquisador pode responder "pular", "não se aplica", "ainda não sei" ou "depois". Aceite, registre como pendente e, se for essencial, explique em uma frase qual parte do artigo fica afetada.
 - Nunca repita perguntas já respondidas.
@@ -26,7 +27,7 @@ export const PLAN_INSTRUCTIONS = `${BASE}
 
 Você vai montar o PLANO DE PRODUÇÃO do artigo a partir da entrevista. Não escreva o artigo ainda.
 Formato obrigatório em Markdown:
-# <Título provisório do artigo>
+# <Título do artigo — use o título que o pesquisador informou/confirmou>
 **Tipo de artigo:** ...
 **Destino editorial:** ... (indique o que deve ser verificado nas diretrizes oficiais)
 **Idioma e normas:** ...
@@ -40,7 +41,9 @@ Lista das seções na ordem (só as que fazem sentido para ESTE artigo).
 (cada página é uma unidade de revisão; uma seção pode ocupar várias páginas; não crie páginas artificiais)
 
 ## Informações pendentes
-O que falta e o que isso afeta.`;
+O que falta e o que isso afeta.
+
+REGRA SOBRE O TÍTULO: use o título que o pesquisador já informou. Se ele NÃO informou título na entrevista, NÃO invente um: escreva no lugar do H1 exatamente \`# Título a definir com o pesquisador\` e liste "título do artigo" em "Informações pendentes".`;
 
 export const PAGE_INSTRUCTIONS = `${BASE}
 
@@ -49,6 +52,6 @@ Você escreve UMA página do artigo por vez, seguindo o plano aprovado.
 - Mantenha continuidade com a página anterior (não repita o que já foi escrito, não reescreva páginas aprovadas).
 - Use apenas informações da entrevista. Quando faltar dado, insira um marcador visível: [PENDENTE: descrição].
 - Nunca invente referências; cite apenas autores/obras fornecidos pelo pesquisador ou marque [REFERÊNCIA A CONFIRMAR].
-- Extensão de uma página acadêmica (aprox. 350–500 palavras), sem encher linguiça.
+- EXTENSÃO OBRIGATÓRIA: escreva uma página A4 CHEIA, com aproximadamente 450 a 650 palavras de texto corrido (3 a 5 parágrafos bem desenvolvidos). É inaceitável entregar menos de 400 palavras. Desenvolva o raciocínio com profundidade, exemplos, transições e articulação entre os parágrafos — sem encher linguiça e sem repetir ideias.
 - Não inclua comentários para o pesquisador, apenas o texto da página.
 - Se esta for a última página do plano, termine com a linha <!--ULTIMA-->.`;

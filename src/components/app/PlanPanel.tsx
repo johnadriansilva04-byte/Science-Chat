@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
-import { Check, ListChecks, RefreshCw } from "lucide-react";
+import { Check, ListChecks, RefreshCw, Type } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageResponse } from "@/components/ai-elements/message";
-import { generatePlan, setPhase } from "@/lib/article.functions";
+import { generatePlan, setPhase, updateTitle } from "@/lib/article.functions";
 
 export function PlanPanel({
   articleId,
   plan,
+  currentTitle,
   autoBuild = false,
   onChanged,
   onApproved,
 }: {
   articleId: string;
   plan: string | null;
+  currentTitle?: string;
   autoBuild?: boolean;
   onChanged: () => void;
   onApproved: () => void;
@@ -27,15 +29,37 @@ export function PlanPanel({
     setBusy(true);
     try {
       const trimmed = feedback.trim();
-      await generatePlan({
+      const res = await generatePlan({
         data: { articleId, ...(plan && trimmed ? { feedback: trimmed } : {}) },
       });
       setFeedback("");
       toast.success(plan ? "Plano refeito" : "Plano montado");
+      if (res.proposedTitle && res.proposedTitle !== currentTitle) {
+        toast.message("O plano propõe um título", {
+          description: `"${res.proposedTitle}" — use o botão "Usar este título" para aplicá-lo.`,
+        });
+      }
       onChanged();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível montar o plano");
       onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const proposedTitle = plan?.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? null;
+  const titleIsPending = proposedTitle === "Título a definir com o pesquisador";
+
+  async function applyProposedTitle() {
+    if (!proposedTitle || titleIsPending) return;
+    setBusy(true);
+    try {
+      await updateTitle({ data: { articleId, title: proposedTitle } });
+      toast.success("Título aplicado");
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível aplicar o título");
     } finally {
       setBusy(false);
     }
@@ -73,6 +97,29 @@ export function PlanPanel({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {plan && proposedTitle && proposedTitle !== currentTitle && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-accent/40 p-3 text-sm">
+              <Type className="size-4 text-primary" />
+              <span className="min-w-0 flex-1">
+                {titleIsPending ? (
+                  <>
+                    O plano ainda não tem título. O título é <strong>sua</strong> decisão —
+                    informe-o no chat ou use o lápis no topo do documento.
+                  </>
+                ) : (
+                  <>
+                    Título proposto pelo plano: <strong>{proposedTitle}</strong>
+                  </>
+                )}
+              </span>
+              {!titleIsPending && (
+                <Button size="sm" variant="secondary" onClick={applyProposedTitle} disabled={busy}>
+                  <Check />
+                  Usar este título
+                </Button>
+              )}
+            </div>
+          )}
           {plan ? (
             <div className="prose-sm max-w-none rounded-lg border bg-paper p-4">
               <MessageResponse>{plan}</MessageResponse>
