@@ -7,6 +7,7 @@ import {
   ListChecks,
   Minus,
   PanelRight,
+  Paperclip,
   Pencil,
   Plus,
   Printer,
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { A4Measure, A4Sheet } from "@/components/app/A4Sheet";
 import { BookReader } from "@/components/app/BookReader";
+import { DocumentsPanel } from "@/components/app/DocumentsPanel";
 import { PagePanel } from "@/components/app/PagePanel";
 import { PlanPanel } from "@/components/app/PlanPanel";
 import { documentSections, parseBlocks, serializeBlocks, type Block } from "@/lib/article-blocks";
@@ -32,7 +34,12 @@ import {
 } from "@/lib/article-export";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
 import { interviewNotes, type InterviewNote } from "@/lib/interview-notes";
-import { savePage, updateTitle, type WorkspacePage } from "@/lib/article.functions";
+import {
+  savePage,
+  updateTitle,
+  type WorkspacePage,
+  type WorkspaceDocument,
+} from "@/lib/article.functions";
 
 /** Bloco do documento com a página (unidade de produção) que o originou. */
 type DocBlock = { block: Block; dbPage: number; dbIndex: number };
@@ -98,6 +105,7 @@ export function DocumentCanvas({
   title,
   plan,
   pages,
+  documents,
   messages,
   liveWriting = false,
   phase,
@@ -116,6 +124,7 @@ export function DocumentCanvas({
   title: string;
   plan: string | null;
   pages: WorkspacePage[];
+  documents: WorkspaceDocument[];
   messages: { role: string; parts: { type: string; text?: string }[] }[];
   liveWriting?: boolean;
   phase: string;
@@ -133,7 +142,7 @@ export function DocumentCanvas({
   const [zoom, setZoom] = useState(1);
   const [editing, setEditing] = useState(false);
   const [reading, setReading] = useState(false);
-  const [panelTab, setPanelTab] = useState<"plan" | "pages">(
+  const [panelTab, setPanelTab] = useState<"plan" | "pages" | "docs">(
     phase === "interview" ? "plan" : "pages",
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -561,6 +570,23 @@ export function DocumentCanvas({
                 <FileDown className="size-3.5" />
                 Produção
               </button>
+              <button
+                type="button"
+                onClick={() => setPanelTab("docs")}
+                className={`relative flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  panelTab === "docs"
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Paperclip className="size-3.5" />
+                Anexos
+                {documents.length > 0 && (
+                  <span className="ml-0.5 rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+                    {documents.length}
+                  </span>
+                )}
+              </button>
               <Button
                 size="icon"
                 variant="ghost"
@@ -581,7 +607,7 @@ export function DocumentCanvas({
                   onChanged={onPlanChanged}
                   onApproved={onPlanApproved}
                 />
-              ) : (
+              ) : panelTab === "pages" ? (
                 <PagePanel
                   articleId={articleId}
                   page={currentPage}
@@ -589,6 +615,12 @@ export function DocumentCanvas({
                   isVirtualNext={isVirtualNext}
                   onChanged={onPagesChanged}
                   onApproved={onPageApproved}
+                />
+              ) : (
+                <DocumentsPanel
+                  articleId={articleId}
+                  documents={documents}
+                  onChanged={onPagesChanged}
                 />
               )}
             </div>

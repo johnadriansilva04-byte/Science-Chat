@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
+import { base64ToBytes } from "@/lib/base64";
 import * as repo from "@/lib/cf/repo.server";
 
 type Part = { type: string; text?: string };
@@ -20,6 +21,17 @@ export type WorkspaceArticle = {
   phase: string;
   plan: string | null;
   updated_at: string;
+};
+
+export type WorkspaceDocument = {
+  id: string;
+  seq: number;
+  filename: string;
+  mime: string;
+  size: number;
+  note: string | null;
+  hasText: boolean;
+  created_at: string;
 };
 
 export type ArticleListItem = { id: string; title: string; phase: string; updated_at: string };
@@ -101,7 +113,59 @@ export const getWorkspace = createServerFn({ method: "POST" })
         status: p.status,
         created_at: p.created_at,
       })) as WorkspacePage[],
+      documents: (await repo.listDocuments(context.user.id, data.articleId)).map((d) => ({
+        id: d.id,
+        seq: d.seq,
+        filename: d.filename,
+        mime: d.mime,
+        size: d.size,
+        note: d.note,
+        hasText: Boolean(d.text_content),
+        created_at: d.created_at,
+      })) as WorkspaceDocument[],
     };
+  });
+
+export const uploadDocument = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator(
+    (d: { articleId: string; filename: string; mime: string; base64: string; note?: string }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    const { extractText } = await import("@/lib/documents.server");
+    const bytes = base64ToBytes(data.base64);
+    const MAX = 8 * 1024 * 1024;
+    if (bytes.length === 0) throw new Error("Arquivo vazio");
+    if (bytes.length > MAX) throw new Error("Arquivo maior que 8 MB");
+    const article = await repo.getArticle(context.user.id, data.articleId);
+    if (!article) throw new Error("Artigo não encontrado");
+    const textContent = extractText(data.filename, data.mime, data.base64);
+    const doc = await repo.addDocument(context.user.id, data.articleId, {
+      filename: data.filename.slice(0, 200),
+      mime: data.mime || "application/octet-stream",
+      size: bytes.length,
+      content: data.base64,
+      textContent,
+      note: data.note?.slice(0, 500) ?? null,
+    });
+    return {
+      id: doc.id,
+      seq: doc.seq,
+      filename: doc.filename,
+      mime: doc.mime,
+      size: doc.size,
+      note: doc.note,
+      hasText: Boolean(textContent),
+      created_at: doc.created_at,
+    } as WorkspaceDocument;
+  });
+
+export const deleteDocument = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string; documentId: string }) => d)
+  .handler(async ({ data, context }) => {
+    await repo.deleteDocument(context.user.id, data.articleId, data.documentId);
+    return { ok: true };
   });
 
 export const generatePlan = createServerFn({ method: "POST" })
@@ -113,7 +177,18 @@ export const generatePlan = createServerFn({ method: "POST" })
     const article = await repo.getArticle(context.user.id, data.articleId);
     if (!article) throw new Error("Artigo não encontrado");
     const transcript = await loadTranscript(context.user.id, data.articleId);
-    const prompt = `ENTREVISTA:\n${transcript}\n\n${
+    const docs = await repo.listDocuments(context.user.id, data.articleId);
+    const anexos = docs.length
+      ? `\n\nDOCUMENTOS PRIMÁRIOS ANEXADOS (numeração estável):\n${docs
+          .map(
+            (d) =>
+              `Anexo ${d.seq}: ${d.filename}${d.note ? ` — ${d.note}` : ""}${
+                d.text_content ? `\nTrecho: ${d.text_content.slice(0, 400)}` : ""
+              }`,
+          )
+          .join("\n")}\nAo planejar, indique em quais páginas/subcapítulos cada Anexo deve entrar.`
+      : "";
+    const prompt = `ENTREVISTA:\n${transcript}${anexos}\n\n${
       article.plan && data.feedback
         ? `PLANO ANTERIOR:\n${article.plan}\n\nAJUSTE PEDIDO PELO PESQUISADOR: ${data.feedback}\n\nRefaça o plano aplicando o ajuste.`
         : "Monte o plano."
@@ -170,9 +245,21 @@ export const generatePage = createServerFn({ method: "POST" })
     const nextApproved = all.find((p) => p.status === "approved" && p.page_number === number + 1);
 
     const transcript = await loadTranscript(userId, data.articleId);
+    const docs = await repo.listDocuments(userId, data.articleId);
+    const anexos = docs.length
+      ? `DOCUMENTOS PRIMÁRIOS ANEXADOS (numeração estável):\n${docs
+          .map(
+            (d) =>
+              `Anexo ${d.seq}: ${d.filename}${d.note ? ` — ${d.note}` : ""}${
+                d.text_content ? `\nTrecho: ${d.text_content.slice(0, 600)}` : ""
+              }`,
+          )
+          .join("\n")}\nQuando fizer sentido, cite os anexos no texto como [Anexo N].`
+      : "";
     const prompt = [
       `PLANO APROVADO:\n${article.plan}`,
       `ENTREVISTA:\n${transcript}`,
+      anexos,
       prev ? `PÁGINA ANTERIOR (${prev.page_number}), APROVADA:\n${prev.content}` : "",
       nextApproved
         ? `PRÓXIMA PÁGINA JÁ APROVADA (${nextApproved.page_number}) — mantenha continuidade com ela:\n${nextApproved.content}`

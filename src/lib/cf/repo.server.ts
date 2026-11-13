@@ -201,3 +201,104 @@ export async function deletePage(
     .bind(articleId, pageNumber, userId)
     .run();
 }
+
+export type DocumentRow = {
+  id: string;
+  article_id: string;
+  user_id: string;
+  seq: number;
+  filename: string;
+  mime: string;
+  size: number;
+  text_content: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type DocumentWithContent = DocumentRow & { content: string };
+
+/** Lista os documentos (sem o base64, que é pesado) em ordem de anexo. */
+export async function listDocuments(userId: string, articleId: string): Promise<DocumentRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, article_id, user_id, seq, filename, mime, size, text_content, note, created_at from documents where article_id = ? and user_id = ? order by seq",
+    )
+    .bind(articleId, userId)
+    .all<DocumentRow>();
+  return results;
+}
+
+export async function getDocument(
+  userId: string,
+  articleId: string,
+  id: string,
+): Promise<DocumentWithContent | null> {
+  return requireDb()
+    .prepare(
+      "select id, article_id, user_id, seq, filename, mime, size, content, text_content, note, created_at from documents where id = ? and article_id = ? and user_id = ?",
+    )
+    .bind(id, articleId, userId)
+    .first<DocumentWithContent>();
+}
+
+/** Insere um documento recebendo o próximo número de anexo do artigo. */
+export async function addDocument(
+  userId: string,
+  articleId: string,
+  doc: {
+    filename: string;
+    mime: string;
+    size: number;
+    content: string;
+    textContent: string | null;
+    note: string | null;
+  },
+): Promise<DocumentRow> {
+  const db = requireDb();
+  const next = await db
+    .prepare(
+      "select coalesce(max(seq), 0) + 1 as seq from documents where article_id = ? and user_id = ?",
+    )
+    .bind(articleId, userId)
+    .first<{ seq: number }>();
+  const seq = next?.seq ?? 1;
+  const id = newId();
+  const ts = nowIso();
+  await db
+    .prepare(
+      "insert into documents (id, article_id, user_id, seq, filename, mime, size, content, text_content, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(
+      id,
+      articleId,
+      userId,
+      seq,
+      doc.filename,
+      doc.mime,
+      doc.size,
+      doc.content,
+      doc.textContent,
+      doc.note,
+      ts,
+    )
+    .run();
+  return {
+    id,
+    article_id: articleId,
+    user_id: userId,
+    seq,
+    filename: doc.filename,
+    mime: doc.mime,
+    size: doc.size,
+    text_content: doc.textContent,
+    note: doc.note,
+    created_at: ts,
+  };
+}
+
+export async function deleteDocument(userId: string, articleId: string, id: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from documents where id = ? and article_id = ? and user_id = ?")
+    .bind(id, articleId, userId)
+    .run();
+}

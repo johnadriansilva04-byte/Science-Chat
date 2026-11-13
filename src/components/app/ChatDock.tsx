@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { Check, ClipboardCheck, Copy, Minus, Sparkles } from "lucide-react";
+import {
+  Check,
+  ClipboardCheck,
+  Copy,
+  Loader2,
+  Mic,
+  MicOff,
+  Minus,
+  Search,
+  Sparkles,
+  Square,
+  Volume2,
+  VolumeX,
+  Wrench,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Conversation,
@@ -26,20 +40,28 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAvatar";
 import { interviewProgress } from "@/lib/interview-progress";
+import { useVoice } from "@/hooks/useVoice";
 
 const QUICK = ["Pular", "Não se aplica", "Ainda não sei", "Quero responder depois"];
 
+/** Nomes amigáveis das ferramentas que o Pracinha pode executar sobre o artigo. */
+const TOOL_LABELS: Record<string, string> = {
+  pesquisar_bases: "pesquisando bases científicas",
+  atualizar_titulo: "alterando o título",
+  editar_pagina: "reescrevendo uma página",
+  acrescentar_na_pagina: "acrescentando ao documento",
+};
+
 /**
  * Dock do Pracinha: SÓ diálogo. Reúne a entrevista e, na produção, as dúvidas do
- * pesquisador. O plano e a produção página por página ficam no painel do documento,
- * nunca duplicados aqui. As mensagens ao vivo são repassadas ao documento para a
- * folha A4 ser preenchida enquanto o pesquisador responde.
+ * pesquisador. O plano e a produção página por página ficam no painel do documento.
+ * As mensagens ao vivo são repassadas ao documento para a folha A4 ser preenchida
+ * enquanto o pesquisador responde. O dock fica à ESQUERDA para não cobrir o texto.
  */
 export function ChatDock({
   articleId,
   initialMessages,
   phase,
-  shiftLeft = false,
   onActivity,
   onLiveMessages,
   onBusyChange,
@@ -48,7 +70,6 @@ export function ChatDock({
   articleId: string;
   initialMessages: UIMessage[];
   phase: string;
-  shiftLeft?: boolean;
   onActivity: () => void;
   onLiveMessages?: (messages: UIMessage[]) => void;
   onBusyChange?: (busy: boolean) => void;
@@ -56,8 +77,10 @@ export function ChatDock({
 }) {
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
+  const [autoSpeak, setAutoSpeak] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wasBusy = useRef(false);
+  const voice = useVoice("pt-BR");
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { articleId } }),
@@ -111,6 +134,14 @@ export function ChatDock({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy]);
 
+  // Ferramentas mudam o documento: recarrega a folha assim que o assistente termina.
+  const lastMessage = messages.at(-1);
+  useEffect(() => {
+    if (!lastMessage || lastMessage.role !== "assistant") return;
+    if (lastMessage.parts.some((p) => p.type.startsWith("tool-"))) onActivity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastMessage]);
+
   useEffect(() => {
     if (!busy && open) inputRef.current?.focus();
   }, [busy, open]);
@@ -124,8 +155,24 @@ export function ChatDock({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Lê em voz alta a última resposta do assistente quando o modo de áudio está ligado.
+  const lastAssistantText = useMemo(() => {
+    const last = [...messages].reverse().find((m) => m.role === "assistant");
+    if (!last) return "";
+    return last.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join(" ")
+      .trim();
+  }, [messages]);
+  useEffect(() => {
+    if (!autoSpeak || busy) return;
+    if (lastAssistantText) voice.speak(lastAssistantText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSpeak, busy, lastAssistantText]);
+
   const send = (text: string) => {
     if (!text.trim() || busy) return;
+    voice.stopSpeaking();
     sendMessage({ text });
   };
 
@@ -138,7 +185,11 @@ export function ChatDock({
     }
   };
 
-  const side = shiftLeft ? "right-4 lg:right-[436px]" : "right-4";
+  const messageText = (m: UIMessage) =>
+    m.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join(" ")
+      .trim();
 
   if (!open) {
     return (
@@ -148,7 +199,7 @@ export function ChatDock({
           setOpen(true);
           setUnread(0);
         }}
-        className={`dock-enter fixed bottom-4 ${side} z-40 flex items-center gap-2 rounded-full bg-primary py-2 pl-1.5 pr-4 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90`}
+        className="dock-enter fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full bg-primary py-2 pl-1.5 pr-4 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90"
       >
         <PracinhaAvatar state={avatarState} size={28} />
         Pracinha
@@ -162,9 +213,7 @@ export function ChatDock({
   }
 
   return (
-    <aside
-      className={`dock-enter fixed bottom-4 ${side} z-40 flex h-[min(72vh,600px)] w-[min(94vw,400px)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl`}
-    >
+    <aside className="dock-enter fixed bottom-4 left-4 z-40 flex h-[min(72vh,600px)] w-[min(92vw,344px)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl">
       <header className="flex items-center gap-2 border-b bg-gradient-to-r from-accent/50 to-transparent px-3 py-2">
         <PracinhaAvatar state={avatarState} size={34} />
         <div className="min-w-0 flex-1">
@@ -183,6 +232,25 @@ export function ChatDock({
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium tabular-nums text-secondary-foreground">
             {progress.answered}/{progress.asked}
           </span>
+        )}
+        {voice.ttsSupported && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            onClick={() => {
+              if (autoSpeak) voice.stopSpeaking();
+              setAutoSpeak((v) => !v);
+            }}
+            title={autoSpeak ? "Desligar voz do Pracinha" : "Ligar voz do Pracinha"}
+            aria-label={autoSpeak ? "Desligar voz do Pracinha" : "Ligar voz do Pracinha"}
+          >
+            {autoSpeak ? (
+              <Volume2 className="size-4 text-primary" />
+            ) : (
+              <VolumeX className="size-4" />
+            )}
+          </Button>
         )}
         <Button
           size="icon"
@@ -203,7 +271,8 @@ export function ChatDock({
                 <PracinhaAvatar state="idle" size={52} />
                 <p className="text-sm text-muted-foreground">
                   Vou fazer perguntas, uma de cada vez. Você pode pular qualquer uma — e o documento
-                  à esquerda vai sendo preenchido ao vivo.
+                  à direita vai sendo preenchido ao vivo. Também pode conversar livremente ou pedir
+                  que eu pesquise referências.
                 </p>
                 <Button
                   size="sm"
@@ -220,24 +289,54 @@ export function ChatDock({
                   <MessageContent
                     className={m.role === "user" ? "bg-primary text-primary-foreground" : ""}
                   >
-                    {m.parts.map((p, i) =>
-                      p.type === "text" ? (
-                        <MessageResponse key={i}>{p.text}</MessageResponse>
-                      ) : null,
-                    )}
+                    {m.parts.map((p, i) => {
+                      if (p.type === "text")
+                        return <MessageResponse key={i}>{p.text}</MessageResponse>;
+                      if (p.type === "tool-pesquisar_bases") {
+                        return (
+                          <span
+                            key={i}
+                            className="flex items-center gap-1.5 text-xs italic text-muted-foreground"
+                          >
+                            <Search className="size-3.5" />
+                            pesquisando bases científicas…
+                          </span>
+                        );
+                      }
+                      if (p.type.startsWith("tool-")) {
+                        const name = p.type.replace("tool-", "");
+                        return (
+                          <span
+                            key={i}
+                            className="flex items-center gap-1.5 text-xs italic text-muted-foreground"
+                          >
+                            <Wrench className="size-3.5" />
+                            {TOOL_LABELS[name] ?? "alterando o documento"}…
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
                   </MessageContent>
                   {m.role === "assistant" && (
                     <MessageActions className="opacity-0 transition-opacity group-hover:opacity-100">
                       <MessageAction
                         tooltip="Copiar"
-                        onClick={() =>
-                          void copyMessage(
-                            m.parts.map((p) => (p.type === "text" ? p.text : "")).join(" "),
-                          )
-                        }
+                        onClick={() => void copyMessage(messageText(m))}
                       >
                         <Copy className="size-3.5" />
                       </MessageAction>
+                      {voice.ttsSupported && (
+                        <MessageAction
+                          tooltip="Ouvir"
+                          onClick={() => {
+                            if (voice.speaking) voice.stopSpeaking();
+                            else voice.speak(messageText(m));
+                          }}
+                        >
+                          <Volume2 className="size-3.5" />
+                        </MessageAction>
+                      )}
                     </MessageActions>
                   )}
                 </Message>
@@ -286,12 +385,59 @@ export function ChatDock({
           {planApproved && (
             <div className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1.5 text-[11px] text-success">
               <Check className="size-3.5" />
-              Entrevista concluída. A produção acontece no painel do documento.
+              Entrevista concluída. Peça alterações aqui e eu aplico no documento.
             </div>
           )}
           <PromptInput onSubmit={(msg: PromptInputMessage) => send(msg.text)}>
-            <PromptInputTextarea ref={inputRef} placeholder="Escreva sua resposta..." />
-            <PromptInputFooter className="justify-end">
+            <PromptInputTextarea
+              ref={inputRef}
+              placeholder={
+                voice.listening ? "Ouvindo… fale sua resposta" : "Escreva sua resposta..."
+              }
+            />
+            <PromptInputFooter className="justify-between">
+              <div className="flex items-center gap-1">
+                {voice.sttSupported && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant={voice.listening ? "default" : "ghost"}
+                    className="size-8"
+                    title={voice.listening ? "Parar de gravar" : "Falar por voz"}
+                    aria-label={voice.listening ? "Parar de gravar" : "Falar por voz"}
+                    onClick={() => {
+                      if (voice.listening) {
+                        voice.stopListening();
+                      } else {
+                        voice.startListening((text) => {
+                          if (inputRef.current) inputRef.current.value = text;
+                          send(text);
+                        });
+                      }
+                    }}
+                  >
+                    {voice.listening ? (
+                      <MicOff className="size-4 animate-pulse" />
+                    ) : (
+                      <Mic className="size-4" />
+                    )}
+                  </Button>
+                )}
+                {voice.speaking && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-8"
+                    title="Parar de falar"
+                    aria-label="Parar de falar"
+                    onClick={() => voice.stopSpeaking()}
+                  >
+                    <Square className="size-3.5" />
+                  </Button>
+                )}
+                {busy && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
+              </div>
               <PromptInputSubmit status={status} onStop={stop} />
             </PromptInputFooter>
           </PromptInput>

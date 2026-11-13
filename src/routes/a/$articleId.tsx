@@ -13,6 +13,7 @@ import {
   getWorkspace,
   updateTitle,
   type WorkspaceArticle,
+  type WorkspaceDocument,
   type WorkspaceMessage,
   type WorkspacePage,
 } from "@/lib/article.functions";
@@ -38,6 +39,7 @@ function ArticleWorkspace() {
 
   const [article, setArticle] = useState<WorkspaceArticle | null>(null);
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
+  const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
   const [liveMessages, setLiveMessages] = useState<UIMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [pages, setPages] = useState<WorkspacePage[]>([]);
@@ -58,6 +60,7 @@ function ArticleWorkspace() {
     setArticle(data.article);
     setMessages(data.messages);
     setPages(data.pages);
+    setDocuments(data.documents);
     return data;
   }, [articleId]);
 
@@ -72,6 +75,7 @@ function ArticleWorkspace() {
         setArticle(data.article);
         setMessages(data.messages);
         setPages(data.pages);
+        setDocuments(data.documents);
       })
       .catch((e) => {
         if (!active) return;
@@ -205,6 +209,7 @@ function ArticleWorkspace() {
           title={article.title}
           plan={article.plan}
           pages={pages}
+          documents={documents}
           messages={canvasMessages}
           liveWriting={busy && pages.length === 0}
           phase={article.phase}
@@ -233,7 +238,6 @@ function ArticleWorkspace() {
           articleId={articleId}
           initialMessages={initialMessages}
           phase={article.phase}
-          shiftLeft={panelOpen}
           onActivity={() => void reload()}
           onLiveMessages={setLiveMessages}
           onBusyChange={setBusy}

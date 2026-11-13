@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, type UIMessage } from "ai";
 import { startResponses } from "@/lib/ai/gateway.server";
 import { INTERVIEW_INSTRUCTIONS, WRITING_CHAT_INSTRUCTIONS } from "@/lib/ai/prompts";
+import { buildTools } from "@/lib/ai/tools.server";
 import { getSessionUser } from "@/lib/cf/auth.server";
 import * as repo from "@/lib/cf/repo.server";
 
@@ -32,6 +33,8 @@ async function handle(request: Request) {
     request,
     await convertToModelMessages(body.messages),
     instructions,
+    undefined,
+    buildTools({ userId: user.id, articleId: article.id }),
   );
   return result.toUIMessageStreamResponse({
     originalMessages: body.messages,

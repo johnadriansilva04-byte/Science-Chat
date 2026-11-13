@@ -1,5 +1,5 @@
 import { createWorkersAI } from "workers-ai-provider";
-import { streamText, type ModelMessage } from "ai";
+import { streamText, stepCountIs, type ModelMessage, type ToolSet } from "ai";
 import { getEnv, requireAi, type AiBinding } from "@/lib/cf/bindings.server";
 
 /**
@@ -107,12 +107,14 @@ export function startResponses(
   messages: ModelMessage[],
   instructions: string,
   maxOutputTokens: number = DEFAULT_MAX_OUTPUT_TOKENS,
+  tools?: ToolSet,
 ) {
   const result = streamText({
     model: model(),
     system: instructions,
     messages,
     maxOutputTokens,
+    ...(tools ? { tools, stopWhen: stepCountIs(5) } : {}),
     ...(request?.signal ? { abortSignal: request.signal } : {}),
   });
   return { result };
