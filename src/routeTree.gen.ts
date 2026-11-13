@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AArticleIdRouteImport } from './routes/a/$articleId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as PublicacoesIndexRouteImport } from './routes/publicacoes/index'
+import { Route as PublicacoesSlugRouteImport } from './routes/publicacoes/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublicacoesIndexRoute = PublicacoesIndexRouteImport.update({
+  id: '/publicacoes/',
+  path: '/publicacoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicacoesSlugRoute = PublicacoesSlugRouteImport.update({
+  id: '/publicacoes/$slug',
+  path: '/publicacoes/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
+  '/publicacoes/$slug': typeof PublicacoesSlugRoute
+  '/publicacoes/': typeof PublicacoesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
+  '/publicacoes/$slug': typeof PublicacoesSlugRoute
+  '/publicacoes': typeof PublicacoesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
+  '/publicacoes/$slug': typeof PublicacoesSlugRoute
+  '/publicacoes/': typeof PublicacoesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/a/$articleId' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/a/$articleId'
+    | '/api/chat'
+    | '/publicacoes/$slug'
+    | '/publicacoes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/a/$articleId' | '/api/chat'
-  id: '__root__' | '/' | '/auth' | '/a/$articleId' | '/api/chat'
+  to:
+    | '/'
+    | '/auth'
+    | '/a/$articleId'
+    | '/api/chat'
+    | '/publicacoes/$slug'
+    | '/publicacoes'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/a/$articleId'
+    | '/api/chat'
+    | '/publicacoes/$slug'
+    | '/publicacoes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AArticleIdRoute: typeof AArticleIdRoute
   ApiChatRoute: typeof ApiChatRoute
+  PublicacoesSlugRoute: typeof PublicacoesSlugRoute
+  PublicacoesIndexRoute: typeof PublicacoesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/publicacoes/': {
+      id: '/publicacoes/'
+      path: '/publicacoes'
+      fullPath: '/publicacoes/'
+      preLoaderRoute: typeof PublicacoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/publicacoes/$slug': {
+      id: '/publicacoes/$slug'
+      path: '/publicacoes/$slug'
+      fullPath: '/publicacoes/$slug'
+      preLoaderRoute: typeof PublicacoesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AArticleIdRoute: AArticleIdRoute,
   ApiChatRoute: ApiChatRoute,
+  PublicacoesSlugRoute: PublicacoesSlugRoute,
+  PublicacoesIndexRoute: PublicacoesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

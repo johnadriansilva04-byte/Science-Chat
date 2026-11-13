@@ -1,6 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { FilePlus2, MessageSquareText, ListChecks, FileText, Play } from "lucide-react";
+import {
+  BookOpenText,
+  FilePlus2,
+  MessageSquareText,
+  ListChecks,
+  FileText,
+  Play,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
@@ -69,6 +76,15 @@ function Index() {
       <header className="flex items-center gap-2 p-3">
         <ArticlesMenu />
         <span className="font-serif text-lg font-semibold">ScienceChat</span>
+        <nav className="ml-auto flex items-center gap-3 text-sm">
+          <Link
+            to="/publicacoes"
+            className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <BookOpenText className="size-4" />
+            Publicações
+          </Link>
+        </nav>
       </header>
       <main className="mx-auto max-w-2xl px-6 pb-16 pt-12 text-center">
         <img src={logo} alt="" width={72} height={72} className="mx-auto mb-6" />

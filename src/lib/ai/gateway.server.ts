@@ -33,15 +33,34 @@ export function dedupeSseStream(stream: ReadableStream<Uint8Array>): ReadableStr
   );
 }
 
+/**
+ * O SSE da Workers AI repete o mesmo conteúdo em dois formatos no mesmo evento:
+ *  - nativo:  `{ response: "…", tool_calls: [...] }`
+ *  - OpenAI:  `{ choices: [{ delta: { content: "…", tool_calls: [...] } }] }`
+ *
+ * O `workers-ai-provider` lê os dois. Para texto isso duplica cada token
+ * ("OlOlá!"); para tool calls duplica cada argumento, produzindo JSON inválido
+ * ("{"titulo": "{"titulo": "…") e a ferramenta falha antes de executar. Quando o
+ * formato OpenAI (`choices[].delta`) está presente, removemos os campos nativos
+ * equivalentes. Modelos que só usam o formato nativo ficam intactos.
+ */
 function fixEvent(event: string): string {
   const line = event.split("\n").find((l) => l.startsWith("data: "));
   if (!line) return event;
   try {
     const parsed = JSON.parse(line.slice(6));
-    const hasChoicesText = parsed?.choices?.[0]?.delta?.content !== undefined;
-    if (!hasChoicesText) return event;
-    delete parsed.response;
-    return `data: ${JSON.stringify(parsed)}`;
+    const delta = parsed?.choices?.[0]?.delta;
+    if (!delta) return event;
+    let changed = false;
+    if (delta.content !== undefined && parsed.response !== undefined) {
+      delete parsed.response;
+      changed = true;
+    }
+    if (delta.tool_calls !== undefined && parsed.tool_calls !== undefined) {
+      delete parsed.tool_calls;
+      changed = true;
+    }
+    return changed ? `data: ${JSON.stringify(parsed)}` : event;
   } catch {
     return event;
   }

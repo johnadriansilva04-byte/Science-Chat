@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pencil } from "lucide-react";
+import { BookUp, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ArticlesMenu } from "@/components/app/ArticlesMenu";
 import { ChatDock } from "@/components/app/ChatDock";
 import { DocumentCanvas } from "@/components/app/DocumentCanvas";
+import { PublishDialog } from "@/components/app/PublishDialog";
 import {
   getWorkspace,
   updateTitle,
@@ -50,6 +51,7 @@ function ArticleWorkspace() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const [publishOpen, setPublishOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -201,6 +203,15 @@ function ArticleWorkspace() {
         <Badge variant="outline" className="ml-auto">
           {phaseLabel[article.phase] ?? article.phase}
         </Badge>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setPublishOpen(true)}
+          title="Publicar na área pública (após revisão por pares)"
+        >
+          <BookUp className="size-4" />
+          Publicar
+        </Button>
       </header>
 
       <main className="min-h-0 flex-1">
@@ -247,6 +258,13 @@ function ArticleWorkspace() {
           }}
         />
       </div>
+
+      <PublishDialog
+        articleId={articleId}
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        defaultAuthor={user?.email?.split("@")[0] ?? ""}
+      />
     </div>
   );
 }
