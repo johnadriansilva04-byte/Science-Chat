@@ -4,6 +4,7 @@ import { startResponses } from "@/lib/ai/gateway.server";
 import { INTERVIEW_INSTRUCTIONS, WRITING_CHAT_INSTRUCTIONS } from "@/lib/ai/prompts";
 import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
 import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
+import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
 import { getSessionUser } from "@/lib/cf/auth.server";
 import * as repo from "@/lib/cf/repo.server";
@@ -69,6 +70,14 @@ async function handle(request: Request) {
   return result.toUIMessageStreamResponse({
     originalMessages: sanitized,
     sendReasoning: true,
+    // A cota diária da Workers AI pode esgotar no meio da conversa. Em vez de
+    // derrubar o chat, emitimos um marcador que o cliente troca por um aviso
+    // amigável ("o Pracinha vai descansar e volta às HH:MM").
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      if (isQuotaError(message)) return QUOTA_MARKER;
+      return "Não foi possível concluir a resposta. Tente novamente.";
+    },
     onFinish: async ({ responseMessage }) => {
       const parts = responseMessage.parts
         .filter((p) => p.type === "text")

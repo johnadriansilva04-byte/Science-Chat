@@ -40,7 +40,9 @@ import {
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAvatar";
+import { PracinhaRest } from "@/components/app/PracinhaRest";
 import { interviewProgress } from "@/lib/interview-progress";
+import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
 import { useVoice } from "@/hooks/useVoice";
 
 const QUICK = ["Pular", "Não se aplica", "Ainda não sei", "Quero responder depois"];
@@ -86,6 +88,9 @@ export function ChatDock({
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  // Momento (ms) em que a IA volta, quando a cota diária de neurônios esgota.
+  const [restedAt, setRestedAt] = useState<number | null>(null);
+  const lastSent = useRef("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wasBusy = useRef(false);
   const voice = useVoice("pt-BR");
@@ -101,6 +106,11 @@ export function ChatDock({
     transport,
     onError: (e) => {
       const m = e.message || "";
+      // Cota de neurônios esgotada → o Pracinha se cansa, avisa e trava o chat.
+      if (m.includes("PRACINHA_QUOTA_EXHAUSTED") || isQuotaError(m)) {
+        setRestedAt(nextQuotaReset());
+        return;
+      }
       toast.error(
         m.includes("429")
           ? "Muitas requisições. Aguarde um pouco."
@@ -112,6 +122,7 @@ export function ChatDock({
     onFinish: () => onActivity(),
   });
   const busy = status === "submitted" || status === "streaming";
+  const resting = restedAt !== null;
   const planApproved = phase === "writing" || phase === "done";
 
   const progress = useMemo(() => interviewProgress(messages), [messages]);
@@ -180,9 +191,33 @@ export function ChatDock({
   }, [autoSpeak, busy, lastAssistantText]);
 
   const send = (text: string) => {
-    if (!text.trim() || busy) return;
+    if (!text.trim() || busy || resting) return;
     voice.stopSpeaking();
+    lastSent.current = text;
     sendMessage({ text });
+  };
+
+  // Rede de segurança: se o aviso de cota chegar como texto, também trava o chat.
+  useEffect(() => {
+    if (resting) return;
+    const last = messages.at(-1);
+    if (last?.role !== "assistant") return;
+    const txt = last.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
+    if (txt.includes("PRACINHA_QUOTA_EXHAUSTED")) setRestedAt(nextQuotaReset());
+  }, [messages, resting]);
+
+  // Quando o relógio chega a zero, destrava o chat para o pesquisador continuar.
+  useEffect(() => {
+    if (!resting) return;
+    const id = setInterval(() => {
+      if (restedAt !== null && Date.now() >= restedAt) setRestedAt(null);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [resting, restedAt]);
+
+  const retryRest = () => {
+    setRestedAt(null);
+    if (lastSent.current) sendMessage({ text: lastSent.current });
   };
 
   const copyMessage = async (text: string) => {
@@ -367,6 +402,9 @@ export function ChatDock({
                 </Shimmer>
               </div>
             )}
+            {resting && (
+              <PracinhaRest resetAt={restedAt ?? undefined} onRetry={retryRest} retrying={busy} />
+            )}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
@@ -408,8 +446,13 @@ export function ChatDock({
           <PromptInput onSubmit={(msg: PromptInputMessage) => send(msg.text)}>
             <PromptInputTextarea
               ref={inputRef}
+              disabled={resting}
               placeholder={
-                voice.listening ? "Ouvindo… fale sua resposta" : "Escreva sua resposta..."
+                resting
+                  ? "O Pracinha foi descansar e volta amanhã 😴"
+                  : voice.listening
+                    ? "Ouvindo… fale sua resposta"
+                    : "Escreva sua resposta..."
               }
             />
             <PromptInputFooter className="justify-between">

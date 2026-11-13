@@ -242,6 +242,10 @@
   .pracinha-avatar--done .pracinha-avatar__ring {
     border-color: var(--color-success);
   }
+  .pracinha-avatar--tired .pracinha-avatar__ring {
+    border-color: color-mix(in oklab, var(--color-muted-foreground) 60%, transparent);
+    animation: pracinha-pulse 2.4s ease-in-out infinite;
+  }
 }
 
 @keyframes pracinha-spin {

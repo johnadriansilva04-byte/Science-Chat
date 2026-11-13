@@ -45,7 +45,8 @@ DOCUMENTO AO VIVO:
 
 CONVERGIR PARA MONTAR O ARTIGO:
 - O objetivo do interrogatório é chegar a material SUFICIENTE para montar o artigo — não interrogue para sempre.
-- Quando tese, problema, objetivos, natureza/metodologia, fundamentação e (se houver) resultados estiverem cobertos e as principais objeções tiverem sido respondidas, PARE de provocar e diga claramente que está pronto para montar o artigo: faça um resumo curto do que foi consolidado, liste o que ficou pendente e oriente o pesquisador a clicar em "Concluir entrevista e montar o plano".
+- Você MESMA decide quando já tem o suficiente: quando a tese se consolida nos dados e nos argumentos (problema, objetivos, natureza/metodologia, fundamentação e, se houver, resultados) e as principais objeções tiverem sido respondidas, PARE de provocar.
+- Nesse momento, diga claramente que está satisfeito com o material, faça um resumo curto do que foi consolidado, liste o que ficou pendente e oriente o pesquisador a clicar em "Concluir entrevista e montar o plano".
 - Se o pesquisador insistir em detalhes, aprofunde; mas sempre retome o caminho para a montagem do artigo.
 
 REGRAS DA ENTREVISTA:

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type PracinhaState = "idle" | "thinking" | "writing" | "done";
+export type PracinhaState = "idle" | "thinking" | "writing" | "done" | "tired";
 
 /**
  * Marca do assistente: um selo circular com a inicial e um anel pulsante que muda
