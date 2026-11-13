@@ -151,6 +151,7 @@ export function DocumentCanvas({
   const [zoom, setZoom] = useState(1);
   const [editing, setEditing] = useState(false);
   const [reading, setReading] = useState(false);
+  const [celebrateFirst, setCelebrateFirst] = useState(false);
   const [panelTab, setPanelTab] = useState<"plan" | "pages" | "docs">(
     phase === "interview" ? "plan" : "pages",
   );
@@ -258,6 +259,17 @@ export function DocumentCanvas({
       }
     },
     [articleId, onPagesChanged],
+  );
+
+  const handlePageApproved = useCallback(
+    (pageNumber: number) => {
+      if (pageNumber === 1) {
+        setCelebrateFirst(true);
+        window.setTimeout(() => setCelebrateFirst(false), 2800);
+      }
+      onPageApproved(pageNumber);
+    },
+    [onPageApproved],
   );
 
   const changeBlock = useCallback(
@@ -637,7 +649,7 @@ export function DocumentCanvas({
                   pageNumber={currentNumber}
                   isVirtualNext={isVirtualNext}
                   onChanged={onPagesChanged}
-                  onApproved={onPageApproved}
+                  onApproved={handlePageApproved}
                 />
               ) : (
                 <DocumentsPanel
@@ -661,6 +673,21 @@ export function DocumentCanvas({
 
       {reading && (
         <BookReader title={title} pages={approvedPages} onClose={() => setReading(false)} />
+      )}
+
+      {celebrateFirst && (
+        <div className="first-page-reveal" role="status" aria-live="polite">
+          <div className="first-page-reveal__card">
+            <span className="first-page-reveal__mark">
+              <Check className="size-5" />
+            </span>
+            <p className="first-page-reveal__title">Primeira página selada.</p>
+            <p className="first-page-reveal__sub">
+              É oficial: você começou a escrever. A partir daqui é só somar — uma página aprovada
+              por vez.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

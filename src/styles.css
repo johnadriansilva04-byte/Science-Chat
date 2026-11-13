@@ -489,6 +489,384 @@
   animation-delay: 0.24s;
 }
 
+/* ===== Mural / estante viva de artigos publicados ===== */
+/* Toque de cientista: papel milimetrado, régua com ticks e acento serifado. */
+.shelf {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(color-mix(in oklab, var(--color-border) 42%, transparent) 1px, transparent 1px)
+      0 0 / 100% 22px,
+    linear-gradient(
+        90deg,
+        color-mix(in oklab, var(--color-border) 42%, transparent) 1px,
+        transparent 1px
+      )
+      0 0 / 22px 100%,
+    var(--color-card);
+  box-shadow: var(--paper-shadow);
+}
+.shelf__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-card) 88%, transparent);
+}
+.shelf__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-success);
+}
+.shelf__count {
+  font-family: var(--font-serif);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+}
+.shelf__stage {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem 1rem 1.2rem;
+}
+@media (min-width: 768px) {
+  .shelf__stage {
+    grid-template-columns: 1fr 3.5rem;
+    align-items: stretch;
+  }
+}
+.shelf__feature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  animation: block-appear 0.55s ease both;
+}
+.shelf__feature-tag {
+  align-self: flex-start;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+.shelf__title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.shelf__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.shelf__title a:hover {
+  color: var(--color-primary);
+}
+.shelf__author {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+.shelf__abstract {
+  max-width: 62ch;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--color-muted-foreground);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.shelf__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--color-muted-foreground);
+}
+/* Régua com ticks sob o destaque — o detalhe de laboratório. */
+.shelf__feature::after {
+  content: "";
+  margin-top: 0.6rem;
+  height: 6px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-muted-foreground) 45%, transparent) 0 1px,
+    transparent 1px 12px
+  );
+  background-position: left bottom;
+  background-size: 100% 6px;
+  background-repeat: repeat-x;
+  mask-image: linear-gradient(90deg, #000 0 60%, transparent 100%);
+  opacity: 0.6;
+}
+
+/* Fileira de lombadas (como livros numa estante), clicáveis e girando sozinha. */
+.shelf__rail-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.shelf__rail {
+  display: flex;
+  flex: 1;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scroll-snap-type: x proximity;
+}
+@media (min-width: 768px) {
+  .shelf__rail {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 12rem;
+  }
+}
+.shelf__spine {
+  flex: none;
+  scroll-snap-align: start;
+  padding: 0.35rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 28%, var(--color-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-primary) 16%, var(--color-card)),
+    color-mix(in oklab, var(--color-primary) 7%, var(--color-card))
+  );
+  color: color-mix(in oklab, var(--color-foreground) 85%, transparent);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+@media (min-width: 768px) {
+  .shelf__spine {
+    width: 2.6rem;
+    min-height: 2.2rem;
+    padding: 0.4rem 0.3rem;
+  }
+}
+.shelf__spine-title {
+  font-family: var(--font-serif);
+  font-size: 0.62rem;
+  line-height: 1.1;
+  writing-mode: horizontal-tb;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: left;
+}
+@media (min-width: 768px) {
+  .shelf__spine-title {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    -webkit-line-clamp: unset;
+    max-height: 9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+.shelf__spine:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: 0 6px 14px -8px color-mix(in oklab, var(--color-primary) 60%, transparent);
+}
+.shelf__spine--active {
+  border-color: var(--color-primary);
+  background: linear-gradient(
+    180deg,
+    var(--color-primary),
+    color-mix(in oklab, var(--color-primary) 78%, black)
+  );
+  color: var(--color-primary-foreground);
+  box-shadow: 0 8px 18px -10px color-mix(in oklab, var(--color-primary) 70%, transparent);
+}
+.shelf__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-foreground);
+  transition: background 0.2s ease;
+}
+.shelf__nav:hover {
+  background: var(--color-accent);
+}
+@media (min-width: 768px) {
+  .shelf__nav {
+    display: none;
+  }
+}
+.shelf-empty {
+  position: relative;
+  overflow: hidden;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  padding: 1.4rem 1.25rem 1.6rem;
+}
+.shelf-empty__ruler {
+  display: block;
+  height: 8px;
+  margin-bottom: 0.8rem;
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-muted-foreground) 40%, transparent) 0 1px,
+    transparent 1px 10px
+  );
+  opacity: 0.55;
+}
+
+/* Toque de cientista: papel milimetrado bem sutil no fundo da home. */
+.lab-bg {
+  background-image:
+    radial-gradient(
+      color-mix(in oklab, var(--color-foreground) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(color-mix(in oklab, var(--color-border) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-border) 55%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    22px 22px,
+    110px 110px,
+    110px 110px;
+  background-position:
+    0 0,
+    0 0,
+    0 0;
+}
+/* Régua fina com ticks sob o cabeçalho — o traço do laboratório. */
+.lab-rule {
+  height: 7px;
+  border-bottom: 1px solid var(--color-border);
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-muted-foreground) 38%, transparent) 0 1px,
+    transparent 1px 14px
+  );
+  opacity: 0.7;
+}
+
+/* ===== Vida no painel de produção ===== */
+/* A página "chega" como texto recém-escrito; o selo marca a aprovação. */
+.page-reveal {
+  animation: page-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes page-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.approve-seal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border: 1.5px solid var(--color-success);
+  border-radius: 0.35rem;
+  color: var(--color-success);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  animation: seal-stamp 0.45s cubic-bezier(0.2, 1.4, 0.5, 1) both;
+}
+@keyframes seal-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-3deg) scale(1);
+  }
+}
+
+/* Revelação comemorativa da primeira página aprovada. */
+.first-page-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in oklab, var(--color-success) 22%, transparent),
+    transparent 62%
+  );
+  animation: curtain-in 0.4s ease both;
+}
+.first-page-reveal__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 2rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--color-success) 40%, transparent);
+  background: color-mix(in oklab, var(--color-card) 95%, transparent);
+  box-shadow: 0 24px 60px -24px color-mix(in oklab, var(--color-success) 55%, transparent);
+  text-align: center;
+  animation: curtain-card 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.first-page-reveal__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 9999px;
+  background: var(--color-success);
+  color: var(--color-success-foreground);
+}
+.first-page-reveal__title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.first-page-reveal__sub {
+  max-width: 20rem;
+  font-size: 0.85rem;
+  color: var(--color-muted-foreground);
+}
+
 /* Escrita ao vivo na folha: um cursor suave e um realce quando o bloco chega. */
 .a4-sheet--live .a4-block:last-child {
   animation: block-appear 0.5s ease both;

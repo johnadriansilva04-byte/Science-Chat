@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  BookMarked,
   BookOpenText,
   FilePlus2,
   MessageSquareText,
@@ -14,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
 import { Button } from "@/components/ui/button";
 import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
+import { PublishedShelf } from "@/components/app/PublishedShelf";
 import { BrandFooter } from "@/components/app/BrandFooter";
 import logo from "@/assets/sciencechat-logo.png";
 
@@ -84,7 +86,7 @@ function Index() {
     },
   ];
   return (
-    <div className="min-h-screen bg-background">
+    <div className="lab-bg min-h-screen bg-background">
       <header className="flex items-center gap-2 p-3">
         <ArticlesMenu />
         <span className="font-serif text-lg font-semibold">ScienceChat</span>
@@ -98,6 +100,7 @@ function Index() {
           </Link>
         </nav>
       </header>
+      <div className="lab-rule" aria-hidden />
       <main className="mx-auto max-w-2xl px-6 pb-16 pt-12 text-center">
         <img src={logo} alt="" width={72} height={72} className="mx-auto mb-6" />
         <h1 className="font-serif text-4xl font-semibold leading-tight md:text-5xl">
@@ -141,7 +144,19 @@ function Index() {
           </Button>
         </div>
 
-        <div className="mt-14 grid gap-4 text-left md:grid-cols-3">
+        <div className="mt-12 text-left">
+          <div className="mb-3 flex items-center gap-2">
+            <BookMarked className="size-5 text-primary" />
+            <h2 className="font-serif text-xl font-semibold">Mural de artigos publicados</h2>
+          </div>
+          <PublishedShelf />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Só entra aqui o artigo que já passou pela revisão por pares e recebeu o aval do próprio
+            autor. É a sua marca registrada — o conhecimento fica protegido e creditado.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-4 text-left md:grid-cols-3">
           {steps.map((s) => (
             <div key={s.t} className="rounded-lg border bg-card p-5">
               <s.icon className="mb-3 size-5 text-primary" />

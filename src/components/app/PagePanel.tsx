@@ -106,7 +106,12 @@ export function PagePanel({
           <FileText className="size-5 text-primary" />
           {isVirtualNext ? `Próxima página — ${pageNumber}` : `Página ${pageNumber}`}
         </CardTitle>
-        {isApproved && <Badge variant="secondary">Aprovada</Badge>}
+        {isApproved && (
+          <span className="approve-seal">
+            <Check className="size-3" />
+            Aprovada
+          </span>
+        )}
         {isDraft && <Badge>Rascunho</Badge>}
         {isVirtualNext && <Badge variant="outline">Não escrita</Badge>}
       </CardHeader>
@@ -120,7 +125,7 @@ export function PagePanel({
         )}
 
         {page && !editing && (
-          <div className="paper-sheet rounded-lg border">
+          <div key={page.id} className="page-reveal paper-sheet rounded-lg border">
             <MessageResponse>{stripMarkers(page.content)}</MessageResponse>
           </div>
         )}
