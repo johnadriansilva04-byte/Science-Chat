@@ -4,24 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteDocument, uploadDocument, type WorkspaceDocument } from "@/lib/article.functions";
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.includes(",") ? result.slice(result.indexOf(",") + 1) : result);
-    };
-    reader.onerror = () => reject(new Error("Falha ao ler o arquivo"));
-    reader.readAsDataURL(file);
-  });
-}
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { fileToBase64, formatSize } from "@/lib/file-upload";
 
 /**
  * Dossiê de documentos primários. Cada anexo recebe um número estável ("Anexo N")

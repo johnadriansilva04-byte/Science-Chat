@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileText, Loader2, Paperclip, Sparkles, Trash2, UploadCloud } from "lucide-react";
+import { Loader2, Paperclip, Sparkles, Trash2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,24 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { deleteDocument, uploadDocument, type WorkspaceDocument } from "@/lib/article.functions";
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.includes(",") ? result.slice(result.indexOf(",") + 1) : result);
-    };
-    reader.onerror = () => reject(new Error("Falha ao ler o arquivo"));
-    reader.readAsDataURL(file);
-  });
-}
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { fileToBase64, formatSize } from "@/lib/file-upload";
 
 /**
  * Anexos DENTRO do chat: só um clipe discreto no rodapé. Ao clicar, abre uma
@@ -193,11 +176,11 @@ export function ChatAttachments({
                       <Trash2 className="size-3.5" />
                     </Button>
                   </div>
-                  <div className="mt-2 flex items-center gap-1.5">
+                  <div className="mt-2">
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-7 flex-1 gap-1.5 text-[11px]"
+                      className="h-7 w-full gap-1.5 text-[11px]"
                       onClick={() => {
                         onUse(d);
                         setOpen(false);
@@ -206,7 +189,6 @@ export function ChatAttachments({
                       <Sparkles className="size-3.5" />
                       Usar no artigo
                     </Button>
-                    <FileText className="size-3.5 text-muted-foreground" />
                   </div>
                 </li>
               ))}
