@@ -125,7 +125,7 @@ export const MUSEUM_WORKS: MuseumWork[] = [
     doi: "10.1112/plms/s2-42.1.230",
     wing: "revolucao",
     note: "Inventou a máquina de Turing: o conceito que fundou a computação.",
-    tags: ["computação", "lógica", "matemática"],
+    tags: ["computação", "lógica", "matemática", "tecnologia"],
   },
   {
     id: "turing-1950-inteligencia",
@@ -137,7 +137,7 @@ export const MUSEUM_WORKS: MuseumWork[] = [
     doi: "10.1093/mind/LIX.236.433",
     wing: "revolucao",
     note: "Propôs o teste de Turing: a pergunta 'máquinas podem pensar?' vira ciência.",
-    tags: ["inteligência artificial", "computação", "mente"],
+    tags: ["inteligência artificial", "computação", "mente", "tecnologia"],
   },
   {
     id: "shannon-1948",
@@ -149,7 +149,7 @@ export const MUSEUM_WORKS: MuseumWork[] = [
     doi: "10.1002/j.1538-7305.1948.tb01338.x",
     wing: "revolucao",
     note: "Nasceu a teoria da informação — o bit, a entropia, o mundo digital.",
-    tags: ["informação", "comunicação", "matemática"],
+    tags: ["informação", "comunicação", "matemática", "tecnologia"],
   },
 
   // ── Ala: Poder, burocracia e violência institucional ─────────────────────

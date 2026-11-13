@@ -883,6 +883,30 @@
 .museum-card__doi:hover {
   text-decoration: underline;
 }
+.museum-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+.museum-card__send {
+  height: auto;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  color: color-mix(in oklab, var(--color-primary) 85%, var(--color-foreground));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.museum-card:hover .museum-card__send,
+.museum-card__send:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .museum-card__send {
+    opacity: 1;
+  }
+}
 
 /* Convite ao Museu, na home. */
 .museum-invite {

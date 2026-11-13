@@ -43,6 +43,7 @@ import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAva
 import { PracinhaRest } from "@/components/app/PracinhaRest";
 import { interviewProgress } from "@/lib/interview-progress";
 import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
+import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
 import { useVoice } from "@/hooks/useVoice";
 
 const QUICK = ["Pular", "Não se aplica", "Ainda não sei", "Quero responder depois"];
@@ -111,6 +112,8 @@ export function ChatDock({
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  // Obras trazidas do Museu ("Mostrar ao Pracinha"), à espera de envio.
+  const [inbox, setInbox] = useState<InboxWork[]>([]);
   // Momento (ms) em que a IA volta, quando a cota diária de neurônios esgota.
   const [restedAt, setRestedAt] = useState<number | null>(null);
   const lastSent = useRef("");
@@ -205,6 +208,18 @@ export function ChatDock({
   useEffect(() => {
     if (!busy && open) inputRef.current?.focus();
   }, [busy, open]);
+
+  // Obras trazidas do Museu: aparecem assim que o chat abre, prontas para enviar.
+  useEffect(() => {
+    if (open) setInbox(readInbox());
+  }, [open, busy]);
+
+  const sendInbox = () => {
+    if (!inbox.length) return;
+    send(inboxToMessage(inbox));
+    clearInbox();
+    setInbox([]);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -459,6 +474,33 @@ export function ChatDock({
         </Conversation>
 
         <div className="space-y-1.5 border-t p-2">
+          {inbox.length > 0 && (
+            <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
+              <Sparkles className="size-4 shrink-0 text-primary" />
+              <span className="min-w-0 flex-1 text-[11px] leading-tight">
+                {inbox.length === 1 ? "1 obra do Museu" : `${inbox.length} obras do Museu`} à
+                espera.
+              </span>
+              <Button
+                size="sm"
+                className="h-6 px-2 text-[11px]"
+                disabled={busy || resting}
+                onClick={sendInbox}
+              >
+                Enviar
+              </Button>
+              <button
+                type="button"
+                className="text-[11px] text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  clearInbox();
+                  setInbox([]);
+                }}
+              >
+                dispensar
+              </button>
+            </div>
+          )}
           {messages.length > 0 && !planApproved && (
             <Button
               size="sm"

@@ -115,12 +115,11 @@ function Index() {
           Construa o seu artigo científico conversando.
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-          Primeiro investigamos. Depois planejamos. Depois escrevemos página por página — e a
-          autoria é sempre sua.
+          Primeiro investigamos. Depois planejamos. Depois escrevemos — página por página. A autoria
+          é sua.
         </p>
         <p className="mx-auto mt-3 max-w-md text-sm italic text-muted-foreground">
-          Produzir ciência não exige pertencer a uma instituição. Exige investigar, argumentar,
-          documentar e construir conhecimento.
+          Ciência não é das instituições. É de quem investiga, argumenta e documenta.
         </p>
 
         <form
@@ -159,8 +158,8 @@ function Index() {
           </div>
           <PublishedShelf />
           <p className="mt-2 text-xs text-muted-foreground">
-            Só entra aqui o artigo que já passou pela revisão por pares e recebeu o aval do próprio
-            autor. É a sua marca registrada — o conhecimento fica protegido e creditado.
+            Só entra aqui o artigo já aprovado na revisão por pares — e liberado pelo autor. Seu
+            conhecimento fica protegido e creditado.
           </p>
         </div>
 
@@ -169,12 +168,11 @@ function Index() {
           <div className="min-w-0">
             <div className="font-serif text-lg font-semibold">Museu de Artigos Científicos</div>
             <p className="text-sm text-muted-foreground">
-              De Einstein a Turing; do poder e da violência institucional à psicologia e à
-              metacognição. Metadados reais, com DOI — para estudar a fonte primária.
+              De Einstein a Turing; do poder e da exclusão à metacognição. Fontes reais, com DOI.
             </p>
           </div>
           <span className="ml-auto shrink-0 self-center text-sm font-medium text-primary">
-            Entrar no museu →
+            Entrar →
           </span>
         </Link>
 
