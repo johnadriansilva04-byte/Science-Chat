@@ -10,6 +10,9 @@ import {
   FileText,
   Play,
   Sparkles,
+  Paperclip,
+  ShieldCheck,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -111,6 +114,10 @@ function Index() {
       <div className="lab-rule" aria-hidden />
       <main className="mx-auto max-w-2xl px-6 pb-16 pt-12 text-center">
         <img src={logo} alt="" width={72} height={72} className="mx-auto mb-6" />
+        <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[11px] font-medium text-primary">
+          <Sparkles className="size-3.5" />
+          Pesquisa independente · com documentação probatória
+        </span>
         <h1 className="font-serif text-4xl font-semibold leading-tight md:text-5xl">
           Construa o seu artigo científico conversando.
         </h1>
@@ -175,6 +182,46 @@ function Index() {
             Entrar →
           </span>
         </Link>
+
+        <section className="mt-12 text-left">
+          <h2 className="font-serif text-xl font-semibold">Por que é diferente</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Não é um chatbot que devolve um texto pronto. São quatro mecanismos que sustentam a sua
+            autoria.
+          </p>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {[
+              {
+                icon: MessageSquareText,
+                t: "Entrevista científica inteligente",
+                d: "Perguntas adaptativas, uma por vez, com a opção de pular o que não se aplica.",
+              },
+              {
+                icon: Paperclip,
+                t: "Dossiê documental",
+                d: "Anexe provas — planilhas, fotos, códigos, PDFs — ligadas às suas afirmações.",
+              },
+              {
+                icon: ShieldCheck,
+                t: "Auditoria de rastreabilidade",
+                d: "Cada afirmação é confrontada com a evidência: sustentada, parcial ou a confirmar.",
+              },
+              {
+                icon: Layers,
+                t: "Geração página por página",
+                d: "O artigo nasce em folhas A4 que você aprova uma a uma — sem reescrever tudo.",
+              },
+            ].map((p) => (
+              <li key={p.t} className="flex gap-3 rounded-lg border bg-card p-4">
+                <p.icon className="mt-0.5 size-5 shrink-0 text-primary" />
+                <div>
+                  <div className="text-sm font-medium">{p.t}</div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{p.d}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <div className="mt-12 grid gap-4 text-left md:grid-cols-3">
           {steps.map((s) => (

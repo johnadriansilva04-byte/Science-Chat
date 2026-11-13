@@ -53,7 +53,14 @@ const EDIT_VERBS = [
   "delete",
 ];
 const RESEARCH_VERBS = ["pesquis", "busque", "buscar", "procure", "procurar", "encontre", "provoc"];
-const ATTACH_VERBS = ["anexe", "anexar", "referencie", "cite o anexo"];
+const ATTACH_VERBS = [
+  "anexe",
+  "anexar",
+  "referencie",
+  "cite o anexo",
+  "use o anexo",
+  "usar o anexo",
+];
 /** Pedidos de provocação/advogado do diabo: exigem busca de evidência contrária. */
 const CHALLENGE_HINTS = [
   "advogado do diabo",
@@ -109,7 +116,13 @@ export function pickForcedTool(text: string): string | null {
   if (wantsEdit && has(t, TITLE_OBJECTS)) return "atualizar_titulo";
 
   // Anexos.
-  if ((wantsAttach || wantsAppend) && has(t, ATTACH_OBJECTS)) return "anexar_documento_em_pagina";
+  if ((wantsAttach || wantsAppend) && has(t, ATTACH_OBJECTS)) {
+    // "use o Anexo 3 no artigo" → primeiro LER o anexo; a posição vem depois, com
+    // autonomia da IA. Pedidos diretos de inserção ("anexe na página 2") inserem já.
+    const onlyUse = !has(t, ["anexe", "anexar", "referencie", "cite o anexo"]);
+    if (onlyUse && /anexo\s*\d/.test(t)) return "ler_anexo";
+    return "anexar_documento_em_pagina";
+  }
 
   // Pesquisa de literatura.
   if (wantsResearch && (has(t, RESEARCH_OBJECTS) || t.includes("sobre"))) return "pesquisar_bases";

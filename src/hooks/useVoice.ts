@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { pickVoiceName, splitSentences } from "@/lib/speech";
 
 // Web Speech API — sem custo e sem chave. Tipos do DOM não cobrem SpeechRecognition,
 // então declaramos o mínimo que usamos.
+type SpeechResultAlt = { transcript: string; confidence: number };
+type SpeechResult = { isFinal: boolean; length: number; [i: number]: SpeechResultAlt };
+type SpeechResultList = { length: number; [i: number]: SpeechResult };
+
 type SpeechRecognitionLike = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  maxAlternatives: number;
   start: () => void;
   stop: () => void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: (() => void) | null;
+  abort: () => void;
+  onresult: ((e: { resultIndex: number; results: SpeechResultList }) => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
   onend: (() => void) | null;
 };
 
@@ -22,7 +29,15 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-/** Ditado por voz (STT) e leitura em voz alta (TTS) do assistente. */
+/** Escolhe a melhor voz disponível para o idioma (pt-BR preferido). */
+function pickVoice(lang: string): SpeechSynthesisVoice | null {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const name = pickVoiceName(voices, lang);
+  return name ? (voices.find((v) => v.name === name) ?? null) : null;
+}
+
+/** Ditado por voz (STT, com transcrição ao vivo) e leitura em voz alta (TTS) fluida. */
 export function useVoice(lang = "pt-BR") {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -31,32 +46,49 @@ export function useVoice(lang = "pt-BR") {
     () => typeof window !== "undefined" && "speechSynthesis" in window,
   );
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const queueRef = useRef<string[]>([]);
+  const stoppedRef = useRef(false);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    const rec = recognitionRef.current;
     recognitionRef.current = null;
+    rec?.stop();
     setListening(false);
   }, []);
 
+  /**
+   * Inicia o ditado. `onText` recebe a transcrição parcial (ao vivo) e, ao final
+   * da fala, o texto completo — para preencher o campo enquanto o usuário fala.
+   */
   const startListening = useCallback(
-    (onText: (text: string) => void) => {
+    (onText: (text: string, isFinal: boolean) => void) => {
       const Ctor = getRecognitionCtor();
       if (!Ctor) return;
-      recognitionRef.current?.stop();
+      recognitionRef.current?.abort();
       const rec = new Ctor();
       rec.lang = lang;
-      rec.continuous = false;
-      rec.interimResults = false;
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+      let finalText = "";
       rec.onresult = (e) => {
-        let text = "";
-        for (let i = 0; i < e.results.length; i += 1) {
-          const alt = e.results[i]?.[0];
-          if (alt) text += alt.transcript;
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i += 1) {
+          const res = e.results[i];
+          const alt = res?.[0];
+          if (!alt) continue;
+          if (res.isFinal) finalText += alt.transcript;
+          else interim += alt.transcript;
         }
-        if (text.trim()) onText(text.trim());
+        const combined = `${finalText}${interim}`.trim();
+        if (combined) onText(combined, false);
       };
       rec.onerror = () => setListening(false);
-      rec.onend = () => setListening(false);
+      rec.onend = () => {
+        setListening(false);
+        recognitionRef.current = null;
+        if (finalText.trim()) onText(finalText.trim(), true);
+      };
       recognitionRef.current = rec;
       setListening(true);
       rec.start();
@@ -64,32 +96,63 @@ export function useVoice(lang = "pt-BR") {
     [lang],
   );
 
+  // Fala a fila em sequência: cada frase é um utterance curto, o que evita o corte
+  // de vozes longas e faz a resposta começar a soar quase de imediato.
+  const speakNext = useCallback(() => {
+    if (stoppedRef.current) return;
+    const next = queueRef.current.shift();
+    if (next === undefined) {
+      setSpeaking(false);
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(next);
+    utter.lang = lang;
+    const voice = pickVoice(lang);
+    if (voice) utter.voice = voice;
+    utter.rate = 1.02;
+    utter.pitch = 1;
+    utter.onend = () => speakNext();
+    utter.onerror = () => speakNext();
+    window.speechSynthesis.speak(utter);
+  }, [lang]);
+
   const speak = useCallback(
     (text: string) => {
       if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-      const clean = text.replace(/[_*`#>]/g, "").trim();
-      if (!clean) return;
+      const chunks = splitSentences(text);
+      if (!chunks.length) return;
       window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(clean);
-      utter.lang = lang;
-      utter.onend = () => setSpeaking(false);
-      utter.onerror = () => setSpeaking(false);
+      queueRef.current = chunks;
+      stoppedRef.current = false;
       setSpeaking(true);
-      window.speechSynthesis.speak(utter);
+      speakNext();
     },
-    [lang],
+    [speakNext],
   );
 
   const stopSpeaking = useCallback(() => {
+    stoppedRef.current = true;
+    queueRef.current = [];
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
     setSpeaking(false);
   }, []);
 
+  // Algumas engines só populam a lista de vozes após um evento; aquecemos a lista.
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.getVoices();
+    const onVoices = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener?.("voiceschanged", onVoices);
+    return () => {
+      window.speechSynthesis.removeEventListener?.("voiceschanged", onVoices);
+    };
+  }, []);
+
   useEffect(() => {
     return () => {
-      recognitionRef.current?.stop();
+      recognitionRef.current?.abort();
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }

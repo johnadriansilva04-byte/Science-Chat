@@ -41,10 +41,12 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAvatar";
 import { PracinhaRest } from "@/components/app/PracinhaRest";
+import { ChatAttachments } from "@/components/app/ChatAttachments";
 import { interviewProgress } from "@/lib/interview-progress";
 import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
 import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
 import { useVoice } from "@/hooks/useVoice";
+import type { WorkspaceDocument } from "@/lib/article.functions";
 
 const QUICK = ["Pular", "Não se aplica", "Ainda não sei", "Quero responder depois"];
 
@@ -91,6 +93,8 @@ export function ChatDock({
   onBusyChange,
   onRequestPlan,
   seed,
+  documents = [],
+  onDocumentsChanged,
   isMobile = false,
   mobileVisible = true,
   onMobileClose,
@@ -104,6 +108,9 @@ export function ChatDock({
   onRequestPlan: () => void;
   /** Inquietação inicial vinda da página de criação; vira a primeira mensagem. */
   seed?: string | undefined;
+  /** Documentos primários do artigo, mostrados na gaveta de anexos do chat. */
+  documents?: WorkspaceDocument[];
+  onDocumentsChanged?: () => void;
   /** No celular o chat vira uma tela cheia, alternável com o documento. */
   isMobile?: boolean;
   mobileVisible?: boolean;
@@ -112,6 +119,8 @@ export function ChatDock({
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  // Transcrição ao vivo do ditado, exibida acima do campo enquanto o pesquisador fala.
+  const [interim, setInterim] = useState("");
   // Obras trazidas do Museu ("Mostrar ao Pracinha"), à espera de envio.
   const [inbox, setInbox] = useState<InboxWork[]>([]);
   // Momento (ms) em que a IA volta, quando a cota diária de neurônios esgota.
@@ -119,6 +128,10 @@ export function ChatDock({
   const lastSent = useRef("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wasBusy = useRef(false);
+  // Se o pesquisador mandou ÁUDIO, o Pracinha responde em áudio também.
+  const replyInAudio = useRef(false);
+  // Marca que o texto no campo veio de ditado (para responder em áudio no envio).
+  const dictated = useRef(false);
   const voice = useVoice("pt-BR");
   const visible = isMobile ? mobileVisible : open;
 
@@ -230,24 +243,38 @@ export function ChatDock({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Lê em voz alta a última resposta do assistente quando o modo de áudio está ligado.
-  const lastAssistantText = useMemo(() => {
-    const last = [...messages].reverse().find((m) => m.role === "assistant");
-    if (!last) return "";
-    return last.parts
-      .map((p) => (p.type === "text" ? p.text : ""))
-      .join(" ")
-      .trim();
-  }, [messages]);
+  // Lê em voz alta a última resposta do assistente quando o modo de áudio está
+  // ligado OU quando o pesquisador mandou a pergunta por voz (aí ele responde em áudio).
+  const lastAssistant = useMemo(
+    () => [...messages].reverse().find((m) => m.role === "assistant"),
+    [messages],
+  );
+  const lastAssistantText = useMemo(
+    () =>
+      lastAssistant
+        ? lastAssistant.parts
+            .map((p) => (p.type === "text" ? p.text : ""))
+            .join(" ")
+            .trim()
+        : "",
+    [lastAssistant],
+  );
+  const spokenId = useRef<string | null>(null);
   useEffect(() => {
-    if (!autoSpeak || busy) return;
-    if (lastAssistantText) voice.speak(lastAssistantText);
+    if (busy || !lastAssistant) return;
+    if (spokenId.current === lastAssistant.id) return;
+    spokenId.current = lastAssistant.id;
+    if (autoSpeak || replyInAudio.current) {
+      if (lastAssistantText) voice.speak(lastAssistantText);
+    }
+    replyInAudio.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSpeak, busy, lastAssistantText]);
+  }, [autoSpeak, busy, lastAssistant, lastAssistantText]);
 
-  const send = (text: string) => {
+  const send = (text: string, viaVoice = false) => {
     if (!text.trim() || busy || resting) return;
     voice.stopSpeaking();
+    replyInAudio.current = viaVoice;
     lastSent.current = text;
     sendMessage({ text });
   };
@@ -534,7 +561,27 @@ export function ChatDock({
               Entrevista concluída. Peça alterações aqui e eu aplico no documento.
             </div>
           )}
-          <PromptInput onSubmit={(msg: PromptInputMessage) => send(msg.text)}>
+          <PromptInput
+            onSubmit={(msg: PromptInputMessage) => {
+              const viaVoice = dictated.current;
+              dictated.current = false;
+              setInterim("");
+              send(msg.text, viaVoice);
+            }}
+          >
+            {voice.listening && <div className="chat-listening h-0.5 w-full" aria-hidden />}
+            {voice.listening && (
+              <div className="flex items-start gap-1.5 px-3 pt-2 text-[11px] text-muted-foreground">
+                <span className="mt-1 flex size-1.5 shrink-0 animate-pulse rounded-full bg-destructive" />
+                <span className="min-w-0 flex-1">
+                  {interim ? (
+                    <span className="italic">“{interim}”</span>
+                  ) : (
+                    "Ouvindo… fale com calma; as palavras aparecem aqui."
+                  )}
+                </span>
+              </div>
+            )}
             <PromptInputTextarea
               ref={inputRef}
               disabled={resting}
@@ -548,6 +595,17 @@ export function ChatDock({
             />
             <PromptInputFooter className="justify-between">
               <div className="flex items-center gap-1">
+                <ChatAttachments
+                  articleId={articleId}
+                  documents={documents}
+                  disabled={resting}
+                  onChanged={() => onDocumentsChanged?.()}
+                  onUse={(doc) =>
+                    send(
+                      `Use o Anexo ${doc.seq} ("${doc.filename}") no meu artigo. Leia o conteúdo e decida o melhor lugar para citá-lo (qual página e qual trecho), explicando em uma frase por que ali.`,
+                    )
+                  }
+                />
                 {voice.sttSupported && (
                   <Button
                     type="button"
@@ -559,12 +617,15 @@ export function ChatDock({
                     onClick={() => {
                       if (voice.listening) {
                         voice.stopListening();
-                      } else {
-                        voice.startListening((text) => {
-                          if (inputRef.current) inputRef.current.value = text;
-                          send(text);
-                        });
+                        setInterim("");
+                        return;
                       }
+                      // A transcrição entra AO VIVO no campo; o envio é do pesquisador.
+                      voice.startListening((text, isFinal) => {
+                        if (inputRef.current) inputRef.current.value = text;
+                        dictated.current = true;
+                        setInterim(isFinal ? "" : text);
+                      });
                     }}
                   >
                     {voice.listening ? (

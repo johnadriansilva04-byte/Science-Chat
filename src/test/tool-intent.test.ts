@@ -23,6 +23,13 @@ describe("pickForcedTool", () => {
   it("detecta anexos", () => {
     expect(pickForcedTool("anexe o documento na página 2")).toBe("anexar_documento_em_pagina");
   });
+  it("pedido de usar um anexo começa pela leitura (autonomia de posição)", () => {
+    expect(
+      pickForcedTool(
+        'Use o Anexo 1 ("dados.csv") no meu artigo. Leia o conteúdo e decida o melhor lugar para citá-lo.',
+      ),
+    ).toBe("ler_anexo");
+  });
   it("não dispara em frases avaliativas ou perguntas", () => {
     expect(pickForcedTool("o título está bom assim?")).toBeNull();
     expect(pickForcedTool("como funciona a metodologia?")).toBeNull();

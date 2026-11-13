@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Landmark, ExternalLink, Quote, Search, Sparkles, BookOpenText } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Landmark, ExternalLink, Quote, Search, Sparkles, BookOpenText, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   MUSEUM_SIZE,
@@ -37,6 +37,7 @@ function MuseumPage() {
   const [wing, setWing] = useState<MuseumWingId | "todas">("todas");
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const works = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,6 +49,18 @@ function MuseumPage() {
         : true,
     );
   }, [wing, query]);
+
+  // Atalho "/" foca a busca, como nos catálogos científicos.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "/" && document.activeElement?.tagName !== "INPUT") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function showToPracinha(w: MuseumWork) {
     setBusyId(w.id);
@@ -116,12 +129,32 @@ function MuseumPage() {
         <div className="relative mt-6">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
+            ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por tema, autor, teoria ou DOI… (ex.: tecnologia, burocracia, Turing)"
-            className="h-11 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="h-11 w-full rounded-md border border-input bg-card pl-9 pr-9 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Limpar busca"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          ) : (
+            <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:block">
+              /
+            </kbd>
+          )}
         </div>
+        <p className="mt-2 h-4 text-xs text-muted-foreground" aria-live="polite">
+          {query.trim()
+            ? `${works.length} ${works.length === 1 ? "obra encontrada" : "obras encontradas"} para “${query.trim()}”.`
+            : ""}
+        </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -150,9 +183,19 @@ function MuseumPage() {
         )}
 
         {works.length === 0 ? (
-          <p className="mt-10 text-center text-sm text-muted-foreground">
-            Nada encontrado para “{query}”. Tente outro termo — ou peça no chat: “ache DOI sobre …”.
-          </p>
+          <div className="mt-10 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm text-muted-foreground">
+              Nada encontrado para “{query}”. Tente outro termo — ou peça no chat: “ache DOI sobre
+              …”.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {["tecnologia", "burocracia", "memória", "viés", "Turing"].map((t) => (
+                <button key={t} type="button" className="museum-chip" onClick={() => setQuery(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
             {works.map((w) => (

@@ -295,6 +295,8 @@ function ArticleWorkspace() {
             setPanelOpen(true);
           }}
           seed={seed}
+          documents={documents}
+          onDocumentsChanged={() => void reload()}
           isMobile={isMobile}
           mobileVisible={mobileTab === "chat"}
           onMobileClose={() => setMobileTab("doc")}

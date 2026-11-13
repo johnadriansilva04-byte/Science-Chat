@@ -1095,6 +1095,31 @@
   border-radius: 9999px;
 }
 
+/* Barra de escuta: linha viva que "respira" enquanto o Pracinha ouve o pesquisador. */
+.chat-listening {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-destructive) 55%, transparent),
+    color-mix(in oklab, var(--color-primary) 55%, transparent),
+    color-mix(in oklab, var(--color-destructive) 55%, transparent)
+  );
+  background-size: 200% 100%;
+  animation: chat-listening 1.6s linear infinite;
+}
+@keyframes chat-listening {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Cartão de anexo "à espera" e demais superfícies do dock ganham um leve relevo. */
+.dock-card {
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
+}
+
 /* Fita de progresso da produção, no topo do documento. */
 .production-strip {
   background-image: linear-gradient(
