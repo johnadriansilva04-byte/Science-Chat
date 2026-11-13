@@ -20,10 +20,14 @@ const PHASE: Record<string, string> = {
   done: "Concluído",
 };
 
-export async function createArticle(navigate: ReturnType<typeof useNavigate>) {
+export async function createArticle(navigate: ReturnType<typeof useNavigate>, seed?: string) {
   try {
     const { id } = await createArticleFn();
-    navigate({ to: "/a/$articleId", params: { articleId: id } });
+    navigate({
+      to: "/a/$articleId",
+      params: { articleId: id },
+      search: seed && seed.trim() ? { seed: seed.trim() } : {},
+    });
   } catch {
     toast.error("Não foi possível criar o artigo");
   }

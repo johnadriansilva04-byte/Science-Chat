@@ -5,12 +5,15 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ArticlesMenu } from "@/components/app/ArticlesMenu";
 import { ChatDock } from "@/components/app/ChatDock";
 import { DocumentCanvas } from "@/components/app/DocumentCanvas";
+import { JourneyRail } from "@/components/app/JourneyRail";
+import { PhaseTransition } from "@/components/app/PhaseTransition";
 import { PublishDialog } from "@/components/app/PublishDialog";
+import { interviewProgress } from "@/lib/interview-progress";
+import { journeyIndex } from "@/lib/journey";
 import {
   getWorkspace,
   updateTitle,
@@ -22,6 +25,9 @@ import {
 import type { UIMessage } from "ai";
 
 export const Route = createFileRoute("/a/$articleId")({
+  validateSearch: (search: Record<string, unknown>): { seed?: string | undefined } => ({
+    seed: typeof search["seed"] === "string" ? (search["seed"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Artigo — ScienceChat" },
@@ -36,6 +42,7 @@ export const Route = createFileRoute("/a/$articleId")({
 
 function ArticleWorkspace() {
   const { articleId } = Route.useParams();
+  const { seed } = Route.useSearch();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -107,6 +114,26 @@ function ArticleWorkspace() {
     [pages],
   );
   const draftPage = useMemo(() => pages.find((p) => p.status === "draft") ?? null, [pages]);
+  const interviewRatio = useMemo(
+    () =>
+      interviewProgress(
+        messages.map((m) => ({
+          role: m.role,
+          parts: m.parts as { type: string; text?: string }[],
+        })),
+      ).ratio,
+    [messages],
+  );
+  const actIndex = useMemo(
+    () =>
+      journeyIndex({
+        phase: article?.phase ?? "interview",
+        approvedPages: approvedPages.length,
+        hasDraft: Boolean(draftPage),
+        interviewRatio,
+      }),
+    [article?.phase, approvedPages.length, draftPage, interviewRatio],
+  );
   const nextNumber = useMemo(
     () => pages.reduce((max, p) => Math.max(max, p.page_number), 0) + 1,
     [pages],
@@ -116,13 +143,6 @@ function ArticleWorkspace() {
     draftPage ?? approvedPages.find((p) => p.page_number === selectedPage) ?? null;
   const currentNumber = draftPage?.page_number ?? selectedPage;
   const isVirtualNext = !draftPage && currentNumber === nextNumber;
-
-  const phaseLabel: Record<string, string> = {
-    interview: "Entrevista",
-    plan: "Plano",
-    writing: "Escrevendo",
-    done: "Concluído",
-  };
 
   async function saveTitle() {
     if (!article) return;
@@ -210,9 +230,13 @@ function ArticleWorkspace() {
             <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
           </button>
         )}
-        <Badge variant="outline" className="ml-auto">
-          {phaseLabel[article.phase] ?? article.phase}
-        </Badge>
+        <JourneyRail
+          phase={article.phase}
+          approvedPages={approvedPages.length}
+          hasDraft={Boolean(draftPage)}
+          interviewRatio={interviewRatio}
+          className="order-last w-full sm:order-none sm:w-auto"
+        />
         <Button
           size="sm"
           variant="outline"
@@ -270,6 +294,7 @@ function ArticleWorkspace() {
             setAutoBuild(true);
             setPanelOpen(true);
           }}
+          seed={seed}
           isMobile={isMobile}
           mobileVisible={mobileTab === "chat"}
           onMobileClose={() => setMobileTab("doc")}
@@ -307,6 +332,8 @@ function ArticleWorkspace() {
         onOpenChange={setPublishOpen}
         defaultAuthor={user?.email?.split("@")[0] ?? ""}
       />
+
+      <PhaseTransition index={actIndex} />
     </div>
   );
 }

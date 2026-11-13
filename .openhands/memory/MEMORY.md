@@ -72,3 +72,6 @@ O `workers-ai-provider@4` só RECUPERA chamadas "vazadas como texto" quando `too
 `INTERVIEW_INSTRUCTIONS` faz a IA interrogar (teoria/problema → testa a tese → descobre teórica vs empírica → fecha lacunas) e usar `pesquisar_bases` para comprovar. `interview-notes.ts` (`sectionForQuestion`/`groupNotesBySection`) classifica pergunta→seção; `DocumentCanvas.preliminaryDocument` monta o A4 por seção durante a entrevista.
 
 Pendências de produto: dossiê documental (precisa habilitar R2 no painel Cloudflare), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
+
+### Jornada científica em 5 atos (UX)
+`src/lib/journey.ts` é a espinha dorsal da UX: atos Ignição → Interrogatório → Estrutura → Produção → Obra, cada um com tagline emocional, cor (oklch) e ícone. `journeyIndex()`/`journeyPercent()` derivam o ato de `phase` + progresso real (páginas aprovadas, draft, razão da entrevista). `JourneyRail.tsx` substitui o antigo Badge de fase no header do workspace; `PhaseTransition.tsx` mostra uma cortina breve ao mudar de ato. `ChatDock` troca frases de "pensando" (entrevista x produção) enquanto `busy`. A landing (`routes/index.tsx`) cria artigo com uma "inquietação" inicial que vira a 1ª mensagem via `?seed=` (validado em `validateSearch` de `a/$articleId.tsx`, consumido no `ChatDock`).

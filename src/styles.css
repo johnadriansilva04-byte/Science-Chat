@@ -265,6 +265,230 @@
   }
 }
 
+/* ===== Jornada científica: trilho vivo, cortina de ato e pulsos ===== */
+
+/* Trilho de atos no topo do workspace. A cor do ato atual chega por --act. */
+.journey-rail {
+  --act: var(--color-primary);
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+.journey-rail__track {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.journey-node {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.journey-node__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-muted-foreground);
+  transition: all 0.3s ease;
+}
+.journey-node__label {
+  margin-left: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
+}
+.journey-node__link {
+  display: inline-block;
+  width: clamp(0.5rem, 2.5vw, 1.75rem);
+  height: 2px;
+  margin: 0 0.35rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-border) 90%, transparent);
+  transition: background 0.3s ease;
+}
+.journey-node--done .journey-node__dot {
+  border-color: transparent;
+  background: color-mix(in oklab, var(--color-success) 88%, white);
+  color: var(--color-success-foreground);
+}
+.journey-node--done .journey-node__label {
+  color: color-mix(in oklab, var(--color-foreground) 70%, transparent);
+}
+.journey-node--done .journey-node__link {
+  background: color-mix(in oklab, var(--color-success) 60%, transparent);
+}
+.journey-node--now .journey-node__dot {
+  border-color: transparent;
+  background: var(--act);
+  color: white;
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--act) 22%, transparent),
+    0 0 18px color-mix(in oklab, var(--act) 45%, transparent);
+  animation: journey-breathe 2.2s ease-in-out infinite;
+}
+.journey-node--now .journey-node__label {
+  color: var(--act);
+  font-weight: 600;
+}
+.journey-rail__tagline {
+  padding-left: 0.1rem;
+  font-family: var(--font-serif);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: color-mix(in oklab, var(--act) 82%, var(--color-foreground));
+  animation: block-appear 0.5s ease both;
+}
+@keyframes journey-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 3px color-mix(in oklab, var(--act) 22%, transparent),
+      0 0 14px color-mix(in oklab, var(--act) 40%, transparent);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 0 6px color-mix(in oklab, var(--act) 14%, transparent),
+      0 0 22px color-mix(in oklab, var(--act) 55%, transparent);
+  }
+}
+/* No celular, o trilho mostra só os pontos e a etiqueta do ato atual. */
+@media (max-width: 640px) {
+  .journey-node__label {
+    display: none;
+  }
+  .journey-node--now .journey-node__label {
+    display: inline;
+  }
+}
+
+/* Cortina emocional entre atos. */
+.phase-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 40%,
+    color-mix(in oklab, var(--act) 26%, transparent),
+    transparent 60%
+  );
+  animation: curtain-in 0.35s ease both;
+}
+.phase-curtain__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.75rem 2.25rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--act) 35%, transparent);
+  background: color-mix(in oklab, var(--color-card) 94%, transparent);
+  box-shadow: 0 24px 60px -24px color-mix(in oklab, var(--act) 60%, transparent);
+  text-align: center;
+  animation: curtain-card 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.phase-curtain__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: var(--act);
+  color: white;
+  box-shadow: 0 0 24px color-mix(in oklab, var(--act) 55%, transparent);
+}
+.phase-curtain__act {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--act);
+}
+.phase-curtain__welcome {
+  max-width: 22rem;
+  font-size: 0.9rem;
+  color: var(--color-muted-foreground);
+}
+@keyframes curtain-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes curtain-card {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Pulso suave para chamar atenção a um resultado pendente. */
+.attention-pulse {
+  animation: attention-pulse 2s ease-in-out infinite;
+}
+@keyframes attention-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-primary) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 0%, transparent);
+  }
+}
+
+/* Ponto de "pensando" que troca de ideia, no chat. */
+.thinking-swap {
+  animation: thinking-swap 0.4s ease both;
+}
+@keyframes thinking-swap {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Entrada escalonada dos atos do trilho, no primeiro render. */
+.journey-node {
+  animation: block-appear 0.45s ease both;
+}
+.journey-node:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.journey-node:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.journey-node:nth-child(4) {
+  animation-delay: 0.18s;
+}
+.journey-node:nth-child(5) {
+  animation-delay: 0.24s;
+}
+
 /* Escrita ao vivo na folha: um cursor suave e um realce quando o bloco chega. */
 .a4-sheet--live .a4-block:last-child {
   animation: block-appear 0.5s ease both;

@@ -417,15 +417,29 @@ export function DocumentCanvas({
           <Button
             size="sm"
             variant={panelOpen ? "secondary" : "outline"}
-            className="h-7 gap-1 text-xs"
+            className={`h-7 gap-1 text-xs ${
+              !panelOpen && !isPreliminary && pages.some((p) => p.status === "draft")
+                ? "attention-pulse border-primary text-primary"
+                : ""
+            }`}
             onClick={() => {
               setPanelTab(isPreliminary ? "plan" : "pages");
               onPanelOpenChange(!panelOpen);
             }}
-            title={isPreliminary ? "Plano de produção" : "Produção página por página"}
+            title={
+              isPreliminary
+                ? "Plano de produção"
+                : pages.some((p) => p.status === "draft")
+                  ? "Há uma página aguardando a sua revisão"
+                  : "Produção página por página"
+            }
           >
             <PanelRight className="size-3.5" />
-            {isPreliminary ? "Plano" : "Produção"}
+            {isPreliminary
+              ? "Plano"
+              : pages.some((p) => p.status === "draft")
+                ? "Revisar página"
+                : "Produção"}
           </Button>
           <div className="flex items-center gap-0.5 rounded-md border">
             <Button

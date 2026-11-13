@@ -47,6 +47,26 @@ import { useVoice } from "@/hooks/useVoice";
 
 const QUICK = ["Pular", "Não se aplica", "Ainda não sei", "Quero responder depois"];
 
+/**
+ * O que o Pracinha "está pensando" enquanto trabalha. Muda com a etapa para dar a
+ * sensação de vida: na entrevista ele caça objeções nas bases; na produção, ele
+ * redige e confere citações. Frases curtas, trocadas a cada poucos segundos.
+ */
+const THINKING_INTERVIEW = [
+  "procurando a objeção mais forte…",
+  "consultando as bases públicas…",
+  "testando a sua tese contra a literatura…",
+  "procurando o furo no argumento…",
+  "cruzando a sua resposta com o que já existe…",
+];
+const THINKING_PRODUCE = [
+  "escrevendo a próxima página…",
+  "organizando o argumento…",
+  "conferindo citações e fontes…",
+  "mantendo a continuidade com a página anterior…",
+  "revisando a coerência do texto…",
+];
+
 /** Nomes amigáveis das ferramentas que o Pracinha pode executar sobre o artigo. */
 const TOOL_LABELS: Record<string, string> = {
   pesquisar_bases: "pesquisando bases científicas",
@@ -69,6 +89,7 @@ export function ChatDock({
   onLiveMessages,
   onBusyChange,
   onRequestPlan,
+  seed,
   isMobile = false,
   mobileVisible = true,
   onMobileClose,
@@ -80,6 +101,8 @@ export function ChatDock({
   onLiveMessages?: (messages: UIMessage[]) => void;
   onBusyChange?: (busy: boolean) => void;
   onRequestPlan: () => void;
+  /** Inquietação inicial vinda da página de criação; vira a primeira mensagem. */
+  seed?: string | undefined;
   /** No celular o chat vira uma tela cheia, alternável com o documento. */
   isMobile?: boolean;
   mobileVisible?: boolean;
@@ -133,6 +156,23 @@ export function ChatDock({
     : planApproved
       ? "done"
       : "idle";
+
+  // Teatro de pensamento: troca a frase enquanto o Pracinha trabalha, para o chat
+  // parecer vivo. As frases variam com a etapa (entrevista x produção).
+  const thinkingLines = planApproved ? THINKING_PRODUCE : THINKING_INTERVIEW;
+  const [thinkingIndex, setThinkingIndex] = useState(0);
+  useEffect(() => {
+    if (!busy) return;
+    setThinkingIndex(0);
+    const id = window.setInterval(
+      () => setThinkingIndex((i) => (i + 1) % thinkingLines.length),
+      1900,
+    );
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy]);
+  const thinkingText =
+    status === "streaming" ? "escrevendo…" : (thinkingLines[thinkingIndex] ?? "pensando…");
 
   // Repassa as mensagens ao vivo para o documento preencher a folha durante a entrevista.
   useEffect(() => {
@@ -220,6 +260,17 @@ export function ChatDock({
     if (lastSent.current) sendMessage({ text: lastSent.current });
   };
 
+  // Semente da criação: se o pesquisador começou com uma inquietação, ela vira a
+  // primeira mensagem da entrevista — sem tela em branco. Dispara uma única vez.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current) return;
+    if (!seed || !seed.trim() || messages.length > 0) return;
+    seeded.current = true;
+    sendMessage({ text: seed.trim() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed, messages.length]);
+
   const copyMessage = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -271,9 +322,7 @@ export function ChatDock({
           <p className="truncate font-serif text-sm font-semibold leading-tight">Pracinha</p>
           <p className="truncate text-[11px] text-muted-foreground">
             {busy
-              ? status === "streaming"
-                ? "escrevendo…"
-                : "pensando…"
+              ? thinkingText
               : progress.stage
                 ? `Etapa: ${progress.stage}`
                 : "assistente da ScienceChat"}
@@ -397,9 +446,9 @@ export function ChatDock({
             {busy && (
               <div className="flex items-center gap-2">
                 <PracinhaAvatar state={avatarState} size={24} />
-                <Shimmer className="text-xs">
-                  {status === "streaming" ? "Escrevendo…" : "Pensando na próxima pergunta…"}
-                </Shimmer>
+                <span key={thinkingText} className="thinking-swap">
+                  <Shimmer className="text-xs">{thinkingText}</Shimmer>
+                </span>
               </div>
             )}
             {resting && (

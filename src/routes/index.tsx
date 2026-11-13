@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   BookOpenText,
   FilePlus2,
@@ -7,6 +7,7 @@ import {
   ListChecks,
   FileText,
   Play,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [idea, setIdea] = useState("");
+  const [creating, setCreating] = useState(false);
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [loading, user, navigate]);
@@ -54,21 +57,30 @@ function Index() {
     navigate({ to: "/a/$articleId", params: { articleId: first.id } });
   }
 
+  async function ignite() {
+    setCreating(true);
+    try {
+      await createArticle(navigate, idea);
+    } finally {
+      setCreating(false);
+    }
+  }
+
   const steps = [
     {
       icon: MessageSquareText,
-      t: "1. Conversa",
-      d: "Respondo às perguntas sobre a sua pesquisa. Pode pular o que não souber.",
+      t: "1. Ignição e interrogatório",
+      d: "Você traz a inquietação; eu aperto cada lacuna até a tese ficar sólida.",
     },
     {
       icon: ListChecks,
-      t: "2. Plano",
-      d: "Mostro como o artigo vai ficar, página por página. Você aprova.",
+      t: "2. Estrutura",
+      d: "Organizo o material e mostro como o artigo vai ficar. Você aprova.",
     },
     {
       icon: FileText,
-      t: "3. Páginas",
-      d: "Escrevo uma página por vez. Você aprova ou pede correção.",
+      t: "3. Produção e obra",
+      d: "Escrevo uma página por vez — você aprova cada uma até virar um artigo completo.",
     },
   ];
   return (
@@ -99,16 +111,36 @@ function Index() {
           Produzir ciência não exige pertencer a uma instituição. Exige investigar, argumentar,
           documentar e construir conhecimento.
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" onClick={() => createArticle(navigate)}>
+
+        <form
+          className="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void ignite();
+          }}
+        >
+          <div className="relative flex-1">
+            <Sparkles className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/70" />
+            <input
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              placeholder="Qual inquietação você quer investigar? (opcional)"
+              className="h-11 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <Button type="submit" size="lg" disabled={creating} className="gap-1.5">
             <FilePlus2 />
-            Começar novo artigo
+            {creating ? "Acendendo…" : "Começar novo artigo"}
           </Button>
+        </form>
+
+        <div className="mt-4">
           <Button size="lg" variant="outline" onClick={continueResearch}>
             <Play />
             Continuar pesquisa
           </Button>
         </div>
+
         <div className="mt-14 grid gap-4 text-left md:grid-cols-3">
           {steps.map((s) => (
             <div key={s.t} className="rounded-lg border bg-card p-5">
