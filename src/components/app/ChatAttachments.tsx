@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Loader2, Paperclip, Sparkles, Trash2, UploadCloud } from "lucide-react";
+import { Download, Loader2, Paperclip, Sparkles, Trash2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { deleteDocument, uploadDocument, type WorkspaceDocument } from "@/lib/article.functions";
-import { fileToBase64, formatSize } from "@/lib/file-upload";
+import {
+  deleteDocument,
+  getDocumentFile,
+  uploadDocument,
+  type WorkspaceDocument,
+} from "@/lib/article.functions";
+import { fileToBase64, formatSize, openBase64File } from "@/lib/file-upload";
 
 /**
  * Anexos DENTRO do chat: só um clipe discreto no rodapé. Ao clicar, abre uma
@@ -73,6 +78,15 @@ export function ChatAttachments({
       onChanged();
     } catch {
       toast.error("Não foi possível remover");
+    }
+  }
+
+  async function openFile(id: string) {
+    try {
+      const file = await getDocumentFile({ data: { articleId, documentId: id } });
+      openBase64File(file.base64, file.filename, file.mime);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível abrir o arquivo");
     }
   }
 
@@ -166,6 +180,16 @@ export function ChatAttachments({
                         {d.note ? ` · ${d.note}` : ""}
                       </p>
                     </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-6"
+                      aria-label={`Abrir original do Anexo ${d.seq}`}
+                      title="Abrir original"
+                      onClick={() => void openFile(d.id)}
+                    >
+                      <Download className="size-3.5" />
+                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"

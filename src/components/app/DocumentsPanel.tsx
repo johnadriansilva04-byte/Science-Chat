@@ -1,10 +1,15 @@
 import { useRef, useState } from "react";
-import { FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
+import { Download, FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { deleteDocument, uploadDocument, type WorkspaceDocument } from "@/lib/article.functions";
-import { fileToBase64, formatSize } from "@/lib/file-upload";
+import {
+  deleteDocument,
+  getDocumentFile,
+  uploadDocument,
+  type WorkspaceDocument,
+} from "@/lib/article.functions";
+import { fileToBase64, formatSize, openBase64File } from "@/lib/file-upload";
 
 /**
  * Dossiê de documentos primários. Cada anexo recebe um número estável ("Anexo N")
@@ -59,6 +64,15 @@ export function DocumentsPanel({
       onChanged();
     } catch {
       toast.error("Não foi possível remover");
+    }
+  }
+
+  async function openFile(id: string) {
+    try {
+      const file = await getDocumentFile({ data: { articleId, documentId: id } });
+      openBase64File(file.base64, file.filename, file.mime);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível abrir o arquivo");
     }
   }
 
@@ -124,6 +138,16 @@ export function DocumentsPanel({
                   {d.note ? ` · ${d.note}` : ""}
                 </span>
               </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-6"
+                aria-label={`Abrir original do Anexo ${d.seq}`}
+                title="Abrir original"
+                onClick={() => void openFile(d.id)}
+              >
+                <Download className="size-3.5" />
+              </Button>
               <Button
                 size="icon"
                 variant="ghost"

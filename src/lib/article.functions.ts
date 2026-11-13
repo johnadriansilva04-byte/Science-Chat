@@ -133,6 +133,8 @@ export const uploadDocument = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { extractText } = await import("@/lib/documents.server");
+    const { putDocumentBytes, documentKey, toBase64 } = await import("@/lib/cf/storage.server");
+    const { newId } = await import("@/lib/cf/auth.server");
     const bytes = base64ToBytes(data.base64);
     const MAX = 8 * 1024 * 1024;
     if (bytes.length === 0) throw new Error("Arquivo vazio");
@@ -140,11 +142,17 @@ export const uploadDocument = createServerFn({ method: "POST" })
     const article = await repo.getArticle(context.user.id, data.articleId);
     if (!article) throw new Error("Artigo não encontrado");
     const textContent = extractText(data.filename, data.mime, data.base64);
+    const id = newId();
+    const mime = data.mime || "application/octet-stream";
+    // Arquivo bruto no R2 quando disponível; senão base64 no D1 (fallback).
+    const storageKey = await putDocumentBytes(documentKey(data.articleId, id), bytes, mime);
     const doc = await repo.addDocument(context.user.id, data.articleId, {
+      id,
       filename: data.filename.slice(0, 200),
-      mime: data.mime || "application/octet-stream",
+      mime,
       size: bytes.length,
-      content: data.base64,
+      content: storageKey ? null : toBase64(bytes),
+      storageKey,
       textContent,
       note: data.note?.slice(0, 500) ?? null,
     });
@@ -164,8 +172,29 @@ export const deleteDocument = createServerFn({ method: "POST" })
   .middleware([requireUser])
   .validator((d: { articleId: string; documentId: string }) => d)
   .handler(async ({ data, context }) => {
+    const { deleteDocumentBytes } = await import("@/lib/cf/storage.server");
+    const doc = await repo.getDocument(context.user.id, data.articleId, data.documentId);
+    if (doc?.storage_key) await deleteDocumentBytes(doc.storage_key);
     await repo.deleteDocument(context.user.id, data.articleId, data.documentId);
     return { ok: true };
+  });
+
+/** Devolve o arquivo original (base64) para visualizar/baixar o documento anexado. */
+export const getDocumentFile = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string; documentId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { readDocumentBytes } = await import("@/lib/cf/storage.server");
+    const { bytesToBase64 } = await import("@/lib/base64");
+    const doc = await repo.getDocument(context.user.id, data.articleId, data.documentId);
+    if (!doc) throw new Error("Documento não encontrado");
+    const bytes = await readDocumentBytes(doc.storage_key, doc.content);
+    if (!bytes) throw new Error("Arquivo original indisponível");
+    return {
+      filename: doc.filename,
+      mime: doc.mime,
+      base64: bytesToBase64(bytes),
+    };
   });
 
 export const generatePlan = createServerFn({ method: "POST" })

@@ -215,7 +215,10 @@ export type DocumentRow = {
   created_at: string;
 };
 
-export type DocumentWithContent = DocumentRow & { content: string };
+export type DocumentWithContent = DocumentRow & {
+  content: string | null;
+  storage_key: string | null;
+};
 
 /** Lista os documentos (sem o base64, que é pesado) em ordem de anexo. */
 export async function listDocuments(userId: string, articleId: string): Promise<DocumentRow[]> {
@@ -235,7 +238,7 @@ export async function getDocument(
 ): Promise<DocumentWithContent | null> {
   return requireDb()
     .prepare(
-      "select id, article_id, user_id, seq, filename, mime, size, content, text_content, note, created_at from documents where id = ? and article_id = ? and user_id = ?",
+      "select id, article_id, user_id, seq, filename, mime, size, content, storage_key, text_content, note, created_at from documents where id = ? and article_id = ? and user_id = ?",
     )
     .bind(id, articleId, userId)
     .first<DocumentWithContent>();
@@ -246,10 +249,12 @@ export async function addDocument(
   userId: string,
   articleId: string,
   doc: {
+    id?: string;
     filename: string;
     mime: string;
     size: number;
-    content: string;
+    content: string | null;
+    storageKey: string | null;
     textContent: string | null;
     note: string | null;
   },
@@ -262,11 +267,11 @@ export async function addDocument(
     .bind(articleId, userId)
     .first<{ seq: number }>();
   const seq = next?.seq ?? 1;
-  const id = newId();
+  const id = doc.id ?? newId();
   const ts = nowIso();
   await db
     .prepare(
-      "insert into documents (id, article_id, user_id, seq, filename, mime, size, content, text_content, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "insert into documents (id, article_id, user_id, seq, filename, mime, size, content, storage_key, text_content, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(
       id,
@@ -277,6 +282,7 @@ export async function addDocument(
       doc.mime,
       doc.size,
       doc.content,
+      doc.storageKey,
       doc.textContent,
       doc.note,
       ts,

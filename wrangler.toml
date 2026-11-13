@@ -16,11 +16,9 @@ database_name = "sciencechat"
 database_id = "b8793250-696e-4538-aa50-03796ff8635f"
 
 # Arquivos enviados pelo pesquisador (documentos do dossiê).
-# Descomentar depois de habilitar o R2 no painel Cloudflare e criar o bucket:
-#   npx wrangler r2 bucket create sciencechat-files
-# [[r2_buckets]]
-# binding = "FILES"
-# bucket_name = "sciencechat-files"
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "sciencechat-files"
 
 # Cache/estado efêmero (sessões, rate limit).
 # Descomentar depois de criar o namespace (precisa de permissão de escrita em KV):
