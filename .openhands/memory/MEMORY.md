@@ -43,10 +43,21 @@ Primeiro investigar (entrevista adaptativa) → depois documentar → depois aud
 - **Truncagem de texto (Workers AI):** o `workers-ai-provider` só envia `max_tokens` quando `maxOutputTokens` é passado ao `streamText`; sem ele a IA usa um padrão baixo e corta a saída no meio da frase (~1000 chars). Sempre passar `maxOutputTokens` (hoje `DEFAULT_MAX_OUTPUT_TOKENS = 2048` em `src/lib/ai/gateway.server.ts`).
 - 4 erros de tsc PRÉ-EXISTENTES (não nossos) em `src/components/ai-elements/{message,shimmer}.tsx`. `npm run build` passa mesmo assim.
 - **Tool calling (AI SDK v7 + Workers AI)**: `tool()` usa `inputSchema` (não `parameters`); loops multi-step com `stopWhen: stepCountIs(n)`. As tools do Pracinha (`src/lib/ai/tools.server.ts`) têm poder real sobre a folha (título, páginas) e pesquisam bases públicas (OpenAlex→Crossref, `research.server.ts`).
+- **SSE da Workers AI duplica conteúdo em DOIS campos**: nativo (`{response, tool_calls}`) e OpenAI (`{choices[0].delta.{content,tool_calls}}`). O `workers-ai-provider` lê os dois → texto duplicado por token E argumentos de tool duplicados → JSON inválido → `tool-error` → a ferramenta nunca executa (o modelo "vaza" a chamada como texto no chat). Fix em `gateway.server.ts` (`fixEvent` + `dedupeSseStream`): quando `choices[0].delta` existe, apagar `parsed.response` E `parsed.tool_calls`. Vale para o binding (AI) e para o modo REST. Testar com `streamText` real + `fullStream` (não dá para importar `.ts` no node puro — inline a função).
 - **Documentos primários** ficam em base64 no D1 (tabela `documents`, migration `0002`), com numeração estável "Anexo N". R2 ainda não habilitado — não usar R2 sem antes habilitar no painel.
 - Dev server (`npm run dev`, porta **3000**) tenta emular bindings via wrangler. Sem `CLOUDFLARE_API_TOKEN` no ambiente ele cai no stub e a IA/D1 não funcionam; o SSR das páginas continua 200. Para bindings reais em dev: exportar `CLOUDFLARE_API_TOKEN` + `npm run preview:cf`.
 - `wrangler deploy --dry-run` valida a config sem token.
 
-## Estado (2026-11-11)
-Migração Cloudflare completa no código e **publicada na Cloudflare**: build verde, 21 testes, `src/` 100% limpo de Supabase/Lovable. Produção em **https://sciencechat.sciencechat.workers.dev** (D1 + Workers AI por binding). Fluxo E2E validado em produção. Também publicável no Vercel (`sciencechat.vercel.app`) via backends REST.
-Pendências de produto (pós-migração): dossiê documental (precisa habilitar R2 no painel Cloudflare), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
+## Área pública de publicações (2026-11-11)
+Regra do produto: **o autor só aparece na área pública depois de submeter à revisão por pares e receber parecer favorável**. Fluxo: `draft → submitted → in_review → accepted → published` (ou `rejected`). Só `status='published'` aparece em `/publicacoes`.
+- Tabela `publications` (migration `0003_publications.sql`, já aplicada no D1 remoto → 7 tabelas). Guarda `slug` único, título, resumo, palavras-chave, autor, vínculo, ORCID, `content` (texto integral), parecer (`review_report`) e datas.
+- `src/lib/cf/repo.server.ts`: CRUD + `uniqueSlug` + `setPublicationStatus`.
+- `src/lib/publication.ts` (puro, testado): `assemblePublicationContent`, `extractAbstract` (remove a linha de palavras-chave), `extractKeywords`, `contentHasAbstract`, `publicationCitation`, `yearOf`.
+- `src/lib/publication.functions.ts`: `preparePublication` (monta das páginas aprovadas), `submitPublication`, `runPeerReview` (Pracinha como revisor → prompt `PEER_REVIEW_INSTRUCTIONS`; aceita quando o parecer traz `ACEITO`), `publishPublication`, `listPublicPublications`/`getPublicPublication` (público), `getArticlePublication`.
+- Rotas públicas: `src/routes/publicacoes/index.tsx` e `$slug.tsx` (renderizam Markdown via `MessageResponse`). UI de gestão: `src/components/app/PublishDialog.tsx` (botão "Publicar" no header do workspace).
+- Seed da 1ª publicação: `docs/publicacoes/sciencechat-artigo.md` + `scripts/seed-publication.mjs` (gera SQL; slug `sciencechat-producao-cientifica-independente`).
+- Rotas são client-rendered (`useEffect` + server fn), então `curl` não mostra o conteúdo; verificar no browser.
+
+## Estado (2026-11-11, fim do dia)
+Publicado na Cloudflare: **https://sciencechat.sciencechat.workers.dev** (D1 + Workers AI por binding). 72 testes passando. Feito hoje: fix do tool calling (dedup de `tool_calls` no SSE), área pública de publicações (`/publicacoes`) com revisão por pares e portão de publicação, e o 1º artigo publicado sobre o próprio ScienceChat. Commit `15f4a0b` (HEAD), anterior `accb4ce`.
+Pendências de produto: dossiê documental (precisa habilitar R2 no painel Cloudflare), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
