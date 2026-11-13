@@ -38,6 +38,8 @@ function ArticleWorkspace() {
 
   const [article, setArticle] = useState<WorkspaceArticle | null>(null);
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
+  const [liveMessages, setLiveMessages] = useState<UIMessage[]>([]);
+  const [busy, setBusy] = useState(false);
   const [pages, setPages] = useState<WorkspacePage[]>([]);
   const [selectedPage, setSelectedPage] = useState<number>(1);
   const [autoBuild, setAutoBuild] = useState(false);
@@ -156,6 +158,11 @@ function ArticleWorkspace() {
     parts: m.parts as UIMessage["parts"],
   })) as UIMessage[];
 
+  // Prefere as mensagens ao vivo (inclui o streaming em andamento) para o documento
+  // refletir o que o pesquisador acabou de responder; cai nas persistidas ao recarregar.
+  const canvasMessages =
+    liveMessages.length >= initialMessages.length ? liveMessages : initialMessages;
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <header className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-2 print:hidden">
@@ -197,7 +204,7 @@ function ArticleWorkspace() {
           title={article.title}
           plan={article.plan}
           pages={pages}
-          messages={messages}
+          messages={canvasMessages}
           onPagesChanged={() => void reload()}
         />
       </main>
@@ -214,6 +221,8 @@ function ArticleWorkspace() {
           isVirtualNext={isVirtualNext}
           autoBuild={autoBuild}
           onActivity={() => void reload()}
+          onLiveMessages={setLiveMessages}
+          onBusyChange={setBusy}
           onRequestPlan={() => {
             setAutoBuild(true);
             void reload();

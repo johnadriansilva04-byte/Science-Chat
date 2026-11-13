@@ -87,6 +87,7 @@ export function A4Sheet({
   pageNumber,
   blocks,
   editing,
+  live = false,
   sectionHighlight,
   onChangeBlock,
   onDeleteBlock,
@@ -94,6 +95,7 @@ export function A4Sheet({
   pageNumber: number;
   blocks: PlacedBlock[];
   editing: boolean;
+  live?: boolean;
   sectionHighlight: string | null;
   onChangeBlock: (index: number, block: Block) => void;
   onDeleteBlock: (index: number) => void;
@@ -105,9 +107,11 @@ export function A4Sheet({
     paddingBottom: `${A4.marginYMm}mm`,
   } as const;
 
+  const lastIndex = blocks.length - 1;
+
   return (
     <section
-      className="a4-sheet paper-sheet relative mx-auto"
+      className={`a4-sheet paper-sheet relative mx-auto ${live ? "a4-sheet--live" : ""}`}
       style={{ width: `${A4.widthMm}mm`, minHeight: `${A4.heightMm}mm` }}
       aria-label={`Folha ${pageNumber}`}
     >
@@ -120,7 +124,7 @@ export function A4Sheet({
               sectionHighlight && block.type === "heading" && block.text === sectionHighlight
                 ? "a4-block--active"
                 : ""
-            }`}
+            } ${live && index === lastIndex ? "a4-writing-caret" : ""}`}
           >
             {editing ? (
               <BlockEditor

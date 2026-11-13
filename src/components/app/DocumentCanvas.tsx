@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   Check,
@@ -95,6 +95,7 @@ export function DocumentCanvas({
   plan,
   pages,
   messages,
+  liveWriting = false,
   onPagesChanged,
 }: {
   articleId: string;
@@ -102,6 +103,7 @@ export function DocumentCanvas({
   plan: string | null;
   pages: WorkspacePage[];
   messages: { role: string; parts: { type: string; text?: string }[] }[];
+  liveWriting?: boolean;
   onPagesChanged: () => void;
 }) {
   const [zoom, setZoom] = useState(1);
@@ -109,6 +111,7 @@ export function DocumentCanvas({
   const [reading, setReading] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [activeSheet, setActiveSheet] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
   const sheetRefs = useRef<Record<number, HTMLElement | null>>({});
 
@@ -149,6 +152,17 @@ export function DocumentCanvas({
     () => pages.filter((p) => countWords(stripMarkers(p.content)) < MIN_PAGE_WORDS),
     [pages],
   );
+
+  // Progresso honesto: páginas aprovadas sobre o total já conhecido (aprovadas +
+  // em revisão + a próxima a escrever). Cresce a cada aprovação, sem prometer um
+  // total que ainda não existe.
+  const progressPct = useMemo(() => {
+    const approved = approvedPages.length;
+    const inReview = pages.length - approved;
+    const total = approved + inReview + (inReview === 0 ? 1 : 0);
+    if (total === 0) return 0;
+    return Math.round((approved / total) * 100);
+  }, [approvedPages.length, pages.length]);
 
   const persist = useCallback(
     async (pageNumber: number, blocks: Block[]) => {
@@ -213,6 +227,22 @@ export function DocumentCanvas({
     sheetRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Mantém a folha em foco no rail conforme o usuário rola o documento.
+  useEffect(() => {
+    const root = scroller.current;
+    if (!root) return;
+    const onScroll = () => {
+      const mid = root.scrollTop + root.clientHeight / 3;
+      let best = 0;
+      for (const [i, el] of Object.entries(sheetRefs.current)) {
+        if (el && el.offsetTop <= mid) best = Number(i);
+      }
+      setActiveSheet(best);
+    };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => root.removeEventListener("scroll", onScroll);
+  }, []);
+
   const masterMarkdown = useMemo(
     () => assembleMarkdown(title, approvedPages),
     [title, approvedPages],
@@ -237,6 +267,12 @@ export function DocumentCanvas({
         {isPreliminary && (
           <span className="rounded-full bg-accent px-2 py-0.5 text-accent-foreground">
             Estrutura preliminar
+          </span>
+        )}
+        {liveWriting && (
+          <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+            <span className="a4-live-dot" />
+            Pracinha está preenchendo ao vivo
           </span>
         )}
         {saveLabel[saveState] && (
@@ -322,6 +358,22 @@ export function DocumentCanvas({
         </div>
       </div>
 
+      {!isPreliminary && (
+        <div className="flex items-center gap-3 border-b bg-card px-3 py-1 text-[11px] text-muted-foreground">
+          <span className="tabular-nums">
+            {approvedPages.length} aprovada(s)
+            {pages.length > approvedPages.length
+              ? ` · ${pages.length - approvedPages.length} em revisão`
+              : ""}
+          </span>
+          <div
+            className="production-strip h-1.5 flex-1 rounded-full"
+            style={{ "--p": `${progressPct}%` } as React.CSSProperties}
+          />
+          <span className="tabular-nums">{Math.round(progressPct)}%</span>
+        </div>
+      )}
+
       {shortPages.length > 0 && !isPreliminary && (
         <p className="border-b bg-amber-50 px-3 py-1 text-xs text-amber-800">
           {shortPages.length} página(s) com menos de {MIN_PAGE_WORDS} palavras — podem estar
@@ -335,29 +387,68 @@ export function DocumentCanvas({
       )}
 
       <div className="flex min-h-0 flex-1">
-        {sections.length > 0 && (
-          <nav className="hidden w-56 shrink-0 overflow-y-auto border-r bg-card p-2 lg:block">
-            <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Seções
-            </p>
-            {sections.map((s, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setHighlight(s.title);
-                  scrollToSheet(s.page - 1);
-                }}
-                className={`block w-full truncate rounded-md px-2 py-1 text-left text-sm hover:bg-muted ${
-                  s.level === 1 ? "font-semibold" : "pl-4"
-                }`}
-                title={s.title}
-              >
-                {s.title}
-              </button>
-            ))}
-          </nav>
-        )}
+        <nav className="hidden w-60 shrink-0 flex-col overflow-y-auto border-r bg-card p-2 lg:flex">
+          <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Folhas
+          </p>
+          <div className="mb-3 space-y-1">
+            {sheets.map((sheet, i) => {
+              const heading = sheet.find((b) => b.block.type === "heading");
+              const label =
+                heading && heading.block.type === "heading" ? heading.block.text : `Folha ${i + 1}`;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setActiveSheet(i);
+                    scrollToSheet(i);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors ${
+                    activeSheet === i
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                  title={label}
+                >
+                  <span
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-[3px] border text-[10px] tabular-nums ${
+                      activeSheet === i ? "border-primary text-primary" : "border-border"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="truncate">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {sections.length > 0 && (
+            <>
+              <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Seções
+              </p>
+              {sections.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setHighlight(s.title);
+                    setActiveSheet(s.page - 1);
+                    scrollToSheet(s.page - 1);
+                  }}
+                  className={`block w-full truncate rounded-md px-2 py-1 text-left text-sm hover:bg-muted ${
+                    s.level === 1 ? "font-semibold" : "pl-4"
+                  }`}
+                  title={s.title}
+                >
+                  {s.title}
+                </button>
+              ))}
+            </>
+          )}
+        </nav>
 
         <div ref={scroller} className="min-h-0 flex-1 overflow-auto p-4 md:p-8">
           <div
@@ -373,8 +464,9 @@ export function DocumentCanvas({
               >
                 <A4Sheet
                   pageNumber={i + 1}
-                  blocks={isPreliminary ? sheet : sheet}
+                  blocks={sheet}
                   editing={editing && !isPreliminary}
+                  live={liveWriting && i === sheets.length - 1}
                   sectionHighlight={highlight}
                   onChangeBlock={changeBlock}
                   onDeleteBlock={deleteBlock}

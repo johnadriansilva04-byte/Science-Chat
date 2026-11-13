@@ -199,6 +199,144 @@
     font-size: 0.7rem;
     color: var(--color-muted-foreground);
   }
+
+  /* Marca do assistente: selo circular com anel pulsante por estado. */
+  .pracinha-avatar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .pracinha-avatar__core {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 25%, oklch(0.62 0.16 35), var(--color-primary));
+    color: var(--color-primary-foreground);
+    font-family: var(--font-serif);
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: inset 0 1px 1px oklch(1 0 0 / 0.35);
+  }
+  .pracinha-avatar__ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    border: 2px solid color-mix(in oklab, var(--color-primary) 45%, transparent);
+  }
+  .pracinha-avatar--thinking .pracinha-avatar__ring {
+    border-color: transparent;
+    border-top-color: var(--color-primary);
+    animation: pracinha-spin 0.9s linear infinite;
+  }
+  .pracinha-avatar--writing .pracinha-avatar__ring {
+    border-color: color-mix(in oklab, var(--color-primary) 60%, transparent);
+    animation: pracinha-pulse 1.4s ease-in-out infinite;
+  }
+  .pracinha-avatar--done .pracinha-avatar__ring {
+    border-color: var(--color-success);
+  }
+}
+
+@keyframes pracinha-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pracinha-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.55;
+  }
+}
+
+/* Escrita ao vivo na folha: um cursor suave e um realce quando o bloco chega. */
+.a4-sheet--live .a4-block:last-child {
+  animation: block-appear 0.5s ease both;
+}
+.a4-live-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  animation: pracinha-pulse 1.2s ease-in-out infinite;
+}
+.a4-block--new {
+  animation: block-appear 0.5s ease both;
+}
+.a4-writing-caret::after {
+  content: "";
+  display: inline-block;
+  width: 0.5ch;
+  height: 1.05em;
+  margin-left: 0.1ch;
+  vertical-align: -0.15em;
+  background: var(--color-primary);
+  animation: caret-blink 1s step-end infinite;
+}
+@keyframes block-appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Dock do chat: entrada suave e barra de rolagem discreta. */
+.dock-enter {
+  animation: dock-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dock-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.dock-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent) transparent;
+}
+.dock-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.dock-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent);
+  border-radius: 9999px;
+}
+
+/* Fita de progresso da produção, no topo do documento. */
+.production-strip {
+  background-image: linear-gradient(
+    to right,
+    var(--color-primary) 0%,
+    var(--color-primary) var(--p, 0%),
+    color-mix(in oklab, var(--color-primary) 18%, transparent) var(--p, 0%),
+    color-mix(in oklab, var(--color-primary) 18%, transparent) 100%
+  );
 }
 
 /* Leitor tipo livro */
