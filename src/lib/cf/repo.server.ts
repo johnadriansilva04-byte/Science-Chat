@@ -537,3 +537,385 @@ export async function uniqueSlug(base: string): Promise<string> {
   }
   return `${base}-${Date.now()}`;
 }
+
+// --- Matriz de rastreabilidade ---------------------------------------------
+
+export type ClaimRow = {
+  id: string;
+  article_id: string;
+  user_id: string;
+  seq: number;
+  text: string;
+  category: string;
+  source_question: string | null;
+  source_answer: string | null;
+  state: string;
+  limitations: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EvidenceRow = {
+  id: string;
+  claim_id: string;
+  document_id: string | null;
+  location: string | null;
+  excerpt: string | null;
+  match_degree: string | null;
+  state: string;
+  note: string | null;
+  created_at: string;
+};
+
+const CLAIM_COLUMNS =
+  "id, article_id, user_id, seq, text, category, source_question, source_answer, state, limitations, created_at, updated_at";
+
+export async function listClaims(userId: string, articleId: string): Promise<ClaimRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${CLAIM_COLUMNS} from claims where article_id = ? and user_id = ? order by seq`,
+    )
+    .bind(articleId, userId)
+    .all<ClaimRow>();
+  return results;
+}
+
+export async function getClaim(
+  userId: string,
+  articleId: string,
+  id: string,
+): Promise<ClaimRow | null> {
+  return requireDb()
+    .prepare(`select ${CLAIM_COLUMNS} from claims where id = ? and article_id = ? and user_id = ?`)
+    .bind(id, articleId, userId)
+    .first<ClaimRow>();
+}
+
+/** Insere uma afirmação com o próximo número estável do artigo. */
+export async function addClaim(
+  userId: string,
+  articleId: string,
+  claim: {
+    text: string;
+    category: string;
+    sourceQuestion: string | null;
+    sourceAnswer: string | null;
+    state: string;
+  },
+): Promise<ClaimRow> {
+  const db = requireDb();
+  const next = await db
+    .prepare(
+      "select coalesce(max(seq), 0) + 1 as seq from claims where article_id = ? and user_id = ?",
+    )
+    .bind(articleId, userId)
+    .first<{ seq: number }>();
+  const seq = next?.seq ?? 1;
+  const id = newId();
+  const ts = nowIso();
+  await db
+    .prepare(
+      `insert into claims (id, article_id, user_id, seq, text, category, source_question, source_answer, state, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      id,
+      articleId,
+      userId,
+      seq,
+      claim.text,
+      claim.category,
+      claim.sourceQuestion,
+      claim.sourceAnswer,
+      claim.state,
+      ts,
+      ts,
+    )
+    .run();
+  return {
+    id,
+    article_id: articleId,
+    user_id: userId,
+    seq,
+    text: claim.text,
+    category: claim.category,
+    source_question: claim.sourceQuestion,
+    source_answer: claim.sourceAnswer,
+    state: claim.state,
+    limitations: null,
+    created_at: ts,
+    updated_at: ts,
+  };
+}
+
+export async function updateClaim(
+  userId: string,
+  articleId: string,
+  id: string,
+  patch: { text?: string; category?: string; state?: string; limitations?: string | null },
+): Promise<void> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  if (patch.text !== undefined) {
+    sets.push("text = ?");
+    values.push(patch.text);
+  }
+  if (patch.category !== undefined) {
+    sets.push("category = ?");
+    values.push(patch.category);
+  }
+  if (patch.state !== undefined) {
+    sets.push("state = ?");
+    values.push(patch.state);
+  }
+  if (patch.limitations !== undefined) {
+    sets.push("limitations = ?");
+    values.push(patch.limitations);
+  }
+  if (!sets.length) return;
+  sets.push("updated_at = ?");
+  values.push(nowIso());
+  values.push(id, articleId, userId);
+  await requireDb()
+    .prepare(`update claims set ${sets.join(", ")} where id = ? and article_id = ? and user_id = ?`)
+    .bind(...values)
+    .run();
+}
+
+export async function deleteClaim(userId: string, articleId: string, id: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from claims where id = ? and article_id = ? and user_id = ?")
+    .bind(id, articleId, userId)
+    .run();
+}
+
+export async function clearClaims(userId: string, articleId: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from claims where article_id = ? and user_id = ?")
+    .bind(articleId, userId)
+    .run();
+}
+
+export async function listEvidence(userId: string, articleId: string): Promise<EvidenceRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select e.id, e.claim_id, e.document_id, e.location, e.excerpt, e.match_degree, e.state, e.note, e.created_at
+       from claim_evidence e
+       join claims c on c.id = e.claim_id
+       where c.article_id = ? and c.user_id = ?
+       order by c.seq`,
+    )
+    .bind(articleId, userId)
+    .all<EvidenceRow>();
+  return results;
+}
+
+export async function addEvidence(
+  userId: string,
+  claimId: string,
+  evidence: {
+    documentId: string | null;
+    location: string | null;
+    excerpt: string | null;
+    matchDegree: string | null;
+    state: string;
+    note: string | null;
+  },
+): Promise<EvidenceRow> {
+  const db = requireDb();
+  const owned = await db
+    .prepare("select id from claims where id = ? and user_id = ?")
+    .bind(claimId, userId)
+    .first<{ id: string }>();
+  if (!owned) throw new Error("Afirmação não encontrada");
+  const id = newId();
+  const ts = nowIso();
+  await db
+    .prepare(
+      `insert into claim_evidence (id, claim_id, document_id, location, excerpt, match_degree, state, note, created_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      id,
+      claimId,
+      evidence.documentId,
+      evidence.location,
+      evidence.excerpt,
+      evidence.matchDegree,
+      evidence.state,
+      evidence.note,
+      ts,
+    )
+    .run();
+  return {
+    id,
+    claim_id: claimId,
+    document_id: evidence.documentId,
+    location: evidence.location,
+    excerpt: evidence.excerpt,
+    match_degree: evidence.matchDegree,
+    state: evidence.state,
+    note: evidence.note,
+    created_at: ts,
+  };
+}
+
+export async function deleteEvidence(userId: string, id: string): Promise<void> {
+  const db = requireDb();
+  const owned = await db
+    .prepare(
+      `select e.id from claim_evidence e join claims c on c.id = e.claim_id
+       where e.id = ? and c.user_id = ?`,
+    )
+    .bind(id, userId)
+    .first<{ id: string }>();
+  if (!owned) return;
+  await db.prepare("delete from claim_evidence where id = ?").bind(id).run();
+}
+
+// --- Auditorias -------------------------------------------------------------
+
+export type AuditRow = {
+  id: string;
+  article_id: string;
+  user_id: string;
+  scope: string;
+  scope_ref: string | null;
+  report: string;
+  summary: string | null;
+  created_at: string;
+};
+
+const AUDIT_COLUMNS = "id, article_id, user_id, scope, scope_ref, report, summary, created_at";
+
+export async function addAudit(
+  userId: string,
+  articleId: string,
+  audit: { scope: string; scopeRef: string | null; report: string; summary: string | null },
+): Promise<AuditRow> {
+  const id = newId();
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      `insert into audits (id, article_id, user_id, scope, scope_ref, report, summary, created_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(id, articleId, userId, audit.scope, audit.scopeRef, audit.report, audit.summary, ts)
+    .run();
+  return {
+    id,
+    article_id: articleId,
+    user_id: userId,
+    scope: audit.scope,
+    scope_ref: audit.scopeRef,
+    report: audit.report,
+    summary: audit.summary,
+    created_at: ts,
+  };
+}
+
+export async function listAudits(userId: string, articleId: string): Promise<AuditRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${AUDIT_COLUMNS} from audits where article_id = ? and user_id = ? order by created_at desc, rowid desc limit 30`,
+    )
+    .bind(articleId, userId)
+    .all<AuditRow>();
+  return results;
+}
+
+// --- Configuração editorial -------------------------------------------------
+
+export type EditorialRow = {
+  article_id: string;
+  user_id: string;
+  destination: string;
+  unit: string | null;
+  standard: string;
+  language: string;
+  guidelines: string | null;
+  notes: string | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getEditorialConfig(
+  userId: string,
+  articleId: string,
+): Promise<EditorialRow | null> {
+  return requireDb()
+    .prepare(
+      `select article_id, user_id, destination, unit, standard, language, guidelines, notes, verified_at, created_at, updated_at
+       from editorial_configs where article_id = ? and user_id = ?`,
+    )
+    .bind(articleId, userId)
+    .first<EditorialRow>();
+}
+
+export async function upsertEditorialConfig(
+  userId: string,
+  articleId: string,
+  fields: {
+    destination: string;
+    unit: string | null;
+    standard: string;
+    language: string;
+    guidelines: string | null;
+    notes: string | null;
+  },
+): Promise<EditorialRow> {
+  const db = requireDb();
+  const ts = nowIso();
+  const existing = await getEditorialConfig(userId, articleId);
+  // A data de verificação é marcada sempre que o pesquisador registra diretrizes.
+  const verifiedAt = fields.guidelines?.trim() ? ts : null;
+  if (existing) {
+    await db
+      .prepare(
+        `update editorial_configs set destination = ?, unit = ?, standard = ?, language = ?, guidelines = ?, notes = ?, verified_at = ?, updated_at = ?
+         where article_id = ? and user_id = ?`,
+      )
+      .bind(
+        fields.destination,
+        fields.unit,
+        fields.standard,
+        fields.language,
+        fields.guidelines,
+        fields.notes,
+        verifiedAt,
+        ts,
+        articleId,
+        userId,
+      )
+      .run();
+    return { ...existing, ...fields, verified_at: verifiedAt, updated_at: ts };
+  }
+  await db
+    .prepare(
+      `insert into editorial_configs (article_id, user_id, destination, unit, standard, language, guidelines, notes, verified_at, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      articleId,
+      userId,
+      fields.destination,
+      fields.unit,
+      fields.standard,
+      fields.language,
+      fields.guidelines,
+      fields.notes,
+      verifiedAt,
+      ts,
+      ts,
+    )
+    .run();
+  return {
+    article_id: articleId,
+    user_id: userId,
+    ...fields,
+    verified_at: verifiedAt,
+    created_at: ts,
+    updated_at: ts,
+  };
+}

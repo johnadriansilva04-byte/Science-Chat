@@ -40,6 +40,14 @@ Investigar (entrevista adaptativa) → documentar → auditar → plano aprovado
 - Dev: `npm run dev` (porta **3000**) emula bindings via wrangler; sem `CLOUDFLARE_API_TOKEN` cai no stub (IA/D1 não funcionam, SSR 200). `wrangler dev` serve `.output/` → rodar `npx vite build` antes. `wrangler deploy --dry-run` valida config sem token.
 - **Cota Workers AI:** 10.000 neurônios/dia; esgotar → erro `4006` + stream vazio. Reset à meia-noite UTC. UX: Pracinha "cansa" (`src/lib/ai/quota.ts` + `PracinhaRest.tsx`).
 
+## Rastreabilidade, auditoria, editorial e exportação (2026-11-11)
+Migration `0005_audit_traceability_editorial.sql`: tabelas `claims`, `claim_evidence`, `audits`, `editorial_configs`. Repo: `src/lib/cf/repo.server.ts` (seção nova: `listClaims/addClaim/updateClaim/clearClaims`, `listEvidence/addEvidence/deleteEvidence`, `addAudit/listAudits`, `getEditorialConfig/upsertEditorialConfig`).
+- **Módulos puros (testados):** `src/lib/traceability.ts` (extração de afirmações, `overlapRatio`/`bestExcerpt`/`matchDegree`, `claimStateFor` — ausência de doc NUNCA vira "falsa", vira `nao_localizada`/`nao_verificavel`), `src/lib/audit.ts` (integridade textual + coerência + documental, gera relatório MD), `src/lib/editorial.ts` (destino Udelar/outra/independente, normas, `formatReference`, `requirementsFor` com nível `verificar` — nunca inventa norma da Udelar), `src/lib/docx.ts` (ZIP/OOXML store sem deps: `crc32`, `zipStore`, `buildDocx`), `src/lib/export-formats.ts` (`markdownToLatex`, `markdownToHtml`).
+- **Server fns:** `traceability.functions.ts`, `audit.functions.ts`, `editorial.functions.ts`, `export.functions.ts` (`buildExport` → docx/latex/html/md/txt; `buildDossier` → dossiê+matriz como produto separado).
+- **UI:** `TraceabilityPanel`, `AuditPanel`, `EditorialPanel`, `ExportDialog`; painel lateral do `DocumentCanvas` agora tem 6 abas (Plano/Produção/Anexos/Rastreabilidade/Auditoria/Editorial); botão **Exportar** substitui os antigos .md/.txt.
+- **Migração com ledger:** `scripts/db-migrate.mjs` (`npm run db:migrate:local|remote`) registra em `schema_migrations`; evita reexecutar as destrutivas.
+- **Landing redesenhada:** `src/routes/index.tsx` — tela única `h-screen overflow-hidden`, 2 colunas (promessa+CTA | 4 mecanismos+estante), brilho que segue o ponteiro, shimmer, cards animados. CSS em `styles.css` (`.landing-*`).
+
 ## Publicações públicas (`/publicacoes`)
 Autor só aparece após revisão por pares favorável: `draft → submitted → in_review → accepted → published` (ou `rejected`). Só `published` é público.
 - `publications` (migration `0003`): slug único, título, resumo, palavras-chave, autor, vínculo, ORCID, `content`, parecer, datas.
@@ -48,8 +56,9 @@ Autor só aparece após revisão por pares favorável: `draft → submitted → 
 - Rotas client-rendered (verificar no browser). Gestão: `PublishDialog.tsx`.
 
 ## Estado (2026-11-11)
-Prod: **https://sciencechat.sciencechat.workers.dev**. **126 testes** (20 arquivos) verdes. tsc limpo (fora os 4 pré-existentes), build nitro OK.
+Prod: **https://sciencechat.sciencechat.workers.dev**. **168 testes** (25 arquivos) verdes. tsc limpo (fora os 4 pré-existentes), build nitro OK. Deploy feito.
 - UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora com advogado do diabo fundamentado, mural de publicações (`PublishedShelf.tsx`), museu curado (`museum.ts` + `/museu`).
 - Chat: voz fluida (`useVoice` + `src/lib/speech.ts`), gaveta de anexos (`ChatAttachments.tsx`), roteamento de anexo pela IA.
 - **R2 do dossiê:** feito e validado em produção (upload→R2, download, delete). Ver log `2026-11-11.md`.
-- Pendências: matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
+- **Matriz de rastreabilidade, auditoria científica, config editorial Udelar e exportação DOCX/LaTeX/HTML:** feitos e validados em produção (seção acima). As 4 pendências anteriores estão concluídas.
+- Migration `0005` aplicada no D1 remoto (ledger `schema_migrations` com 5 entradas); 7 artigos preservados.

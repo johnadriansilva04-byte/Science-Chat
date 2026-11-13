@@ -4,7 +4,9 @@ import {
   Check,
   Download,
   FileDown,
+  Landmark,
   ListChecks,
+  Link2,
   Minus,
   PanelRight,
   Paperclip,
@@ -12,6 +14,7 @@ import {
   Plus,
   Printer,
   Save,
+  ScanSearch,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,17 +24,14 @@ import { BookReader } from "@/components/app/BookReader";
 import { DocumentsPanel } from "@/components/app/DocumentsPanel";
 import { PagePanel } from "@/components/app/PagePanel";
 import { PlanPanel } from "@/components/app/PlanPanel";
+import { TraceabilityPanel } from "@/components/app/TraceabilityPanel";
+import { AuditPanel } from "@/components/app/AuditPanel";
+import { EditorialPanel } from "@/components/app/EditorialPanel";
+import { ExportDialog } from "@/components/app/ExportDialog";
 import { documentSections, parseBlocks, serializeBlocks, type Block } from "@/lib/article-blocks";
 import { useA4Pagination } from "@/lib/a4";
 import { stripMarkers } from "@/lib/article-marker";
-import {
-  ARTICLE_SIGNATURE,
-  assembleMarkdown,
-  downloadFile,
-  markdownToPlainText,
-  slugify,
-  startsWithTitleHeading,
-} from "@/lib/article-export";
+import { ARTICLE_SIGNATURE, startsWithTitleHeading } from "@/lib/article-export";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
 import { groupNotesBySection, interviewNotes, type InterviewNote } from "@/lib/interview-notes";
 import {
@@ -151,10 +151,11 @@ export function DocumentCanvas({
   const [zoom, setZoom] = useState(1);
   const [editing, setEditing] = useState(false);
   const [reading, setReading] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [celebrateFirst, setCelebrateFirst] = useState(false);
-  const [panelTab, setPanelTab] = useState<"plan" | "pages" | "docs">(
-    phase === "interview" ? "plan" : "pages",
-  );
+  const [panelTab, setPanelTab] = useState<
+    "plan" | "pages" | "docs" | "trace" | "audit" | "editorial"
+  >(phase === "interview" ? "plan" : "pages");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [highlight, setHighlight] = useState<string | null>(null);
   const [activeSheet, setActiveSheet] = useState(0);
@@ -335,12 +336,6 @@ export function DocumentCanvas({
     return () => root.removeEventListener("scroll", onScroll);
   }, []);
 
-  const masterMarkdown = useMemo(
-    () => assembleMarkdown(title, approvedPages),
-    [title, approvedPages],
-  );
-  const filename = slugify(title);
-
   const saveLabel: Record<SaveState, string> = {
     idle: "",
     saving: "Salvando...",
@@ -409,22 +404,10 @@ export function DocumentCanvas({
             variant="outline"
             className="h-7 gap-1 text-xs"
             disabled={approvedPages.length === 0}
-            onClick={() =>
-              downloadFile(`${filename}.md`, masterMarkdown, "text/markdown;charset=utf-8")
-            }
+            onClick={() => setExportOpen(true)}
           >
             <Download className="size-3.5" />
-            .md
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 gap-1 text-xs"
-            disabled={approvedPages.length === 0}
-            onClick={() => downloadFile(`${filename}.txt`, markdownToPlainText(masterMarkdown))}
-          >
-            <FileDown className="size-3.5" />
-            .txt
+            Exportar
           </Button>
           <Button
             size="sm"
@@ -579,53 +562,41 @@ export function DocumentCanvas({
         </div>
 
         {panelOpen && (
-          <aside className="dock-enter flex w-[min(92vw,420px)] shrink-0 flex-col border-l bg-card">
-            <div className="flex items-center gap-1 border-b px-2 py-1.5">
-              <button
-                type="button"
-                onClick={() => setPanelTab("plan")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                  panelTab === "plan"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                <ListChecks className="size-3.5" />
-                Plano
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanelTab("pages")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                  panelTab === "pages"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                <FileDown className="size-3.5" />
-                Produção
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanelTab("docs")}
-                className={`relative flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                  panelTab === "docs"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                <Paperclip className="size-3.5" />
-                Anexos
-                {documents.length > 0 && (
-                  <span className="ml-0.5 rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
-                    {documents.length}
-                  </span>
-                )}
-              </button>
+          <aside className="dock-enter flex w-[min(92vw,440px)] shrink-0 flex-col border-l bg-card">
+            <div className="dock-scroll flex items-center gap-1 overflow-x-auto border-b px-2 py-1.5">
+              {(
+                [
+                  { id: "plan", icon: ListChecks, label: "Plano" },
+                  { id: "pages", icon: FileDown, label: "Produção" },
+                  { id: "docs", icon: Paperclip, label: "Anexos", badge: documents.length },
+                  { id: "trace", icon: Link2, label: "Rastreabilidade" },
+                  { id: "audit", icon: ScanSearch, label: "Auditoria" },
+                  { id: "editorial", icon: Landmark, label: "Editorial" },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setPanelTab(tab.id)}
+                  className={`flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    panelTab === tab.id
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <tab.icon className="size-3.5" />
+                  {tab.label}
+                  {"badge" in tab && tab.badge ? (
+                    <span className="ml-0.5 rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+                      {tab.badge}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-7"
+                className="ml-auto size-7 shrink-0"
                 onClick={() => onPanelOpenChange(false)}
                 aria-label="Fechar painel"
               >
@@ -651,12 +622,24 @@ export function DocumentCanvas({
                   onChanged={onPagesChanged}
                   onApproved={handlePageApproved}
                 />
-              ) : (
+              ) : panelTab === "docs" ? (
                 <DocumentsPanel
                   articleId={articleId}
                   documents={documents}
                   onChanged={onPagesChanged}
                 />
+              ) : panelTab === "trace" ? (
+                <div className="p-3">
+                  <TraceabilityPanel articleId={articleId} documents={documents} />
+                </div>
+              ) : panelTab === "audit" ? (
+                <div className="p-3">
+                  <AuditPanel articleId={articleId} />
+                </div>
+              ) : (
+                <div className="p-3">
+                  <EditorialPanel articleId={articleId} />
+                </div>
               )}
             </div>
           </aside>
@@ -674,6 +657,8 @@ export function DocumentCanvas({
       {reading && (
         <BookReader title={title} pages={approvedPages} onClose={() => setReading(false)} />
       )}
+
+      <ExportDialog articleId={articleId} open={exportOpen} onOpenChange={setExportOpen} />
 
       {celebrateFirst && (
         <div className="first-page-reveal" role="status" aria-live="polite">

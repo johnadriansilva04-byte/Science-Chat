@@ -21,7 +21,14 @@ export function formatSize(bytes: number) {
 /** Abre o arquivo original numa nova aba (PDF/imagem) ou baixa (demais tipos). */
 export function openBase64File(base64: string, filename: string, mime: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  const blob = new Blob([bytes], { type: mime || "application/octet-stream" });
+  downloadBytes(bytes, filename, mime);
+}
+
+/** Baixa bytes como arquivo (blob). Usado para DOCX e demais exportações. */
+export function downloadBytes(bytes: Uint8Array, filename: string, mime: string) {
+  const blob = new Blob([bytes as unknown as BlobPart], {
+    type: mime || "application/octet-stream",
+  });
   const url = URL.createObjectURL(blob);
   const viewable = mime === "application/pdf" || mime.startsWith("image/");
   if (viewable) {
@@ -34,4 +41,13 @@ export function openBase64File(base64: string, filename: string, mime: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/** Baixa bytes em base64 (DOCX vindo do servidor). */
+export function downloadBase64File(base64: string, filename: string, mime: string) {
+  downloadBytes(
+    Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)),
+    filename,
+    mime,
+  );
 }
