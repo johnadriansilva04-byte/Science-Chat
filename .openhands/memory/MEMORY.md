@@ -42,6 +42,8 @@ Primeiro investigar (entrevista adaptativa) → depois documentar → depois aud
 - `tsconfig`: `noImplicitReturns`, `exactOptionalPropertyTypes`, `noPropertyAccessFromIndexSignature`. Não usar `return toast.error(...)`; acessar index signatures com `env["X"]`; não passar `undefined` explícito em props opcionais (spread condicional).
 - **Truncagem de texto (Workers AI):** o `workers-ai-provider` só envia `max_tokens` quando `maxOutputTokens` é passado ao `streamText`; sem ele a IA usa um padrão baixo e corta a saída no meio da frase (~1000 chars). Sempre passar `maxOutputTokens` (hoje `DEFAULT_MAX_OUTPUT_TOKENS = 2048` em `src/lib/ai/gateway.server.ts`).
 - 4 erros de tsc PRÉ-EXISTENTES (não nossos) em `src/components/ai-elements/{message,shimmer}.tsx`. `npm run build` passa mesmo assim.
+- **Tool calling (AI SDK v7 + Workers AI)**: `tool()` usa `inputSchema` (não `parameters`); loops multi-step com `stopWhen: stepCountIs(n)`. As tools do Pracinha (`src/lib/ai/tools.server.ts`) têm poder real sobre a folha (título, páginas) e pesquisam bases públicas (OpenAlex→Crossref, `research.server.ts`).
+- **Documentos primários** ficam em base64 no D1 (tabela `documents`, migration `0002`), com numeração estável "Anexo N". R2 ainda não habilitado — não usar R2 sem antes habilitar no painel.
 - Dev server (`npm run dev`, porta **3000**) tenta emular bindings via wrangler. Sem `CLOUDFLARE_API_TOKEN` no ambiente ele cai no stub e a IA/D1 não funcionam; o SSR das páginas continua 200. Para bindings reais em dev: exportar `CLOUDFLARE_API_TOKEN` + `npm run preview:cf`.
 - `wrangler deploy --dry-run` valida a config sem token.
 
