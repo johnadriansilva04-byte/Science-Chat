@@ -63,7 +63,7 @@ Publicado na Cloudflare: **https://sciencechat.sciencechat.workers.dev** (D1 + W
 
 ### Fix do tool calling (narração em vez de execução)
 O `workers-ai-provider@4` só RECUPERA chamadas "vazadas como texto" quando `toolChoice` é FORÇADO. Com histórico longo o llama-3.3 narra a chamada e a ferramenta nunca executa. Fix: forçar a ferramenta **só no passo 0** via `prepareStep` (`{toolChoice:{type:"tool",toolName}}`), voltando a `auto` depois (forçar em todos os passos causa loop de 5). Quem escolhe a ferramenta: `src/lib/ai/tool-intent.ts` (`pickForcedTool`). Sanitização do histórico: `src/lib/ai/leaked-tool-call.ts`.
-**Cota Workers AI:** conta free = 10.000 neurônios/dia; ao esgotar retorna erro `4006` e stream vazio ("No output generated"). Reset diário — não confundir com bug.
+**Cota Workers AI:** conta free = 10.000 neurônios/dia; ao esgotar retorna erro `4006` e stream vazio ("No output generated"). Reset diário à meia-noite UTC — não confundir com bug. UX: o Pracinha "cansa" (`src/lib/ai/quota.ts` + `PracinhaRest.tsx`), mostra relógio com a hora de volta e trava o chat até renovar.
 
 ### UX mobile
 `src/routes/a/$articleId.tsx` usa `useIsMobile()` + abas fixas no rodapé (Chat/Documento); `ChatDock` ganha `isMobile`/`mobileVisible`/`onMobileClose` e vira tela cheia (`fixed inset-0`) no celular. Ambos permanecem montados (não perde estado).
