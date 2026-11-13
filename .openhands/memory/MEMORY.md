@@ -59,5 +59,16 @@ Regra do produto: **o autor só aparece na área pública depois de submeter à 
 - Rotas são client-rendered (`useEffect` + server fn), então `curl` não mostra o conteúdo; verificar no browser.
 
 ## Estado (2026-11-11, fim do dia)
-Publicado na Cloudflare: **https://sciencechat.sciencechat.workers.dev** (D1 + Workers AI por binding). 72 testes passando. Feito hoje: fix do tool calling (dedup de `tool_calls` no SSE), área pública de publicações (`/publicacoes`) com revisão por pares e portão de publicação, e o 1º artigo publicado sobre o próprio ScienceChat. Commit `15f4a0b` (HEAD), anterior `accb4ce`.
+Publicado na Cloudflare: **https://sciencechat.sciencechat.workers.dev** (D1 + Workers AI por binding). 91 testes passando. Feito hoje: fix do tool calling (dedup de `tool_calls` no SSE), área pública de publicações (`/publicacoes`) com revisão por pares e portão de publicação, o 1º artigo publicado sobre o próprio ScienceChat, **UX mobile (abas Chat/Documento)**, **entrevista interrogadora** (prompts) e **documento ao vivo organizado por seção**. Commits `15f4a0b` → `7d391a8` (HEAD). Deploy prod: versão `f816501b`.
+
+### Fix do tool calling (narração em vez de execução)
+O `workers-ai-provider@4` só RECUPERA chamadas "vazadas como texto" quando `toolChoice` é FORÇADO. Com histórico longo o llama-3.3 narra a chamada e a ferramenta nunca executa. Fix: forçar a ferramenta **só no passo 0** via `prepareStep` (`{toolChoice:{type:"tool",toolName}}`), voltando a `auto` depois (forçar em todos os passos causa loop de 5). Quem escolhe a ferramenta: `src/lib/ai/tool-intent.ts` (`pickForcedTool`). Sanitização do histórico: `src/lib/ai/leaked-tool-call.ts`.
+**Cota Workers AI:** conta free = 10.000 neurônios/dia; ao esgotar retorna erro `4006` e stream vazio ("No output generated"). Reset diário — não confundir com bug.
+
+### UX mobile
+`src/routes/a/$articleId.tsx` usa `useIsMobile()` + abas fixas no rodapé (Chat/Documento); `ChatDock` ganha `isMobile`/`mobileVisible`/`onMobileClose` e vira tela cheia (`fixed inset-0`) no celular. Ambos permanecem montados (não perde estado).
+
+### Entrevista interrogadora e documento vivo
+`INTERVIEW_INSTRUCTIONS` faz a IA interrogar (teoria/problema → testa a tese → descobre teórica vs empírica → fecha lacunas) e usar `pesquisar_bases` para comprovar. `interview-notes.ts` (`sectionForQuestion`/`groupNotesBySection`) classifica pergunta→seção; `DocumentCanvas.preliminaryDocument` monta o A4 por seção durante a entrevista.
+
 Pendências de produto: dossiê documental (precisa habilitar R2 no painel Cloudflare), matriz de rastreabilidade, auditoria científica, config editorial Udelar, exportação DOCX/LaTeX.
