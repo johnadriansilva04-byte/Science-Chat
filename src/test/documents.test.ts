@@ -5,6 +5,7 @@ import {
   extractText,
   extractPdfImages,
   joinImageDescriptions,
+  ascii85Decode,
   isImage,
   isPdf,
   mimeFromFilename,
@@ -245,6 +246,53 @@ function fakePng(size = 6000): Uint8Array {
   b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
   return b;
 }
+
+/** Codifica em ASCII85 (para montar PDFs de teste como o ReportLab faz). */
+function ascii85Encode(bytes: Uint8Array): string {
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 4) {
+    const chunk = bytes.subarray(i, i + 4);
+    let value = 0;
+    for (let j = 0; j < 4; j += 1) value = value * 256 + (chunk[j] ?? 0);
+    const n = chunk.length;
+    const digits: number[] = [];
+    for (let j = 0; j < 5; j += 1) {
+      digits.unshift(value % 85);
+      value = Math.floor(value / 85);
+    }
+    out += String.fromCharCode(...digits.map((d) => d + 33).slice(0, n + 1));
+  }
+  return `${out}~>`;
+}
+
+/** PDF com imagem JPEG codificada em ASCII85 (padrão do ReportLab). */
+function pdfWithAscii85Jpeg(image: Uint8Array): Uint8Array {
+  const dict = `<< /Type /XObject /Subtype /Image /Width 100 /Height 100 /Filter [ /ASCII85Decode /DCTDecode ] >>`;
+  const head = new TextEncoder().encode(`%PDF-1.4\n1 0 obj\n${dict}\nstream\n`);
+  const body = new TextEncoder().encode(ascii85Encode(image));
+  const tail = new TextEncoder().encode(`\nendstream\nendobj\n%%EOF`);
+  const out = new Uint8Array(head.length + body.length + tail.length);
+  out.set(head, 0);
+  out.set(body, head.length);
+  out.set(tail, head.length + body.length);
+  return out;
+}
+
+describe("ASCII85 (PDFs do ReportLab/scanners)", () => {
+  it("decodifica um vetor conhecido", () => {
+    const original = new TextEncoder().encode("Man is distinguished");
+    const decoded = ascii85Decode(new TextEncoder().encode(ascii85Encode(original)));
+    expect(new TextDecoder().decode(decoded)).toBe("Man is distinguished");
+  });
+
+  it("extrai JPEG embutido com /ASCII85Decode + /DCTDecode", async () => {
+    const jpeg = fakeJpeg(7000);
+    const imgs = await extractPdfImages(pdfWithAscii85Jpeg(jpeg));
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]!.mime).toBe("image/jpeg");
+    expect(imgs[0]!.bytes.length).toBe(jpeg.length);
+  });
+});
 
 describe("OCR de PDF digitalizado (extração de imagens)", () => {
   it("extrai imagem JPEG embutida com /DCTDecode", async () => {

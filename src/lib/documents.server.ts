@@ -90,6 +90,43 @@ function sniffImageMime(bytes: Uint8Array): string | null {
 export type PdfImage = { mime: string; bytes: Uint8Array };
 
 /**
+ * Decodifica ASCII85 (`/ASCII85Decode`), usado por muitos geradores de PDF
+ * (ex.: ReportLab) ANTES de um filtro de imagem como `/DCTDecode`. Aceita o
+ * terminador `~>` e ignora espaços em branco.
+ */
+export function ascii85Decode(input: Uint8Array): Uint8Array {
+  const out: number[] = [];
+  let tuple = 0;
+  let count = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    const c = input[i]!;
+    if (c === 0x7e /* ~ */) break;
+    if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0x0c || c === 0x00) continue;
+    if (c === 0x7a /* z */) {
+      if (count === 0) {
+        out.push(0, 0, 0, 0);
+        continue;
+      }
+    }
+    if (c < 0x21 || c > 0x75) continue;
+    tuple = tuple * 85 + (c - 33);
+    count += 1;
+    if (count === 5) {
+      out.push((tuple >>> 24) & 0xff, (tuple >>> 16) & 0xff, (tuple >>> 8) & 0xff, tuple & 0xff);
+      tuple = 0;
+      count = 0;
+    }
+  }
+  if (count > 0) {
+    for (let i = count; i < 5; i += 1) tuple = tuple * 85 + 84;
+    out.push((tuple >>> 24) & 0xff, (tuple >>> 16) & 0xff, (tuple >>> 8) & 0xff, tuple & 0xff);
+    // Remove os bytes de preenchimento: uma tupla parcial gera count-1 bytes.
+    out.length -= 5 - count;
+  }
+  return new Uint8Array(out);
+}
+
+/**
  * Extrai as imagens embutidas num PDF (fotos, digitalizações). Cobre os dois
  * casos comuns em PDFs escaneados:
  *  - imagens com filtro `/DCTDecode` (JPEG) — o stream JÁ é um JPEG;
@@ -104,28 +141,55 @@ export async function extractPdfImages(
 ): Promise<PdfImage[]> {
   const raw = latin1(bytes);
   const out: PdfImage[] = [];
-  const re = /stream\r?\n?([\s\S]*?)\r?\n?endstream/g;
+  const re = /stream\r?\n/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(raw)) !== null) {
+    const bodyStart = m.index + m[0].length;
     const dictStart = raw.lastIndexOf("<<", m.index);
     const dict = dictStart >= 0 ? raw.slice(dictStart, m.index) : "";
     if (!/\/Subtype\s*\/Image/.test(dict)) continue;
-    const body = latin1ToBytes(m[1] ?? "");
-    let img: PdfImage | null = null;
-    if (/\/DCTDecode/.test(dict)) {
-      const mime = sniffImageMime(body);
-      if (mime) img = { mime, bytes: body };
-    } else if (/\/FlateDecode/.test(dict)) {
-      const data = await inflate(body, "deflate");
-      if (data) {
-        const mime = sniffImageMime(data);
-        if (mime) img = { mime, bytes: data };
-      }
+    // Usa /Length (o stream pode conter bytes binários que imitam "endstream").
+    const lenMatch = dict.match(/\/Length\s+(\d+)/);
+    const length = lenMatch ? parseInt(lenMatch[1]!, 10) : 0;
+    let end: number;
+    if (length > 0 && bodyStart + length <= raw.length) {
+      end = bodyStart + length;
+    } else {
+      end = raw.indexOf("endstream", bodyStart);
+      // O EOL antes de "endstream" não faz parte do stream; removê-lo evita
+      // corromper o descompactador (um byte extra quebra o inflate do zlib).
+      if (end > bodyStart && raw[end - 1] === "\n") end -= 1;
+      if (end > bodyStart && raw[end - 1] === "\r") end -= 1;
     }
-    if (img && img.bytes.length >= minBytes) out.push(img);
+    if (end < 0) continue;
+    const body = latin1ToBytes(raw.slice(bodyStart, end));
+    const data = await decodeImageStream(body, dict);
+    if (!data) continue;
+    const mime = sniffImageMime(data);
+    if (mime && data.length >= minBytes) out.push({ mime, bytes: data });
   }
   out.sort((a, b) => b.bytes.length - a.bytes.length);
   return out.slice(0, max);
+}
+
+/**
+ * Aplica a cadeia de filtros de um stream de imagem: `/ASCII85Decode` (comum em
+ * scanners e no ReportLab) e `/FlateDecode` (PNG/zlib) são desfeitos; `/DCTDecode`
+ * (JPEG) já entrega os bytes finais. Devolve null quando não é uma imagem legível.
+ */
+async function decodeImageStream(body: Uint8Array, dict: string): Promise<Uint8Array | null> {
+  const filterMatch = dict.match(/\/Filter\s*(\[[^\]]*\]|\/\w+)/);
+  const filters = filterMatch?.[1] ?? "";
+  let data = body;
+  if (/\/ASCII85Decode/.test(filters)) {
+    const decoded = ascii85Decode(data);
+    if (decoded.length) data = decoded;
+  }
+  if (/\/DCTDecode/.test(filters)) return data; // JPEG pronto
+  if (/\/FlateDecode/.test(filters)) {
+    return (await inflate(data, "deflate")) ?? null;
+  }
+  return data;
 }
 
 /**
