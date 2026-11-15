@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { stripMarkers } from "@/lib/article-marker";
+import { MIN_PAGE_WORDS } from "@/lib/article-page";
 import type { WorkspacePage } from "@/lib/article.functions";
 import {
   approvePage,
@@ -140,7 +141,14 @@ export function PagePanel({
         )}
 
         {page && (
-          <p className="text-xs text-muted-foreground">{wordCount(page.content)} palavras</p>
+          <p className="text-xs text-muted-foreground">
+            {wordCount(page.content)} palavras
+            {!isApproved && wordCount(page.content) < MIN_PAGE_WORDS && (
+              <span className="ml-2 text-amber-600">
+                página curta — peça para refazer com mais desenvolvimento
+              </span>
+            )}
+          </p>
         )}
 
         {page && !isApproved && (
