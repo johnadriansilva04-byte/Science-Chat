@@ -9,6 +9,7 @@ export const TOOL_LABELS: Record<string, string> = {
   pesquisar_bases: "pesquisando bases científicas",
   listar_anexos: "lendo os anexos",
   ler_anexo: "lendo o anexo",
+  ler_todos_anexos: "lendo todos os anexos",
   atualizar_titulo: "alterando o título",
   editar_pagina: "reescrevendo uma página",
   acrescentar_na_pagina: "acrescentando ao documento",

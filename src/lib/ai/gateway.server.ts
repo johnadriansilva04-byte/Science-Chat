@@ -1,6 +1,13 @@
 import { createWorkersAI } from "workers-ai-provider";
-import { streamText, stepCountIs, type ModelMessage, type ToolSet } from "ai";
+import {
+  streamText,
+  stepCountIs,
+  type ModelMessage,
+  type TextStreamPart,
+  type ToolSet,
+} from "ai";
 import { getEnv, requireAi, type AiBinding } from "@/lib/cf/bindings.server";
+import { drainLeakedCalls } from "@/lib/ai/leak-filter";
 
 /**
  * Inferência via Cloudflare Workers AI (binding `AI`), no lugar de um gateway externo.
@@ -122,6 +129,35 @@ function model() {
 export const DEFAULT_MAX_OUTPUT_TOKENS = 2048;
 
 /**
+ * Transform de stream que remove chamadas de ferramenta vazadas como texto,
+ * acumulando deltas por id de texto (o texto pode chegar em vários pedaços) e
+ * emitindo só o que é seguro. Chamadas confirmadas são descartadas em silêncio.
+ */
+function stripLeakedCallsTransform() {
+  const buffers = new Map<string, string>();
+  return new TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>>({
+    transform(part, controller) {
+      if (part.type !== "text-delta") {
+        controller.enqueue(part);
+        return;
+      }
+      const buffered = (buffers.get(part.id) ?? "") + part.text;
+      const { safe, rest } = drainLeakedCalls(buffered);
+      buffers.set(part.id, rest);
+      if (safe) controller.enqueue({ ...part, text: safe });
+    },
+    flush(controller) {
+      // Fim do stream: solta o que ficou retido (nunca engole texto legítimo).
+      for (const [id, rest] of buffers) {
+        const leftover = rest.trim();
+        if (leftover) controller.enqueue({ type: "text-delta", id, text: rest });
+      }
+      buffers.clear();
+    },
+  });
+}
+
+/**
  * Modelo de visão (multimodal) da Workers AI: lê imagens (fotos, gráficos,
  * digitalizações) e devolve descrição + texto transcrito. Configurável por env.
  */
@@ -190,6 +226,9 @@ export function startResponses(
     system: instructions,
     messages,
     maxOutputTokens,
+    // Segura/deduz o JSON de chamadas de ferramenta que o modelo vaza como texto,
+    // para ele nunca aparecer cru no chat (ver `leak-filter.ts`).
+    experimental_transform: stripLeakedCallsTransform,
     ...(tools
       ? {
           tools,

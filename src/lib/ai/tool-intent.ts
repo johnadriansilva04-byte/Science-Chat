@@ -61,6 +61,23 @@ const ATTACH_VERBS = [
   "use o anexo",
   "usar o anexo",
 ];
+/** Verbos de LEITURA de anexos ("olhe os documentos", "leia tudo"). */
+const READ_VERBS = [
+  "leia",
+  "ler ",
+  "leu",
+  "lido",
+  "olhe",
+  "olha",
+  "veja",
+  "analis",
+  "examine",
+  "examin",
+  "consulte",
+  "confira",
+  "acesse",
+  "leitura",
+];
 /** Pedidos de provocação/advogado do diabo: exigem busca de evidência contrária. */
 const CHALLENGE_HINTS = [
   "advogado do diabo",
@@ -76,6 +93,8 @@ const CHALLENGE_HINTS = [
   "explicacao alternativa",
   "provocar minha tese",
 ];
+/** Pedidos de ler TUDO de uma vez (sem citar um anexo específico). */
+const READ_ALL_HINTS = ["tudo", "todos", "todas", "os documentos", "os anexos", "os arquivos"];
 
 const TITLE_OBJECTS = ["título", "titulo"];
 const PAGE_OBJECTS = [
@@ -108,6 +127,7 @@ export function pickForcedTool(text: string): string | null {
   const wantsEdit = has(t, EDIT_VERBS);
   const wantsResearch = has(t, RESEARCH_VERBS);
   const wantsAttach = has(t, ATTACH_VERBS);
+  const wantsRead = has(t, READ_VERBS);
 
   // Provocação/advogado do diabo: precisa buscar evidência real na base.
   if (has(t, CHALLENGE_HINTS)) return "pesquisar_bases";
@@ -115,14 +135,32 @@ export function pickForcedTool(text: string): string | null {
   // Título: só quando há verbo de edição/renomeação.
   if (wantsEdit && has(t, TITLE_OBJECTS)) return "atualizar_titulo";
 
-  // Anexos.
-  if ((wantsAttach || wantsAppend) && has(t, ATTACH_OBJECTS)) {
-    // "use o Anexo 3 no artigo" → primeiro LER o anexo; a posição vem depois, com
-    // autonomia da IA. Pedidos diretos de inserção ("anexe na página 2") inserem já.
-    const onlyUse = !has(t, ["anexe", "anexar", "referencie", "cite o anexo"]);
-    if (onlyUse && /anexo\s*\d/.test(t)) return "ler_anexo";
+  // Anexos: LEITURA vem primeiro. O pesquisador pede para ler/olhar/analisar os
+  // documentos ("olhe os anexos", "leia tudo", "e o Anexo 3?"). Sem isso, o
+  // modelo narra a leitura como texto e o JSON vaza no chat sem a ferramenta rodar.
+  if (wantsRead && has(t, READ_ALL_HINTS)) return "ler_todos_anexos";
+  if ((wantsRead || wantsAttach || wantsAppend) && has(t, ATTACH_OBJECTS)) {
+    if (has(t, READ_ALL_HINTS) || !/anexo\s*\d/.test(t)) {
+      const onlyUse = !has(t, ["anexe", "anexar", "referencie", "cite o anexo"]);
+      if (onlyUse || wantsRead) return "ler_todos_anexos";
+    }
+    if (/anexo\s*\d/.test(t)) return "ler_anexo";
     return "anexar_documento_em_pagina";
   }
+  // Pedidos curtos de leitura sem objeto explícito ("leu?", "olhe aí") — só quando
+  // a mensagem é curtíssima, para não capturar frases normais ("veja se faz sentido").
+  if (
+    wantsRead &&
+    t.trim().length <= 12 &&
+    !has(t, PAGE_OBJECTS) &&
+    !has(t, TITLE_OBJECTS) &&
+    !has(t, RESEARCH_OBJECTS)
+  ) {
+    return "ler_todos_anexos";
+  }
+  // "use o Anexo 3 no artigo" → primeiro LER o anexo; a posição vem depois, com
+  // autonomia da IA. Pedidos diretos de inserção ("anexe na página 2") inserem já.
+  if (wantsAttach && /anexo\s*\d/.test(t)) return "ler_anexo";
 
   // Pesquisa de literatura.
   if (wantsResearch && (has(t, RESEARCH_OBJECTS) || t.includes("sobre"))) return "pesquisar_bases";

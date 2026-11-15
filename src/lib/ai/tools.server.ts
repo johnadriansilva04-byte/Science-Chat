@@ -11,11 +11,67 @@ export const TOOL_NAMES = [
   "pesquisar_bases",
   "listar_anexos",
   "ler_anexo",
+  "ler_todos_anexos",
   "atualizar_titulo",
   "editar_pagina",
   "acrescentar_na_pagina",
   "anexar_documento_em_pagina",
 ] as const;
+
+/** Lê o texto de um anexo: usa o texto salvo ou tenta OCR/visão sob demanda. */
+async function readAnexoText(
+  ctx: ToolContext,
+  doc: {
+    id: string;
+    seq: number;
+    filename: string;
+    mime: string;
+    text_content?: string | null;
+  },
+  limit = 6000,
+): Promise<string> {
+  if (doc.text_content) {
+    return `Anexo ${doc.seq} — ${doc.filename}:\n${doc.text_content.slice(0, limit)}`;
+  }
+  const {
+    isImage,
+    isPdf,
+    IMAGE_DESCRIPTION_PROMPT,
+    PDF_OCR_PROMPT,
+    cleanImageDescription,
+    mimeFromFilename,
+  } = await import("@/lib/documents.server");
+  if (isImage(doc.mime, doc.filename) || isPdf(doc.mime, doc.filename)) {
+    try {
+      const full = await repo.getDocument(ctx.userId, ctx.articleId, doc.id);
+      const { readDocumentBytes, toBase64 } = await import("@/lib/cf/storage.server");
+      const bytes = await readDocumentBytes(full?.storage_key ?? null, full?.content ?? null);
+      if (bytes) {
+        if (isPdf(doc.mime, doc.filename)) {
+          const { describePdfImages } = await import("@/lib/documents.server");
+          const text = await describePdfImages(bytes, PDF_OCR_PROMPT);
+          if (text)
+            return `Anexo ${doc.seq} — ${doc.filename} (PDF digitalizado, transcrito):\n${text.slice(0, limit)}`;
+        } else {
+          const { describeImage } = await import("@/lib/ai/gateway.server");
+          const visionMime = doc.mime.startsWith("image/")
+            ? doc.mime
+            : (mimeFromFilename(doc.filename) ?? doc.mime);
+          const described = await describeImage(
+            toBase64(bytes),
+            visionMime,
+            IMAGE_DESCRIPTION_PROMPT,
+          );
+          const text = cleanImageDescription(described);
+          if (text) return `Anexo ${doc.seq} — ${doc.filename} (imagem):\n${text.slice(0, limit)}`;
+        }
+      }
+    } catch {
+      return `Anexo ${doc.seq} (${doc.filename}) não tem texto legível e não consegui lê-lo agora (a IA pode estar em descanso). Tente de novo mais tarde.`;
+    }
+  }
+  return `Anexo ${doc.seq} (${doc.filename}) não tem texto legível extraído.`;
+}
 
 /**
  * Ferramentas que dão ao Pracinha PODER REAL sobre o artigo: alterar o título e
@@ -71,52 +127,24 @@ export function buildTools(ctx: ToolContext) {
         const docs = await repo.listDocuments(ctx.userId, ctx.articleId);
         const doc = docs.find((d) => d.seq === numero);
         if (!doc) return `Não existe Anexo ${numero}.`;
-        if (doc.text_content) {
-          return `Anexo ${numero} — ${doc.filename}:\n${doc.text_content.slice(0, 6000)}`;
+        return readAnexoText(ctx, doc);
+      },
+    }),
+
+    ler_todos_anexos: tool({
+      description:
+        "Lê de uma vez o conteúdo de TODOS os anexos do artigo (Anexo 1, 2, …), transcrevendo imagens/PDFs digitalizados quando necessário. Use quando o pesquisador pedir para ler/olhar todos os documentos, ou quando precisar do quadro completo antes de diagnosticar.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const docs = await repo.listDocuments(ctx.userId, ctx.articleId);
+        if (!docs.length) return "Nenhum anexo ainda.";
+        // Cada anexo recebe um trecho; o total é limitado para não estourar o contexto.
+        const perDoc = Math.max(1500, Math.floor(16000 / docs.length));
+        const parts: string[] = [];
+        for (const doc of docs) {
+          parts.push(await readAnexoText(ctx, doc, perDoc));
         }
-        // Sem texto extraído: se for imagem ou PDF digitalizado, tenta a visão
-        // sob demanda (ex.: anexado quando a cota de IA estava esgotada).
-        const {
-          isImage,
-          isPdf,
-          IMAGE_DESCRIPTION_PROMPT,
-          PDF_OCR_PROMPT,
-          cleanImageDescription,
-          mimeFromFilename,
-        } = await import("@/lib/documents.server");
-        if (isImage(doc.mime, doc.filename) || isPdf(doc.mime, doc.filename)) {
-          try {
-            const full = await repo.getDocument(ctx.userId, ctx.articleId, doc.id);
-            const { readDocumentBytes, toBase64 } = await import("@/lib/cf/storage.server");
-            const bytes = await readDocumentBytes(full?.storage_key ?? null, full?.content ?? null);
-            if (bytes) {
-              if (isPdf(doc.mime, doc.filename)) {
-                const { describePdfImages } = await import("@/lib/documents.server");
-                const text = await describePdfImages(bytes, PDF_OCR_PROMPT);
-                if (text)
-                  return `Anexo ${numero} — ${doc.filename} (PDF digitalizado, transcrito):\n${text.slice(0, 6000)}`;
-              } else {
-                const { describeImage } = await import("@/lib/ai/gateway.server");
-                // O MIME guardado pode ser genérico (ex.: application/octet-stream);
-                // o modelo de visão precisa de um image/* — derivamos da extensão.
-                const visionMime = doc.mime.startsWith("image/")
-                  ? doc.mime
-                  : (mimeFromFilename(doc.filename) ?? doc.mime);
-                const described = await describeImage(
-                  toBase64(bytes),
-                  visionMime,
-                  IMAGE_DESCRIPTION_PROMPT,
-                );
-                const text = cleanImageDescription(described);
-                if (text)
-                  return `Anexo ${numero} — ${doc.filename} (imagem):\n${text.slice(0, 6000)}`;
-              }
-            }
-          } catch {
-            return `Anexo ${numero} (${doc.filename}) não tem texto legível e não consegui lê-lo agora (a IA pode estar em descanso). Tente de novo mais tarde.`;
-          }
-        }
-        return `Anexo ${numero} (${doc.filename}) não tem texto legível extraído.`;
+        return parts.join("\n\n---\n\n");
       },
     }),
 

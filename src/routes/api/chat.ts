@@ -55,10 +55,16 @@ async function handle(request: Request) {
     .map((p) => (p as { text: string }).text)
     .join(" ");
   const forced = pickForcedTool(lastUserText ?? "");
-  // Na entrevista o documento ainda é preliminar: só forçamos a BUSCA (provocação/
-  // evidência). Edições de título/página só são forçadas na fase de produção.
+  // Na entrevista o documento ainda é preliminar: forçamos a BUSCA (provocação/
+  // evidência) e a LEITURA de anexos (o pesquisador anexa documentos durante a
+  // entrevista). Edições de título/página só são forçadas na fase de produção.
+  const interviewTools = new Set(["pesquisar_bases", "ler_anexo", "ler_todos_anexos", "listar_anexos"]);
   const forcedTool =
-    article.phase === "interview" ? (forced === "pesquisar_bases" ? forced : null) : forced;
+    article.phase === "interview"
+      ? forced && interviewTools.has(forced)
+        ? forced
+        : null
+      : forced;
   const { result } = startResponses(
     request,
     await convertToModelMessages(sanitized),

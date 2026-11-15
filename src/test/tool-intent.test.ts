@@ -23,6 +23,14 @@ describe("pickForcedTool", () => {
   it("detecta anexos", () => {
     expect(pickForcedTool("anexe o documento na página 2")).toBe("anexar_documento_em_pagina");
   });
+  it("detecta leitura de anexos específicos e de todos", () => {
+    expect(pickForcedTool("olhe os documentos anexados")).toBe("ler_todos_anexos");
+    expect(pickForcedTool("cara leia tudo de uma vez e traga o diagnostico")).toBe(
+      "ler_todos_anexos",
+    );
+    expect(pickForcedTool("leia os anexos")).toBe("ler_todos_anexos");
+    expect(pickForcedTool("analise o Anexo 3")).toBe("ler_anexo");
+  });
   it("pedido de usar um anexo começa pela leitura (autonomia de posição)", () => {
     expect(
       pickForcedTool(
