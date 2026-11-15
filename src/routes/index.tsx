@@ -4,6 +4,8 @@ import {
   ArrowRight,
   BadgeCheck,
   BookOpenText,
+  ChevronDown,
+  ChevronUp,
   FilePlus2,
   Landmark,
   Layers,
@@ -24,17 +26,17 @@ import { BrandFooter } from "@/components/app/BrandFooter";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ScienceChat — seu artigo científico, página por página" },
+      { title: "ScienceChat — seu rascunho científico em 5 minutos" },
       {
         name: "description",
         content:
-          "Converse, responda às perguntas e veja seu artigo científico nascer página por página.",
+          "Uma entrevista inteligente estrutura seu rascunho acadêmico real, nas normas da sua revista de destino.",
       },
-      { property: "og:title", content: "ScienceChat — seu artigo científico, página por página" },
+      { property: "og:title", content: "ScienceChat — seu rascunho científico em 5 minutos" },
       {
         property: "og:description",
         content:
-          "Converse, responda às perguntas e veja seu artigo científico nascer página por página.",
+          "Uma entrevista inteligente estrutura seu rascunho acadêmico real, nas normas da sua revista de destino.",
       },
     ],
   }),
@@ -73,6 +75,7 @@ function Index() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,17 +145,21 @@ function Index() {
           <section className="flex min-h-0 flex-col justify-center">
             <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary shadow-sm backdrop-blur">
               <Sparkles className="size-3.5" />
-              Pesquisa independente · com documentação probatória
+              Rascunho científico · entrevista inteligente · normas reais
             </span>
             <h1 className="font-serif text-4xl font-semibold leading-[1.05] tracking-tight md:text-5xl">
-              Construa o seu artigo <span className="landing-shimmer">científico</span> conversando.
+              Uma ideia só é válida se estiver{" "}
+              <span className="landing-shimmer">estruturada no papel</span>.
             </h1>
-            <p className="mt-4 max-w-lg text-muted-foreground">
-              Primeiro investigamos. Depois planejamos. Depois escrevemos — página por página. A
-              autoria é sua.
+
+            <p className="mt-5 text-center font-serif text-sm italic text-primary/85 sm:text-base">
+              (A menos que você seja o Stephen Hawking — mas se for, tá dispensado kkkk)
             </p>
-            <p className="mt-3 max-w-md text-sm italic text-primary/80">
-              Ciência não é das instituições. É de quem investiga, argumenta e documenta.
+
+            <p className="mt-4 max-w-lg text-muted-foreground">
+              Chega de perder insights geniais em conversas de boteco ou rascunhos perdidos. Dê vida
+              à sua tese: uma entrevista inteligente estrutura seu rascunho acadêmico real em
+              minutos, nas normas da sua revista de destino.
             </p>
 
             <form
@@ -178,7 +185,7 @@ function Index() {
                 className="landing-cta h-12 gap-1.5 rounded-xl"
               >
                 <FilePlus2 />
-                {creating ? "Acendendo…" : "Começar novo artigo"}
+                {creating ? "Acendendo…" : "Criar Rascunho Científico em 5 Minutos"}
               </Button>
             </form>
 
@@ -196,6 +203,51 @@ function Index() {
                 Seus artigos ficam no menu ⋮ no topo.
               </span>
             </div>
+
+            {/* Texto longo: só aparece se o visitante quiser ler. */}
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              aria-expanded={showMore}
+              className="mt-6 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary/90 transition-colors hover:text-primary"
+            >
+              {showMore ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+              {showMore ? "Mostrar menos" : "Ler mais"}
+            </button>
+
+            {showMore && (
+              <div className="mt-4 max-w-xl space-y-3 rounded-xl border bg-white/60 p-4 text-sm backdrop-blur">
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    O problema
+                  </h2>
+                  <p className="mt-1 text-muted-foreground">
+                    Toda grande discussão esbarra numa incógnita. Sem estrutura e sem papel, a ideia
+                    vira fumaça — e, a menos que seu QI seja de outro planeta como o do Hawking, ela
+                    evapora.
+                  </p>
+                </div>
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    A solução
+                  </h2>
+                  <p className="mt-1 text-muted-foreground">
+                    Conduza uma entrevista natural enquanto o sistema traduz sua fala em matéria,
+                    delimitando o problema de pesquisa, a introdução e aplicando as normas
+                    editoriais reais (UdelaR, ABNT, APA) em tempo real.
+                  </p>
+                </div>
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    O princípio
+                  </h2>
+                  <p className="mt-1 text-muted-foreground">
+                    Você não entrega o artigo pronto para o mundo — você entrega o esqueleto sólido
+                    e formatado para você lapidar.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <ol className="mt-8 hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
               {["Ignição e interrogatório", "Estrutura", "Produção e obra"].map((label, i) => (
