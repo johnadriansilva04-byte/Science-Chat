@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { SectionGuideCard } from "@/components/app/SectionGuideCard";
+import { quotaRestMessage } from "@/lib/ai/quota";
 import { generatePlan, setPhase, updateTitle } from "@/lib/article.functions";
 
 export function PlanPanel({
@@ -42,7 +43,8 @@ export function PlanPanel({
       }
       onChanged();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível montar o plano");
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(quotaRestMessage(msg) ?? (msg || "Não foi possível montar o plano"));
       onChanged();
     } finally {
       setBusy(false);

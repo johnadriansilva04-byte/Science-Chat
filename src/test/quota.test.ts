@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { countdownLabel, formatResetTime, isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
+import {
+  countdownLabel,
+  formatResetTime,
+  isQuotaError,
+  nextQuotaReset,
+  quotaRestMessage,
+} from "@/lib/ai/quota";
 
 describe("isQuotaError", () => {
   it("reconhece a mensagem de neurônios esgotados", () => {
@@ -35,5 +41,17 @@ describe("countdownLabel", () => {
 describe("formatResetTime", () => {
   it("produz uma hora HH:MM", () => {
     expect(formatResetTime(Date.UTC(2026, 0, 6, 0, 0, 0))).toMatch(/\d{2}:\d{2}/);
+  });
+});
+
+describe("quotaRestMessage", () => {
+  it("devolve uma mensagem amigável quando a cota esgotou", () => {
+    const msg = quotaRestMessage("4006: daily free allocation of 10,000 neurons exhausted");
+    expect(msg).toContain("Pracinha cansou");
+    expect(msg).toMatch(/\d{2}:\d{2}/);
+  });
+  it("devolve null quando não é caso de cota", () => {
+    expect(quotaRestMessage("Não autorizado")).toBeNull();
+    expect(quotaRestMessage(undefined)).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { stripMarkers } from "@/lib/article-marker";
 import { MIN_PAGE_WORDS } from "@/lib/article-page";
+import { quotaRestMessage } from "@/lib/ai/quota";
 import type { WorkspacePage } from "@/lib/article.functions";
 import {
   approvePage,
@@ -54,7 +55,8 @@ export function PagePanel({
       toast.success(okMessage);
       onChanged();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Algo deu errado");
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(quotaRestMessage(msg) ?? (msg || "Algo deu errado"));
     } finally {
       setBusy(false);
     }

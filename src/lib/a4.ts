@@ -43,6 +43,21 @@ export function paginateBlocks(heights: number[], contentHeightPx: number): numb
 
 export type PlacedBlock = { block: Block; index: number };
 
+/**
+ * Alturas "efetivas" de cada bloco para paginação: a distância até o topo do
+ * bloco seguinte (que inclui o `gap` do flex e as margens dos títulos), não só a
+ * altura da caixa. `getBoundingClientRect` não conta margens nem o gap, então
+ * somar apenas as alturas subestimava o consumo e o último bloco de cada folha
+ * podia ser cortado pelo `overflow: hidden` da folha A4. O último bloco usa a
+ * própria altura (não há espaçamento depois dele).
+ */
+export function blockAdvances(heights: number[], tops: number[]): number[] {
+  return heights.map((height, i) => {
+    const next = i + 1 < tops.length ? (tops[i + 1] ?? 0) - (tops[i] ?? 0) : height;
+    return Math.max(height, next);
+  });
+}
+
 export type Pagination = {
   /** Blocos agrupados por folha, com o índice global de cada bloco. */
   pages: PlacedBlock[][];
@@ -68,9 +83,13 @@ export function useA4Pagination(blocks: Block[], revision: unknown): Pagination 
     const container = measureRef.current;
     if (!container) return;
     const children = Array.from(container.children) as HTMLElement[];
-    const heights = children.map((el) => el.getBoundingClientRect().height);
+    const rects = children.map((el) => el.getBoundingClientRect());
+    const heights = rects.map((r) => r.height);
+    const tops = rects.map((r) => r.top);
     const contentHeightPx = mmToPx(A4_CONTENT_HEIGHT_MM);
-    const groups = paginateBlocks(heights, contentHeightPx);
+    // Usa o avanço real (altura + gap/margem) para não cortar o último bloco.
+    const advances = blockAdvances(heights, tops);
+    const groups = paginateBlocks(advances, contentHeightPx);
     setOverflowing(heights.some((h) => h > contentHeightPx));
     setPages(
       groups.map((group) =>

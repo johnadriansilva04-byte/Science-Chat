@@ -45,3 +45,14 @@ export function countdownLabel(resetAt: number, now: number = Date.now()): strin
   if (hours <= 0) return `${minutes} min`;
   return `${hours}h ${minutes.toString().padStart(2, "0")}min`;
 }
+
+/**
+ * Mensagem amigável para exibir quando uma geração (plano/página) falha por cota
+ * esgotada, em vez do erro cru da API. Devolve null quando não é caso de cota.
+ */
+export function quotaRestMessage(message: string | undefined | null): string | null {
+  if (!isQuotaError(message)) return null;
+  return `O Pracinha cansou 😴 — os neurônios do dia acabaram. Ele volta às ${formatResetTime(
+    nextQuotaReset(),
+  )}.`;
+}

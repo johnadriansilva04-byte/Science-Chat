@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { documentSections, parseBlocks, parseInline, serializeBlocks } from "@/lib/article-blocks";
-import { A4, A4_CONTENT_HEIGHT_MM, mmToPx, paginateBlocks } from "@/lib/a4";
+import { A4, A4_CONTENT_HEIGHT_MM, blockAdvances, mmToPx, paginateBlocks } from "@/lib/a4";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
 
 describe("parseBlocks / serializeBlocks", () => {
@@ -78,6 +78,16 @@ describe("A4 geometry", () => {
   it("converts millimetres to CSS pixels", () => {
     expect(Math.round(mmToPx(25.4))).toBe(96);
     expect(Math.round(mmToPx(210))).toBe(794);
+  });
+});
+
+describe("blockAdvances", () => {
+  it("usa a distância até o próximo bloco (inclui gap/margem)", () => {
+    // Bloco de 40 com 12px de espaçamento antes do próximo → avança 52.
+    expect(blockAdvances([40, 30, 50], [0, 52, 94])).toEqual([52, 42, 50]);
+  });
+  it("o último bloco usa a própria altura", () => {
+    expect(blockAdvances([40], [0])).toEqual([40]);
   });
 });
 
