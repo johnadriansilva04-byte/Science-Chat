@@ -69,3 +69,5 @@ Prod: **https://sciencechat.sciencechat.workers.dev**. **168 testes** (25 arquiv
 - **Cota Workers AI:** checar via REST `POST /accounts/{acct}/ai/run/{model}`; erro `4006` = cota esgotada, reseta à meia-noite UTC. Em 2026-11-15 18:00 UTC estava esgotada.
 - Token `cfat_*`: funciona só nos endpoints `/accounts/*` (listar accounts/D1/R2/AI); `/user/tokens/verify` responde "Invalid API Token".
 - Estado D1 remoto (15/11): 11 artigos, 14 páginas, 1 publicação, 6 usuários, **0 documentos**, R2 `sciencechat-files` **vazio**.
+- **Anexos validados em produção** (server fn `uploadDocument` chamada direto, corpo seroval): TXT e DOCX reais → R2 + texto extraído OK. Detalhes no log `2026-11-15.md`.
+- Suíte: **200 testes** (29 arquivos) verdes; `tsc` 0 erros; `eslint` 0 erros (só 14 warnings react-refresh shadcn).
