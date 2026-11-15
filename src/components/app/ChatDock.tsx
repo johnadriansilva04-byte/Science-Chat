@@ -68,6 +68,22 @@ const THINKING_PRODUCE = [
 ];
 
 /** Nomes amigáveis das ferramentas e apresentação: ver `@/lib/tool-trace`. */
+/** Atalhos mostrados quando o chat ainda está vazio, para começar sem hesitar. */
+const OPENING_PROMPTS: { label: string; text: string }[] = [
+  {
+    label: "Quero começar meu primeiro artigo",
+    text: "Olá! Quero começar meu artigo científico.",
+  },
+  {
+    label: "Tenho uma ideia e quero testá-la como tese",
+    text: "Tenho uma ideia que quero transformar em uma tese de artigo científico. Pode me ajudar a testá-la?",
+  },
+  {
+    label: "Já tenho dados/resultados para escrever",
+    text: "Já tenho dados e resultados de uma pesquisa e quero escrever o artigo. Por onde começamos?",
+  },
+];
+
 type ToolPart = {
   type: string;
   state?: string;
@@ -522,13 +538,15 @@ export function ChatDock({
         <Conversation className="dock-scroll min-h-0 flex-1">
           <ConversationContent className="w-full gap-3 px-3 py-3">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <div className="flex flex-col items-center gap-4 py-8 text-center">
                 <PracinhaAvatar state="idle" size={52} />
-                <p className="text-sm text-muted-foreground">
-                  Vou fazer perguntas, uma de cada vez. Você pode pular qualquer uma — e o documento
-                  à direita vai sendo preenchido ao vivo. Também pode conversar livremente ou pedir
-                  que eu pesquise referências.
-                </p>
+                <div className="space-y-1">
+                  <p className="font-serif text-base font-semibold">Vamos escrever seu artigo</p>
+                  <p className="text-sm text-muted-foreground">
+                    Faço uma pergunta de cada vez e o documento à direita vai sendo preenchido ao
+                    vivo. Pule o que quiser — ou converse livremente e peça referências.
+                  </p>
+                </div>
                 <Button
                   size="sm"
                   className="gap-1.5"
@@ -537,6 +555,18 @@ export function ChatDock({
                   <Sparkles className="size-4" />
                   Começar entrevista
                 </Button>
+                <div className="flex w-full flex-col gap-1.5">
+                  {OPENING_PROMPTS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      className="rounded-md border bg-card px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      onClick={() => send(p.text)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               messages.map((m) => (

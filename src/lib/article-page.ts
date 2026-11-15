@@ -11,6 +11,15 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/**
+ * Entre duas versões do mesmo texto, devolve a mais longa (em palavras). Usado
+ * quando a IA precisa reescrever uma página curta: se a nova tentativa vier ainda
+ * menor, mantemos a anterior para não piorar o resultado.
+ */
+export function pickLongerText(a: string, b: string): string {
+  return countWords(b) > countWords(a) ? b : a;
+}
+
 /** Normaliza um parágrafo para comparação (sem acentos, pontuação ou caixa). */
 function normalizeParagraph(text: string): string {
   return text

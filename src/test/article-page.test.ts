@@ -1,9 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { countWords, dedupeParagraphs, MIN_PAGE_WORDS } from "@/lib/article-page";
+import { countWords, dedupeParagraphs, MIN_PAGE_WORDS, pickLongerText } from "@/lib/article-page";
 
 describe("countWords", () => {
   it("conta palavras ignorando espaços extras", () => {
     expect(countWords("  uma   duas três ")).toBe(3);
+  });
+});
+
+describe("pickLongerText", () => {
+  it("prefere a segunda versão quando é mais longa", () => {
+    expect(pickLongerText("curta", "uma versão bem mais longa que a outra")).toBe(
+      "uma versão bem mais longa que a outra",
+    );
+  });
+
+  it("mantém a primeira quando a nova tentativa encolheu", () => {
+    expect(pickLongerText("texto original mais longo aqui", "curta")).toBe(
+      "texto original mais longo aqui",
+    );
+  });
+
+  it("desempata pela primeira em caso de mesmo tamanho", () => {
+    expect(pickLongerText("mesma coisa", "outra coisa")).toBe("mesma coisa");
   });
 });
 
