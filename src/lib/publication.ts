@@ -44,7 +44,7 @@ export function contentHasAbstract(markdown: string): boolean {
 /** Extrai palavras-chave de linhas como "Palavras-chave: a; b; c". */
 export function extractKeywords(markdown: string): string | null {
   const match = markdown.match(
-    /(?:\*\*)?\s*(?:palavras[- ]chave|keywords?|palabras clave)\s*(?:\*\*)?\s*[:\-]\s*(?:\*\*)?\s*(.+)/i,
+    /(?:\*\*)?\s*(?:palavras[- ]chave|keywords?|palabras clave)\s*(?:\*\*)?\s*[:-]\s*(?:\*\*)?\s*(.+)/i,
   );
   if (!match) return null;
   return match[1]!

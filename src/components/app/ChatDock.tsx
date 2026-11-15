@@ -43,18 +43,14 @@ import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAva
 import { PracinhaRest } from "@/components/app/PracinhaRest";
 import { ChatAttachments } from "@/components/app/ChatAttachments";
 import { interviewProgress } from "@/lib/interview-progress";
+import { cleanQuestion } from "@/lib/interview-notes";
+import { suggestReplies } from "@/lib/chat-suggestions";
 import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
 import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
+import { DEFAULT_DOCK_PREFS, clampDockSize, readDockPrefs, writeDockPrefs } from "@/lib/dock-prefs";
 import { useVoice } from "@/hooks/useVoice";
 import type { WorkspaceDocument } from "@/lib/article.functions";
 
-const QUICK = ["Pular", "Não se aplica", "Ainda não sei", "Quero responder depois"];
-
-/**
- * O que o Pracinha "está pensando" enquanto trabalha. Muda com a etapa para dar a
- * sensação de vida: na entrevista ele caça objeções nas bases; na produção, ele
- * redige e confere citações. Frases curtas, trocadas a cada poucos segundos.
- */
 const THINKING_INTERVIEW = [
   "procurando a objeção mais forte…",
   "consultando as bases públicas…",
@@ -73,10 +69,74 @@ const THINKING_PRODUCE = [
 /** Nomes amigáveis das ferramentas que o Pracinha pode executar sobre o artigo. */
 const TOOL_LABELS: Record<string, string> = {
   pesquisar_bases: "pesquisando bases científicas",
+  listar_anexos: "lendo os anexos",
+  ler_anexo: "lendo o anexo",
   atualizar_titulo: "alterando o título",
   editar_pagina: "reescrevendo uma página",
   acrescentar_na_pagina: "acrescentando ao documento",
+  anexar_documento_em_pagina: "posicionando o anexo",
 };
+
+/** Parte de ferramenta do stream (o AI SDK usa `tool-<nome>` como tipo). */
+type ToolPart = {
+  type: string;
+  state?: string;
+  output?: unknown;
+  errorText?: string;
+};
+
+const TOOL_ICON: Record<string, typeof Search> = {
+  pesquisar_bases: Search,
+};
+
+function toolOutputText(output: unknown): string {
+  if (typeof output === "string") return output;
+  if (output && typeof output === "object") {
+    const value =
+      (output as { value?: unknown; text?: unknown }).value ?? (output as { text?: unknown }).text;
+    if (typeof value === "string") return value;
+  }
+  return "";
+}
+
+/**
+ * Mostra uma chamada de ferramenta do Pracinha: enquanto executa, um rótulo
+ * animado; ao concluir, o resultado (ex.: as referências encontradas), para o
+ * pesquisador ver de onde vieram as citações em vez de confiar só no texto.
+ */
+function ToolTrace({ part }: { part: ToolPart }) {
+  const name = part.type.replace(/^tool-/, "");
+  const label = TOOL_LABELS[name] ?? "alterando o documento";
+  const Icon = TOOL_ICON[name] ?? Wrench;
+  const done = part.state === "output-available";
+  const failed = part.state === "output-error";
+  const output = done ? toolOutputText(part.output) : "";
+
+  if (done && output) {
+    return (
+      <details className="tool-trace my-1 rounded-md border bg-muted/40 text-xs">
+        <summary className="flex cursor-pointer items-center gap-1.5 px-2 py-1.5 font-medium text-muted-foreground">
+          <Icon className="size-3.5 shrink-0 text-primary" />
+          {name === "pesquisar_bases" ? "Resultados das bases públicas" : label}
+        </summary>
+        <pre className="max-h-52 overflow-auto whitespace-pre-wrap px-2 pb-2 text-[11px] leading-snug text-foreground/80">
+          {output}
+        </pre>
+      </details>
+    );
+  }
+
+  return (
+    <span
+      className={`flex items-center gap-1.5 text-xs italic ${
+        failed ? "text-destructive" : "text-muted-foreground"
+      }`}
+    >
+      {failed ? <Wrench className="size-3.5" /> : <Icon className="size-3.5" />}
+      {failed ? "não consegui concluir esta ação" : `${label}…`}
+    </span>
+  );
+}
 
 /**
  * Dock do Pracinha: SÓ diálogo. Reúne a entrevista e, na produção, as dúvidas do
@@ -119,6 +179,15 @@ export function ChatDock({
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  // Tamanho do dock (redimensionável). Carregado do localStorage após montar para
+  // não divergir do SSR; gravado quando o pesquisador solta a alça.
+  const [size, setSize] = useState<{ width: number; height: number }>({
+    width: DEFAULT_DOCK_PREFS.width,
+    height: DEFAULT_DOCK_PREFS.height,
+  });
+  const resizeFrom = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const sizeRef = useRef(size);
+  sizeRef.current = size;
   // Transcrição ao vivo do ditado, exibida acima do campo enquanto o pesquisador fala.
   const [interim, setInterim] = useState("");
   // Obras trazidas do Museu ("Mostrar ao Pracinha"), à espera de envio.
@@ -134,6 +203,43 @@ export function ChatDock({
   const dictated = useRef(false);
   const voice = useVoice("pt-BR");
   const visible = isMobile ? mobileVisible : open;
+
+  // Carrega tamanho/estado do dock do localStorage (client-only, após montar).
+  useEffect(() => {
+    const prefs = readDockPrefs();
+    setSize({ width: prefs.width, height: prefs.height });
+    if (!isMobile) setOpen(prefs.open);
+  }, [isMobile]);
+
+  // Redimensiona o dock pela alça do canto inferior direito.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const from = resizeFrom.current;
+      if (!from) return;
+      const { width, height } = clampDockSize(
+        from.w + (e.clientX - from.x),
+        from.h + (e.clientY - from.y),
+      );
+      setSize({ width, height });
+    };
+    const onUp = () => {
+      if (!resizeFrom.current) return;
+      resizeFrom.current = null;
+      document.body.style.userSelect = "";
+      writeDockPrefs({ open: true, ...sizeRef.current });
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  const persistOpen = (value: boolean) => {
+    setOpen(value);
+    writeDockPrefs({ open: value, ...sizeRef.current });
+  };
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { articleId } }),
@@ -165,6 +271,18 @@ export function ChatDock({
   const planApproved = phase === "writing" || phase === "done";
 
   const progress = useMemo(() => interviewProgress(messages), [messages]);
+  // Sugestões contextuais: leem a última pergunta do Pracinha e propõem atalhos
+  // que fazem sentido ali, mantendo as saídas de emergência sempre à mão.
+  const quickReplies = useMemo(() => {
+    const lastQuestion = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant" && m.parts.some((p) => p.type === "text"));
+    const text = lastQuestion?.parts
+      .filter((p) => p.type === "text")
+      .map((p) => p.text)
+      .join(" ");
+    return suggestReplies(text ? cleanQuestion(text) : null);
+  }, [messages]);
   const avatarState: PracinhaState = busy
     ? status === "streaming"
       ? "writing"
@@ -237,7 +355,7 @@ export function ChatDock({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") persistOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -334,7 +452,7 @@ export function ChatDock({
       <button
         type="button"
         onClick={() => {
-          setOpen(true);
+          persistOpen(true);
           setUnread(0);
         }}
         className="dock-enter fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full bg-primary py-2 pl-1.5 pr-4 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90"
@@ -355,9 +473,23 @@ export function ChatDock({
       className={
         isMobile
           ? "dock-enter fixed inset-0 z-40 flex flex-col overflow-hidden bg-card"
-          : "dock-enter fixed bottom-4 left-4 z-40 flex h-[min(72vh,600px)] w-[min(92vw,344px)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl"
+          : "dock-enter fixed bottom-4 left-4 z-40 flex flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl"
       }
+      style={isMobile ? undefined : { width: size.width, height: size.height }}
     >
+      {!isMobile && (
+        <span
+          role="separator"
+          aria-label="Redimensionar o chat"
+          title="Arraste para redimensionar"
+          className="dock-resize absolute bottom-0 right-0 z-10"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            resizeFrom.current = { x: e.clientX, y: e.clientY, w: size.width, h: size.height };
+            document.body.style.userSelect = "none";
+          }}
+        />
+      )}
       <header className="flex items-center gap-2 border-b bg-gradient-to-r from-accent/50 to-transparent px-3 py-2">
         <PracinhaAvatar state={avatarState} size={34} />
         <div className="min-w-0 flex-1">
@@ -398,7 +530,7 @@ export function ChatDock({
           size="icon"
           variant="ghost"
           className="size-7"
-          onClick={() => (isMobile ? onMobileClose?.() : setOpen(false))}
+          onClick={() => (isMobile ? onMobileClose?.() : persistOpen(false))}
           aria-label={isMobile ? "Ver o documento" : "Minimizar chat"}
           title={isMobile ? "Ver o documento" : "Minimizar chat"}
         >
@@ -435,28 +567,8 @@ export function ChatDock({
                     {m.parts.map((p, i) => {
                       if (p.type === "text")
                         return <MessageResponse key={i}>{p.text}</MessageResponse>;
-                      if (p.type === "tool-pesquisar_bases") {
-                        return (
-                          <span
-                            key={i}
-                            className="flex items-center gap-1.5 text-xs italic text-muted-foreground"
-                          >
-                            <Search className="size-3.5" />
-                            pesquisando bases científicas…
-                          </span>
-                        );
-                      }
                       if (p.type.startsWith("tool-")) {
-                        const name = p.type.replace("tool-", "");
-                        return (
-                          <span
-                            key={i}
-                            className="flex items-center gap-1.5 text-xs italic text-muted-foreground"
-                          >
-                            <Wrench className="size-3.5" />
-                            {TOOL_LABELS[name] ?? "alterando o documento"}…
-                          </span>
-                        );
+                        return <ToolTrace key={i} part={p} />;
                       }
                       return null;
                     })}
@@ -541,7 +653,7 @@ export function ChatDock({
           )}
           {messages.length > 0 && !planApproved && (
             <div className="flex flex-wrap gap-1">
-              {QUICK.map((q) => (
+              {quickReplies.map((q) => (
                 <Button
                   key={q}
                   size="sm"

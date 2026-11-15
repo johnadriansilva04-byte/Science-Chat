@@ -18,7 +18,9 @@ describe("dedupeParagraphs", () => {
   });
 
   it("preserva parágrafos distintos", () => {
-    const out = dedupeParagraphs("Primeiro argumento longo e distinto sobre o tema.\n\nSegundo argumento totalmente diferente aqui.");
+    const out = dedupeParagraphs(
+      "Primeiro argumento longo e distinto sobre o tema.\n\nSegundo argumento totalmente diferente aqui.",
+    );
     expect(out.split("\n\n")).toHaveLength(2);
   });
 

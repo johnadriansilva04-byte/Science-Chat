@@ -1120,6 +1120,41 @@
   box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
 }
 
+/* Alça de redimensionar o dock do chat (canto inferior direito). */
+.dock-resize {
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-muted-foreground) 45%, transparent) 0 1.5px,
+    transparent 1.5px 4px
+  );
+  border-bottom-right-radius: 1rem;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+.dock-resize:hover {
+  opacity: 0.95;
+}
+
+/* Resultado de ferramenta no chat (ex.: referências encontradas nas bases). */
+.tool-trace > summary {
+  list-style: none;
+}
+.tool-trace > summary::-webkit-details-marker {
+  display: none;
+}
+.tool-trace > summary::after {
+  content: "▸";
+  margin-left: auto;
+  transition: transform 0.15s ease;
+}
+.tool-trace[open] > summary::after {
+  transform: rotate(90deg);
+}
+
 /* Fita de progresso da produção, no topo do documento. */
 .production-strip {
   background-image: linear-gradient(
@@ -1241,7 +1276,11 @@
       color-mix(in oklab, oklch(0.58 0.14 195) 12%, transparent),
       transparent 62%
     ),
-    linear-gradient(180deg, color-mix(in oklab, var(--color-card) 70%, var(--color-background)), var(--color-background));
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--color-card) 70%, var(--color-background)),
+      var(--color-background)
+    );
 }
 /* Papel milimetrado por cima do gradiente, bem sutil. */
 .landing-hero::before {

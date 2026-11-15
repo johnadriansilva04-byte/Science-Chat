@@ -118,7 +118,7 @@ describe("extractText", () => {
   it("descomprime DOCX (deflate) e junta os runs", async () => {
     const xml =
       '<?xml version="1.0"?><w:document><w:body><w:p><w:r><w:t>Resultado: X</w:t></w:r></w:p>' +
-      '<w:p><w:r><w:t>aumenta Y.</w:t></w:r></w:p></w:body></w:document>';
+      "<w:p><w:r><w:t>aumenta Y.</w:t></w:r></w:p></w:body></w:document>";
     const b64 = bytesToBase64(deflateZip({ "word/document.xml": xml }));
     const out = await extractText("artigo.docx", "", b64);
     expect(out).toContain("Resultado: X");
