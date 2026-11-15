@@ -76,8 +76,14 @@ export function buildTools(ctx: ToolContext) {
         }
         // Sem texto extraído: se for imagem ou PDF digitalizado, tenta a visão
         // sob demanda (ex.: anexado quando a cota de IA estava esgotada).
-        const { isImage, isPdf, IMAGE_DESCRIPTION_PROMPT, PDF_OCR_PROMPT, cleanImageDescription } =
-          await import("@/lib/documents.server");
+        const {
+          isImage,
+          isPdf,
+          IMAGE_DESCRIPTION_PROMPT,
+          PDF_OCR_PROMPT,
+          cleanImageDescription,
+          mimeFromFilename,
+        } = await import("@/lib/documents.server");
         if (isImage(doc.mime, doc.filename) || isPdf(doc.mime, doc.filename)) {
           try {
             const full = await repo.getDocument(ctx.userId, ctx.articleId, doc.id);
@@ -91,9 +97,14 @@ export function buildTools(ctx: ToolContext) {
                   return `Anexo ${numero} — ${doc.filename} (PDF digitalizado, transcrito):\n${text.slice(0, 6000)}`;
               } else {
                 const { describeImage } = await import("@/lib/ai/gateway.server");
+                // O MIME guardado pode ser genérico (ex.: application/octet-stream);
+                // o modelo de visão precisa de um image/* — derivamos da extensão.
+                const visionMime = doc.mime.startsWith("image/")
+                  ? doc.mime
+                  : (mimeFromFilename(doc.filename) ?? doc.mime);
                 const described = await describeImage(
                   toBase64(bytes),
-                  doc.mime,
+                  visionMime,
                   IMAGE_DESCRIPTION_PROMPT,
                 );
                 const text = cleanImageDescription(described);
