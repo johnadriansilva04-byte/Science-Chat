@@ -33,11 +33,13 @@ Investigar (entrevista adaptativa) → documentar → auditar → plano aprovado
 ## Armadilhas conhecidas
 - `tsconfig`: `noImplicitReturns`, `exactOptionalPropertyTypes`, `noPropertyAccessFromIndexSignature`. Não usar `return toast.error(...)`; index signatures com `env["X"]`; sem `undefined` explícito em props opcionais (spread condicional).
 - **Truncagem (Workers AI):** sempre passar `maxOutputTokens` ao `streamText` (`DEFAULT_MAX_OUTPUT_TOKENS = 2048` em `gateway.server.ts`), senão corta a saída em ~1000 chars.
+- **OCR de PDF digitalizado:** scanners/ReportLab embutem a página como **pixels crus** (RGB/cinza) com `/FlateDecode` e SEM cabeçalho PNG/JPEG → `sniffImageMime` falha e a imagem era descartada (OCR nunca rodava). `decodeImageStream` agora reempacota em PNG (`wrapRawImageAsPng`, IHDR+IDAT+IEND; zlib via `CompressionStream`; CRC de `docx.ts`). Formatos ainda NÃO suportados: JPEG 2000 (`/JPXDecode`), fax CCITT, JBIG2 (aviso acionável via `detectUnsupportedPdfImages`).
+- **Página A4:** comporta ~500 palavras. `PAGE_INSTRUCTIONS` pede 4–6 parágrafos, 450–550 palavras, sem repetição; `normalizePageText()` (article-page.ts) deduplica frases (Jaccard ≥0.75) e reflui blocos gigantes. Página de 618 palavras transbordava ("trecho maior que uma folha A4").
 - **SSE da Workers AI duplica conteúdo** em dois campos (nativo e OpenAI) → texto/tool_calls duplicados → tool-error. Fix `fixEvent`+`dedupeSseStream` em `gateway.server.ts`.
 - **Tool calling:** `tool()` usa `inputSchema` (não `parameters`); `stopWhen: stepCountIs(n)`. O provider só recupera chamadas "vazadas como texto" com `toolChoice` FORÇADO — forçar só no passo 0 via `prepareStep` (quem escolhe: `src/lib/ai/tool-intent.ts` `pickForcedTool`; sanitiza histórico: `leaked-tool-call.ts`).
 - 4 erros de tsc PRÉ-EXISTENTES em `src/components/ai-elements/{message,shimmer}.tsx` (build passa mesmo assim).
 - **Documentos primários (dossiê):** arquivo bruto no **R2** (`documents.storage_key`, bucket `sciencechat-files`), base64 no D1 apenas como fallback. Camada `src/lib/cf/storage.server.ts` (`putDocumentBytes`/`readDocumentBytes`/`deleteDocumentBytes`), "Anexo N" estável. `getDocumentFile` devolve o original em base64 (abrir/baixar).
-- Dev: `npm run dev` (porta **3000**) emula bindings via wrangler; sem `CLOUDFLARE_API_TOKEN` cai no stub (IA/D1 não funcionam, SSR 200). `wrangler dev` serve `.output/` → rodar `npx vite build` antes. `wrangler deploy --dry-run` valida config sem token.
+- Dev: `npm run dev` (porta **3000**) emula bindings via wrangler; sem `CLOUDFLARE_API_TOKEN` cai no stub (IA/D1 não funcionam, SSR 200). `wrangler dev` serve `.output/` → rodar `npx vite build` antes **e reiniciar o `wrangler dev`** (senão assets com hash novo dão 404 → chunk JS → tela "didn't load"). No ambiente Agent Canvas o servidor local roda em `wrangler dev --local --port 12000` (link work-1). `wrangler deploy --dry-run` valida config sem token.
 - **Cota Workers AI:** 10.000 neurônios/dia; esgotar → erro `4006` + stream vazio. Reset à meia-noite UTC. UX: Pracinha "cansa" (`src/lib/ai/quota.ts` + `PracinhaRest.tsx`).
 
 ## Rastreabilidade, auditoria, editorial e exportação (2026-11-11)
@@ -71,5 +73,11 @@ Prod: **https://sciencechat.sciencechat.workers.dev**. **168 testes** (25 arquiv
 - Estado D1 remoto (15/11): 11 artigos, 14 páginas, 1 publicação, 6 usuários, **0 documentos**, R2 `sciencechat-files` **vazio**.
 - **Anexos validados em produção** (server fn `uploadDocument` chamada direto, corpo seroval): TXT e DOCX reais → R2 + texto extraído OK. Detalhes no log `2026-11-15.md`.
 - Suíte: **218 testes** (30 arquivos) verdes; `tsc` 0 erros; `eslint` 0 erros (só 14 warnings react-refresh shadcn).
+
+## Correções 2026-11-15 (4ª passada — neurônios voltaram)
+- **Neurônios RESTAURADOS em produção** (Pracinha respondeu ao vivo).
+- **OCR de PDF digitalizado:** bug de pixels crus corrigido (ver "Armadilhas conhecidas"). Suíte **236 testes** (31 arquivos).
+- **Qualidade da página:** `PAGE_INSTRUCTIONS` reforçado + `normalizePageText()`. Commit 5ca8433.
+- **Deploy:** sem `CLOUDFLARE_API_TOKEN` no ambiente → não há como publicar. `main` local **22 commits à frente** de `origin/main`.
 - **Imagens (visão):** `uploadDocument` detecta imagem (`isImage`) e chama `describeImage()` (`@cf/meta/llama-3.2-11b-vision-instruct`, env `AI_VISION_MODEL`) para descrever + transcrever, guardando como `text_content`. Se a IA falhar (ex.: cota), o anexo é salvo sem texto e a tool `ler_anexo` tenta a visão **sob demanda** (lê os bytes do R2 via `readDocumentBytes`).
 - **PDF digitalizado (OCR) — NOVO (15/11):** PDF sem camada de texto → `extractPdfImages()` acha as imagens embutidas (`/DCTDecode` JPEG, `/FlateDecode`, e **`/ASCII85Decode`** — obrigatório p/ ReportLab/scanners) e `describePdfImages()` transcreve via visão. Ligado no upload e no `ler_anexo`. Não cobre `/JPXDecode` (JPEG2000) nem `/CCITTFaxDecode` (fax). Detalhes no log `2026-11-15.md`.
