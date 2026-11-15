@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { quotaRestMessage } from "@/lib/ai/quota";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -100,7 +101,8 @@ export function PublishDialog({
     try {
       await fn();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Operação falhou");
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(quotaRestMessage(msg) ?? (msg || "Operação falhou"));
     } finally {
       setBusy(null);
     }

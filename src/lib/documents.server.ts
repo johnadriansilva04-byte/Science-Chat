@@ -213,7 +213,15 @@ export function joinImageDescriptions(parts: { label: string; text: string }[]):
  */
 export async function describePdfImages(bytes: Uint8Array, prompt: string): Promise<string | null> {
   const images = await extractPdfImages(bytes);
-  if (!images.length) return null;
+  if (!images.length) {
+    // Sem imagem legível: se o PDF usa um formato que o Worker não decodifica
+    // (fax CCITT, JPEG2000, JBIG2), devolvemos um aviso em vez de silêncio — o
+    // pesquisador entende por que o anexo não foi transcrito e o que fazer.
+    const unsupported = detectUnsupportedPdfImages(bytes);
+    return unsupported
+      ? `[PDF digitalizado com imagens em ${unsupported}, formato que não consigo ler automaticamente. Peça uma nova digitalização em JPEG/PNG ou um PDF com texto selecionável.]`
+      : null;
+  }
   const { describeImage } = await import("@/lib/ai/gateway.server");
   const parts: { label: string; text: string }[] = [];
   for (let i = 0; i < images.length; i += 1) {
@@ -222,6 +230,34 @@ export async function describePdfImages(bytes: Uint8Array, prompt: string): Prom
     parts.push({ label: `digitalização ${i + 1}`, text });
   }
   return joinImageDescriptions(parts);
+}
+
+/** Formatos de imagem de PDF que o Worker/Workers AI não decodificam. */
+const UNSUPPORTED_PDF_FILTERS: [RegExp, string][] = [
+  [/\/JPXDecode/, "JPEG 2000"],
+  [/\/CCITTFaxDecode/, "fax (CCITT)"],
+  [/\/JBIG2Decode/, "JBIG2"],
+];
+
+/**
+ * Detecta imagens de PDF num formato que não conseguimos ler (fax, JPEG2000,
+ * JBIG2) para avisar em vez de falhar em silêncio. Devolve os nomes dos formatos
+ * encontrados (ex.: "fax (CCITT)") ou null quando não há nada nesse caso.
+ */
+export function detectUnsupportedPdfImages(bytes: Uint8Array): string | null {
+  const raw = latin1(bytes);
+  const found = new Set<string>();
+  const re = /stream\r?\n/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    const dictStart = raw.lastIndexOf("<<", m.index);
+    const dict = dictStart >= 0 ? raw.slice(dictStart, m.index) : "";
+    if (!/\/Subtype\s*\/Image/.test(dict)) continue;
+    for (const [pattern, label] of UNSUPPORTED_PDF_FILTERS) {
+      if (pattern.test(dict)) found.add(label);
+    }
+  }
+  return found.size ? [...found].join(", ") : null;
 }
 
 /**

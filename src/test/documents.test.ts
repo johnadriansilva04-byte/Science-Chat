@@ -10,6 +10,7 @@ import {
   isPdf,
   mimeFromFilename,
   cleanImageDescription,
+  detectUnsupportedPdfImages,
 } from "@/lib/documents.server";
 import { formatHits, type ResearchHit } from "@/lib/research.server";
 import { insertAnexoMarker, anexoMarker } from "@/lib/anexo";
@@ -324,6 +325,30 @@ describe("OCR de PDF digitalizado (extração de imagens)", () => {
     expect(isPdf("application/pdf", "doc")).toBe(true);
     expect(isPdf("", "scan.PDF")).toBe(true);
     expect(isPdf("text/plain", "nota.txt")).toBe(false);
+  });
+});
+
+describe("detectUnsupportedPdfImages", () => {
+  const pdfWithDict = (dict: string) =>
+    new TextEncoder().encode(`%PDF-1.4\n1 0 obj\n${dict}\nstream\nx\nendstream\nendobj\n%%EOF`);
+
+  it("aponta fax CCITT quando a imagem usa /CCITTFaxDecode", () => {
+    const pdf = pdfWithDict("<< /Type /XObject /Subtype /Image /Filter /CCITTFaxDecode >>");
+    expect(detectUnsupportedPdfImages(pdf)).toBe("fax (CCITT)");
+  });
+
+  it("aponta JPEG 2000 quando usa /JPXDecode", () => {
+    const pdf = pdfWithDict("<< /Type /XObject /Subtype /Image /Filter /JPXDecode >>");
+    expect(detectUnsupportedPdfImages(pdf)).toBe("JPEG 2000");
+  });
+
+  it("devolve null para imagem JPEG comum (/DCTDecode)", () => {
+    const pdf = pdfWithDict("<< /Type /XObject /Subtype /Image /Filter /DCTDecode >>");
+    expect(detectUnsupportedPdfImages(pdf)).toBeNull();
+  });
+
+  it("devolve null quando o PDF não tem imagem", () => {
+    expect(detectUnsupportedPdfImages(new TextEncoder().encode("%PDF-1.4\n%%EOF"))).toBeNull();
   });
 });
 

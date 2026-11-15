@@ -198,7 +198,14 @@ export const runPeerReview = createServerFn({ method: "POST" })
     const { PEER_REVIEW_INSTRUCTIONS } = await import("@/lib/ai/prompts");
     await repo.setPublicationStatus(userId, pub.id, "in_review");
     const prompt = `TÍTULO: ${pub.title}\n\nRESUMO:\n${pub.abstract ?? "(sem resumo)"}\n\nARTIGO:\n${pub.content.slice(0, 12000)}`;
-    const report = await generateFinalText(prompt, PEER_REVIEW_INSTRUCTIONS);
+    let report: string;
+    try {
+      report = await generateFinalText(prompt, PEER_REVIEW_INSTRUCTIONS);
+    } catch (e) {
+      // Não deixar a publicação presa em "em revisão" se a IA falhar (ex.: cota).
+      await repo.setPublicationStatus(userId, pub.id, "submitted");
+      throw e;
+    }
     // Parecer favorável quando o relatório traz o veredito "ACEITO".
     const accepted = /\bACEITO\b/i.test(report) && !/\bREJEITADO\b/i.test(report);
     await repo.setPublicationStatus(userId, pub.id, accepted ? "accepted" : "rejected", {
