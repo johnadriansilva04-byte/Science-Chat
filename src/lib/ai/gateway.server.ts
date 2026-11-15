@@ -121,6 +121,61 @@ function model() {
  */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 2048;
 
+/**
+ * Modelo de visão (multimodal) da Workers AI: lê imagens (fotos, gráficos,
+ * digitalizações) e devolve descrição + texto transcrito. Configurável por env.
+ */
+export const DEFAULT_VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
+
+export function visionModelId(): string {
+  return process.env["AI_VISION_MODEL"] || DEFAULT_VISION_MODEL;
+}
+
+/**
+ * Descreve uma imagem (OCR + leitura de gráficos) usando o modelo de visão.
+ * Recebe a imagem em base64 e o MIME, e devolve o texto descrito/transcrito.
+ * Lança erro quando o binding de IA não está disponível (o chamador trata).
+ */
+export async function describeImage(
+  base64: string,
+  mime: string,
+  instructions: string = "Descreva a imagem e transcreva o texto visível em português.",
+): Promise<string> {
+  const { generateText } = await import("ai");
+  const result = await generateText({
+    model: visionModel(),
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: instructions },
+          { type: "file", data: base64, mediaType: mime },
+        ],
+      },
+    ],
+    maxOutputTokens: 1024,
+  });
+  return result.text;
+}
+
+/** Modelo de visão, com o mesmo fallback de credenciais REST do modelo de texto. */
+function visionModel() {
+  const modelId = visionModelId();
+  if (!getEnv().AI) {
+    const accountId = process.env["CLOUDFLARE_ACCOUNT_ID"];
+    const apiKey = process.env["CLOUDFLARE_API_TOKEN"];
+    if (!accountId || !apiKey) {
+      throw new Error(
+        "Binding 'AI' ausente e credenciais CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_API_TOKEN não configuradas.",
+      );
+    }
+    const workersai = createWorkersAI({ accountId, apiKey, fetch: dedupingFetch });
+    return workersai(modelId as never);
+  }
+  const workersai = createWorkersAI({ binding: aiBinding() as never });
+  return workersai(modelId as never);
+}
+
 export function startResponses(
   request: Request | undefined,
   messages: ModelMessage[],

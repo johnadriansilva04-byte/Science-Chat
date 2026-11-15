@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { deflateRawSync, deflateSync } from "node:zlib";
 import { base64ToBytes, bytesToBase64 } from "@/lib/base64";
-import { extractText } from "@/lib/documents.server";
+import {
+  extractText,
+  isImage,
+  mimeFromFilename,
+  cleanImageDescription,
+} from "@/lib/documents.server";
 import { formatHits, type ResearchHit } from "@/lib/research.server";
 import { insertAnexoMarker, anexoMarker } from "@/lib/anexo";
 import { crc32 } from "@/lib/docx";
@@ -181,5 +186,28 @@ describe("anexo markers", () => {
   it("acrescenta ao final quando só há um parágrafo", () => {
     const out = insertAnexoMarker("Único.", 1, "após o parágrafo 3");
     expect(out).toBe("Único.\n\n[Anexo 1]");
+  });
+});
+
+describe("imagens (visão)", () => {
+  it("reconhece imagem por MIME ou extensão", () => {
+    expect(isImage("image/png", "foto")).toBe(true);
+    expect(isImage("", "grafico.jpg")).toBe(true);
+    expect(isImage("application/octet-stream", "scan.HEIC")).toBe(true);
+    expect(isImage("application/pdf", "doc.pdf")).toBe(false);
+    expect(isImage("text/plain", "nota.txt")).toBe(false);
+  });
+
+  it("infere o MIME pela extensão", () => {
+    expect(mimeFromFilename("foto.JPG")).toBe("image/jpeg");
+    expect(mimeFromFilename("grafico.webp")).toBe("image/webp");
+    expect(mimeFromFilename("documento.docx")).toBeNull();
+  });
+
+  it("normaliza a descrição devolvida pelo modelo de visão", () => {
+    expect(cleanImageDescription("  Gráfico de barras com valores 3, 5 e 8.  ")).toBe(
+      "Gráfico de barras com valores 3, 5 e 8.",
+    );
+    expect(cleanImageDescription("   ")).toBeNull();
   });
 });

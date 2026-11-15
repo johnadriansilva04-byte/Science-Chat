@@ -132,7 +132,7 @@ export const uploadDocument = createServerFn({ method: "POST" })
     (d: { articleId: string; filename: string; mime: string; base64: string; note?: string }) => d,
   )
   .handler(async ({ data, context }) => {
-    const { extractText } = await import("@/lib/documents.server");
+    const { extractText, isImage } = await import("@/lib/documents.server");
     const { putDocumentBytes, documentKey, toBase64 } = await import("@/lib/cf/storage.server");
     const { newId } = await import("@/lib/cf/auth.server");
     const bytes = base64ToBytes(data.base64);
@@ -141,9 +141,29 @@ export const uploadDocument = createServerFn({ method: "POST" })
     if (bytes.length > MAX) throw new Error("Arquivo maior que 8 MB");
     const article = await repo.getArticle(context.user.id, data.articleId);
     if (!article) throw new Error("Artigo não encontrado");
-    const textContent = await extractText(data.filename, data.mime, data.base64);
-    const id = newId();
     const mime = data.mime || "application/octet-stream";
+    let textContent = await extractText(data.filename, data.mime, data.base64);
+    // Imagens (fotos, gráficos, digitalizações) não têm texto embutido: usamos o
+    // modelo de visão para descrever e transcrever o que aparece na imagem. Se a
+    // IA falhar (ex.: cota esgotada), o anexo é salvo de todo modo, sem texto.
+    if (!textContent && isImage(mime, data.filename)) {
+      try {
+        const { describeImage } = await import("@/lib/ai/gateway.server");
+        const { IMAGE_DESCRIPTION_PROMPT, cleanImageDescription, mimeFromFilename } = await import(
+          "@/lib/documents.server"
+        );
+        const visionMime = mime.startsWith("image/") ? mime : (mimeFromFilename(data.filename) ?? mime);
+        const described = await describeImage(
+          data.base64,
+          visionMime,
+          IMAGE_DESCRIPTION_PROMPT,
+        );
+        textContent = cleanImageDescription(described);
+      } catch {
+        textContent = null;
+      }
+    }
+    const id = newId();
     // Arquivo bruto no R2 quando disponível; senão base64 no D1 (fallback).
     const storageKey = await putDocumentBytes(documentKey(data.articleId, id), bytes, mime);
     const doc = await repo.addDocument(context.user.id, data.articleId, {

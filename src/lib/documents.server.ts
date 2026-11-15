@@ -2,6 +2,48 @@ import { base64ToBytes } from "@/lib/base64";
 
 const MAX_TEXT = 20_000;
 
+const IMAGE_EXT: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  bmp: "image/bmp",
+  heic: "image/heic",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+};
+
+/** MIME da imagem a partir da extensão (quando o navegador não informa). */
+export function mimeFromFilename(filename: string): string | null {
+  const ext = filename.toLowerCase().split(".").pop() ?? "";
+  return IMAGE_EXT[ext] ?? null;
+}
+
+/** True quando o anexo é uma imagem (foto, gráfico, captura, exame digitalizado). */
+export function isImage(mime: string, filename: string): boolean {
+  if (mime.startsWith("image/")) return true;
+  return mimeFromFilename(filename) !== null;
+}
+
+/**
+ * Instrução de visão: o modelo descreve a imagem e transcreve o texto visível,
+ * para o Pracinha "ler" fotos, gráficos e digitalizações como lê um texto.
+ */
+export const IMAGE_DESCRIPTION_PROMPT = [
+  "Você é um assistente científico. Analise a imagem anexada a um artigo.",
+  "Descreva em português, de forma objetiva, o que ela mostra (tipo de imagem, elementos, dados, eixos de gráfico, valores legíveis).",
+  "Transcreva TODO o texto visível (rótulos, legendas, números, equações) exatamente como aparece.",
+  "Se for um gráfico ou tabela, resuma os dados principais. Se for um documento digitalizado, transcreva o conteúdo.",
+  "Não invente informação que não esteja na imagem. Se não for possível ler algo, diga que está ilegível.",
+].join(" ");
+
+/** Normaliza a descrição devolvida pelo modelo de visão. */
+export function cleanImageDescription(text: string): string | null {
+  const out = text.trim();
+  return out.length > 0 ? out.slice(0, MAX_TEXT) : null;
+}
+
 /**
  * Extrai texto de um documento primário. Cobre texto puro, CSV e Markdown, e
  * descomprime de verdade os formatos binários: DOCX (ZIP com XML) e PDF
