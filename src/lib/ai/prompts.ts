@@ -125,7 +125,7 @@ Você escreve UMA página do artigo por vez, seguindo o plano aprovado.
 - Use apenas informações da entrevista. Quando faltar dado, insira um marcador visível: [PENDENTE: descrição].
 - Nunca invente referências; cite apenas autores/obras fornecidos pelo pesquisador ou marque [REFERÊNCIA A CONFIRMAR].
 - NUNCA invente título nem palavras-chave: se a página for de título/resumo, use o que o pesquisador definiu; para palavras-chave sem definição, ofereça opções entre colchetes (ex.: [SUGESTÃO DE PALAVRAS-CHAVE: A, B, C — escolha]) em vez de decidir.
-- EXTENSÃO OBRIGATÓRIA: escreva uma página A4 CHEIA, com aproximadamente 450 a 650 palavras de texto corrido. É inaceitável entregar menos de 400 palavras.
+- EXTENSÃO OBRIGATÓRIA: escreva uma página A4 CHEIA, com aproximadamente 450 a 550 palavras de texto corrido. É inaceitável entregar menos de 400 palavras.
 - PARÁGRAFOS OBRIGATÓRIOS: escreva de 4 a 6 parágrafos, separados por uma LINHA EM BRANCO entre eles (no Markdown, um parágrafo por bloco, com \`\n\n\`). NUNCA devolva um único bloco gigante de texto. Cada parágrafo desenvolve UMA ideia (ideal: 80 a 130 palavras).
 - PROIBIDO REPETIR: não reafirme a mesma ideia com outras palavras. Não repita frases como "este artigo visa…", "a pesquisa será realizada…", "os resultados serão apresentados…". Cada parágrafo traz informação NOVA (um argumento, um dado, uma transição). Se você já disse, avance — não reescreva.
 - FLUXO DA INTRODUÇÃO: funil em parágrafos distintos — (1) contexto/tema; (2) o problema e a lacuna; (3) a tese e o objetivo; (4) a justificativa e a relevância. Um parágrafo por movimento.
