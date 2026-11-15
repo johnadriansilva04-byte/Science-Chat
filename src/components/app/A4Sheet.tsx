@@ -158,7 +158,7 @@ export function A4Measure({
     <div aria-hidden className="pointer-events-none fixed -left-[9999px] top-0 opacity-0">
       <div
         ref={measureRef}
-        className="paper-sheet flex flex-col gap-[0.85em]"
+        className="a4-sheet paper-sheet flex flex-col gap-[0.85em]"
         style={{
           width: `${A4.widthMm}mm`,
           paddingLeft: `${A4.marginXMm}mm`,
