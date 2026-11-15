@@ -1,4 +1,5 @@
 import { base64ToBytes, bytesToBase64 } from "@/lib/base64";
+import { crc32 } from "@/lib/docx";
 
 const MAX_TEXT = 20_000;
 
@@ -187,9 +188,117 @@ async function decodeImageStream(body: Uint8Array, dict: string): Promise<Uint8A
   }
   if (/\/DCTDecode/.test(filters)) return data; // JPEG pronto
   if (/\/FlateDecode/.test(filters)) {
-    return (await inflate(data, "deflate")) ?? null;
+    const inflated = await inflate(data, "deflate");
+    if (!inflated) return null;
+    // Muitos scanners e o ReportLab embutem a página como PIXELS CRUS (RGB/cinza
+    // sem cabeçalho), então o FlateDecode devolve bytes que não são PNG/JPEG. Se
+    // for esse o caso, reempacotamos em PNG para o modelo de visão conseguir ler.
+    return sniffImageMime(inflated) ? inflated : await wrapRawImageAsPng(inflated, dict);
   }
   return data;
+}
+
+/**
+ * Reempacota pixels crus (descomprimidos de um `/FlateDecode`) num PNG válido,
+ * para que o modelo de visão leia digitalizações que não trazem cabeçalho de
+ * imagem. Suporta 8 bits por componente em tons de cinza ou RGB; infere os canais
+ * comparando o tamanho dos dados com largura × altura. Devolve null se não casar.
+ */
+async function wrapRawImageAsPng(data: Uint8Array, dict: string): Promise<Uint8Array | null> {
+  const w = parseInt(dict.match(/\/Width\s+(\d+)/)?.[1] ?? "0", 10);
+  const h = parseInt(dict.match(/\/Height\s+(\d+)/)?.[1] ?? "0", 10);
+  const bpc = parseInt(dict.match(/\/BitsPerComponent\s+(\d+)/)?.[1] ?? "8", 10);
+  if (!w || !h || bpc !== 8) return null;
+  const pixels = w * h;
+  const channels = data.length === pixels * 3 ? 3 : data.length === pixels ? 1 : 0;
+  if (!channels) return null;
+  const colorType = channels === 3 ? 2 : 0;
+  const rowBytes = w * channels;
+  const filtered = new Uint8Array(h * (rowBytes + 1));
+  for (let y = 0; y < h; y += 1) {
+    filtered[y * (rowBytes + 1)] = 0; // filtro "None" da linha
+    filtered.set(data.subarray(y * rowBytes, (y + 1) * rowBytes), y * (rowBytes + 1) + 1);
+  }
+  const idat = await deflateZlib(filtered);
+  if (!idat) return null;
+  return buildPng(w, h, colorType, idat);
+}
+
+/** Comprime com zlib (`CompressionStream("deflate")`), o formato exigido no IDAT. */
+async function deflateZlib(data: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const source = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(data);
+        controller.close();
+      },
+    });
+    const reader = source
+      .pipeThrough(
+        new CompressionStream("deflate") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>,
+      )
+      .getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      total += value.length;
+    }
+    const out = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      out.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** Monta um PNG (IHDR + IDAT + IEND) a partir de scanlines já filtradas/comprimidas. */
+function buildPng(width: number, height: number, colorType: number, idat: Uint8Array): Uint8Array {
+  const sig = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const ihdr = new Uint8Array(13);
+  const dv = new DataView(ihdr.buffer);
+  dv.setUint32(0, width);
+  dv.setUint32(4, height);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = colorType;
+  ihdr[10] = 0; // compressão
+  ihdr[11] = 0; // filtro
+  ihdr[12] = 0; // sem entrelaçamento
+  const parts = [
+    sig,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", idat),
+    pngChunk("IEND", new Uint8Array()),
+  ];
+  const total = parts.reduce((sum, p) => sum + p.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const p of parts) {
+    out.set(p, offset);
+    offset += p.length;
+  }
+  return out;
+}
+
+/** Um chunk PNG: comprimento + tipo + dados + CRC (sobre tipo + dados). */
+function pngChunk(type: string, data: Uint8Array): Uint8Array {
+  const typeBytes = new TextEncoder().encode(type);
+  const out = new Uint8Array(12 + data.length);
+  const dv = new DataView(out.buffer);
+  dv.setUint32(0, data.length);
+  out.set(typeBytes, 4);
+  out.set(data, 8);
+  const crcInput = new Uint8Array(typeBytes.length + data.length);
+  crcInput.set(typeBytes);
+  crcInput.set(data, typeBytes.length);
+  dv.setUint32(8 + data.length, crc32(crcInput));
+  return out;
 }
 
 /**

@@ -230,6 +230,35 @@ function pdfWithImage(image: Uint8Array, filter: "DCTDecode" | "FlateDecode"): U
   return out;
 }
 
+/** Bytes pseudoaleatórios incompressíveis (para o PDF de teste passar do tamanho mínimo). */
+function noisyBytes(size: number): Uint8Array {
+  const out = new Uint8Array(size);
+  let x = 123456789;
+  for (let i = 0; i < size; i += 1) {
+    x = (x * 1103515245 + 12345) & 0x7fffffff;
+    out[i] = x & 0xff;
+  }
+  return out;
+}
+
+/** PDF com a página embutida como PIXELS CRUS comprimidos (sem cabeçalho de imagem). */
+function pdfWithRawImage(
+  raw: Uint8Array,
+  width: number,
+  height: number,
+  colorSpace: "DeviceRGB" | "DeviceGray",
+): Uint8Array {
+  const dict = `<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /${colorSpace} /BitsPerComponent 8 /Filter /FlateDecode >>`;
+  const head = new TextEncoder().encode(`%PDF-1.4\n1 0 obj\n${dict}\nstream\n`);
+  const tail = new TextEncoder().encode(`\nendstream\nendobj\n%%EOF`);
+  const body = new Uint8Array(deflateSync(Buffer.from(raw)));
+  const out = new Uint8Array(head.length + body.length + tail.length);
+  out.set(head, 0);
+  out.set(body, head.length);
+  out.set(tail, head.length + body.length);
+  return out;
+}
+
 // JPEG mínimo válido o suficiente para o sniff (FF D8 FF ...). Preenchido para
 // passar do limite de tamanho mínimo (minBytes).
 function fakeJpeg(size = 6000): Uint8Array {
@@ -309,6 +338,37 @@ describe("OCR de PDF digitalizado (extração de imagens)", () => {
     const imgs = await extractPdfImages(pdf);
     expect(imgs).toHaveLength(1);
     expect(imgs[0]!.mime).toBe("image/png");
+  });
+
+  it("reempacota pixels crus (FlateDecode sem cabeçalho) num PNG válido", async () => {
+    // Scanner/ReportLab às vezes embute a página como RGB cru comprimido, sem
+    // cabeçalho PNG/JPEG. Antes isso era descartado e o OCR não acontecia.
+    const w = 400;
+    const h = 300;
+    const raw = noisyBytes(w * h * 3);
+    const pdf = pdfWithRawImage(raw, w, h, "DeviceRGB");
+    const imgs = await extractPdfImages(pdf);
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]!.mime).toBe("image/png");
+    // Assinatura PNG e dimensões no IHDR.
+    const png = imgs[0]!.bytes;
+    expect([...png.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const dv = new DataView(png.buffer, png.byteOffset);
+    expect(dv.getUint32(16)).toBe(w);
+    expect(dv.getUint32(20)).toBe(h);
+  });
+
+  it("reempacota pixels crus em tons de cinza", async () => {
+    const w = 500;
+    const h = 400;
+    const raw = noisyBytes(w * h);
+    const pdf = pdfWithRawImage(raw, w, h, "DeviceGray");
+    const imgs = await extractPdfImages(pdf);
+    expect(imgs).toHaveLength(1);
+    const dv = new DataView(imgs[0]!.bytes.buffer, imgs[0]!.bytes.byteOffset);
+    expect(dv.getUint32(16)).toBe(w);
+    expect(dv.getUint32(20)).toBe(h);
+    expect(imgs[0]!.bytes[25]).toBe(0); // colorType 0 = grayscale no IHDR
   });
 
   it("ignora imagens pequenas demais (logos/ícones)", async () => {
