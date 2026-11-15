@@ -74,28 +74,35 @@ export function buildTools(ctx: ToolContext) {
         if (doc.text_content) {
           return `Anexo ${numero} — ${doc.filename}:\n${doc.text_content.slice(0, 6000)}`;
         }
-        // Sem texto extraído: se for imagem, tenta a visão sob demanda (ex.: anexada
-        // quando a cota de IA estava esgotada).
-        const { isImage, IMAGE_DESCRIPTION_PROMPT, cleanImageDescription } =
+        // Sem texto extraído: se for imagem ou PDF digitalizado, tenta a visão
+        // sob demanda (ex.: anexado quando a cota de IA estava esgotada).
+        const { isImage, isPdf, IMAGE_DESCRIPTION_PROMPT, PDF_OCR_PROMPT, cleanImageDescription } =
           await import("@/lib/documents.server");
-        if (isImage(doc.mime, doc.filename)) {
+        if (isImage(doc.mime, doc.filename) || isPdf(doc.mime, doc.filename)) {
           try {
             const full = await repo.getDocument(ctx.userId, ctx.articleId, doc.id);
             const { readDocumentBytes, toBase64 } = await import("@/lib/cf/storage.server");
             const bytes = await readDocumentBytes(full?.storage_key ?? null, full?.content ?? null);
             if (bytes) {
-              const { describeImage } = await import("@/lib/ai/gateway.server");
-              const described = await describeImage(
-                toBase64(bytes),
-                doc.mime,
-                IMAGE_DESCRIPTION_PROMPT,
-              );
-              const text = cleanImageDescription(described);
-              if (text)
-                return `Anexo ${numero} — ${doc.filename} (imagem):\n${text.slice(0, 6000)}`;
+              if (isPdf(doc.mime, doc.filename)) {
+                const { describePdfImages } = await import("@/lib/documents.server");
+                const text = await describePdfImages(bytes, PDF_OCR_PROMPT);
+                if (text)
+                  return `Anexo ${numero} — ${doc.filename} (PDF digitalizado, transcrito):\n${text.slice(0, 6000)}`;
+              } else {
+                const { describeImage } = await import("@/lib/ai/gateway.server");
+                const described = await describeImage(
+                  toBase64(bytes),
+                  doc.mime,
+                  IMAGE_DESCRIPTION_PROMPT,
+                );
+                const text = cleanImageDescription(described);
+                if (text)
+                  return `Anexo ${numero} — ${doc.filename} (imagem):\n${text.slice(0, 6000)}`;
+              }
             }
           } catch {
-            return `Anexo ${numero} (${doc.filename}) é uma imagem, mas não consegui lê-la agora (a IA pode estar em descanso). Tente de novo mais tarde.`;
+            return `Anexo ${numero} (${doc.filename}) não tem texto legível e não consegui lê-lo agora (a IA pode estar em descanso). Tente de novo mais tarde.`;
           }
         }
         return `Anexo ${numero} (${doc.filename}) não tem texto legível extraído.`;

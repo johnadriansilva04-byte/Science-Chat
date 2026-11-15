@@ -118,8 +118,8 @@ export function ChatAttachments({
           </SheetTitle>
           <SheetDescription className="text-xs">
             Solte aqui PDFs, planilhas, fotos ou códigos. Cada anexo recebe um número (Anexo 1, 2,
-            …) e fica disponível para a IA citar e posicionar no artigo. Fotos e gráficos são lidos
-            pelo modelo de visão (descrição + texto transcrito).
+            …) e fica disponível para a IA citar e posicionar no artigo. Fotos, gráficos e PDFs
+            digitalizados são lidos por visão/OCR (descrição + texto transcrito).
           </SheetDescription>
         </SheetHeader>
 
@@ -179,8 +179,8 @@ export function ChatAttachments({
                         {formatSize(d.size)}
                         {d.hasText
                           ? " · conteúdo lido"
-                          : d.mime.startsWith("image/")
-                            ? " · imagem (não lida ainda)"
+                          : d.mime.startsWith("image/") || d.mime === "application/pdf"
+                            ? " · não lido ainda (OCR)"
                             : " · sem texto legível"}
                         {d.note ? ` · ${d.note}` : ""}
                       </p>

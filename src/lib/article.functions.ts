@@ -132,7 +132,7 @@ export const uploadDocument = createServerFn({ method: "POST" })
     (d: { articleId: string; filename: string; mime: string; base64: string; note?: string }) => d,
   )
   .handler(async ({ data, context }) => {
-    const { extractText, isImage } = await import("@/lib/documents.server");
+    const { extractText, isImage, isPdf } = await import("@/lib/documents.server");
     const { putDocumentBytes, documentKey, toBase64 } = await import("@/lib/cf/storage.server");
     const { newId } = await import("@/lib/cf/auth.server");
     const bytes = base64ToBytes(data.base64);
@@ -156,6 +156,16 @@ export const uploadDocument = createServerFn({ method: "POST" })
           : (mimeFromFilename(data.filename) ?? mime);
         const described = await describeImage(data.base64, visionMime, IMAGE_DESCRIPTION_PROMPT);
         textContent = cleanImageDescription(described);
+      } catch {
+        textContent = null;
+      }
+    }
+    // PDF digitalizado (só a foto da página, sem camada de texto): extrai as
+    // imagens embutidas e transcreve via visão (OCR). Se a IA falhar, segue sem.
+    if (!textContent && isPdf(mime, data.filename)) {
+      try {
+        const { describePdfImages, PDF_OCR_PROMPT } = await import("@/lib/documents.server");
+        textContent = await describePdfImages(bytes, PDF_OCR_PROMPT);
       } catch {
         textContent = null;
       }

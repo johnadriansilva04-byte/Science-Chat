@@ -1,4 +1,4 @@
-import { base64ToBytes } from "@/lib/base64";
+import { base64ToBytes, bytesToBase64 } from "@/lib/base64";
 
 const MAX_TEXT = 20_000;
 
@@ -26,6 +26,11 @@ export function isImage(mime: string, filename: string): boolean {
   return mimeFromFilename(filename) !== null;
 }
 
+/** True quando o anexo é um PDF (pode ser texto ou digitalização). */
+export function isPdf(mime: string, filename: string): boolean {
+  return mime === "application/pdf" || filename.toLowerCase().endsWith(".pdf");
+}
+
 /**
  * Instrução de visão: o modelo descreve a imagem e transcreve o texto visível,
  * para o Pracinha "ler" fotos, gráficos e digitalizações como lê um texto.
@@ -42,6 +47,117 @@ export const IMAGE_DESCRIPTION_PROMPT = [
 export function cleanImageDescription(text: string): string | null {
   const out = text.trim();
   return out.length > 0 ? out.slice(0, MAX_TEXT) : null;
+}
+
+/**
+ * Instrução de OCR para PDF digitalizado (página que é só uma foto): pede a
+ * transcrição fiel do documento, priorizando o texto sobre a descrição.
+ */
+export const PDF_OCR_PROMPT = [
+  "Esta imagem é uma página digitalizada de um documento (PDF escaneado).",
+  "Transcreva em português TODO o texto visível, na ordem de leitura, mantendo títulos, listas, tabelas e números.",
+  "Se houver figuras, tabelas ou gráficos, descreva brevemente e informe os dados legíveis.",
+  "Se alguma parte estiver ilegível, escreva [ilegível]. Não invente conteúdo que não esteja na página.",
+].join(" ");
+
+/** Assinaturas (magic bytes) das imagens que a Workers AI consegue ler. */
+function sniffImageMime(bytes: Uint8Array): string | null {
+  if (bytes.length >= 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e) {
+    return "image/png";
+  }
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (bytes.length >= 3 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+    return "image/gif";
+  }
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+  return null;
+}
+
+export type PdfImage = { mime: string; bytes: Uint8Array };
+
+/**
+ * Extrai as imagens embutidas num PDF (fotos, digitalizações). Cobre os dois
+ * casos comuns em PDFs escaneados:
+ *  - imagens com filtro `/DCTDecode` (JPEG) — o stream JÁ é um JPEG;
+ *  - imagens com filtro `/FlateDecode` (PNG/zlib) — descomprime e valida o PNG.
+ * Devolve no máximo `max` imagens, das maiores para as menores (as páginas
+ * escaneadas costumam dominar; logos e ícones ficam de fora).
+ */
+export async function extractPdfImages(
+  bytes: Uint8Array,
+  max = 3,
+  minBytes = 4096,
+): Promise<PdfImage[]> {
+  const raw = latin1(bytes);
+  const out: PdfImage[] = [];
+  const re = /stream\r?\n?([\s\S]*?)\r?\n?endstream/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    const dictStart = raw.lastIndexOf("<<", m.index);
+    const dict = dictStart >= 0 ? raw.slice(dictStart, m.index) : "";
+    if (!/\/Subtype\s*\/Image/.test(dict)) continue;
+    const body = latin1ToBytes(m[1] ?? "");
+    let img: PdfImage | null = null;
+    if (/\/DCTDecode/.test(dict)) {
+      const mime = sniffImageMime(body);
+      if (mime) img = { mime, bytes: body };
+    } else if (/\/FlateDecode/.test(dict)) {
+      const data = await inflate(body, "deflate");
+      if (data) {
+        const mime = sniffImageMime(data);
+        if (mime) img = { mime, bytes: data };
+      }
+    }
+    if (img && img.bytes.length >= minBytes) out.push(img);
+  }
+  out.sort((a, b) => b.bytes.length - a.bytes.length);
+  return out.slice(0, max);
+}
+
+/**
+ * Junta as descrições de várias páginas/imagens num só texto, com cabeçalho por
+ * página. Função pura para poder ser testada sem IA.
+ */
+export function joinImageDescriptions(parts: { label: string; text: string }[]): string | null {
+  const clean = parts
+    .map((p) => ({ label: p.label, text: p.text.trim() }))
+    .filter((p) => p.text.length > 0);
+  if (!clean.length) return null;
+  const out =
+    clean.length === 1 ? clean[0]!.text : clean.map((p) => `[${p.label}]\n${p.text}`).join("\n\n");
+  return out.slice(0, MAX_TEXT);
+}
+
+/**
+ * OCR de PDF digitalizado: extrai as imagens do PDF e passa cada uma pelo modelo
+ * de visão, juntando as descrições. Devolve null quando não há imagem legível ou
+ * quando a IA está indisponível (o chamador decide o que fazer).
+ */
+export async function describePdfImages(bytes: Uint8Array, prompt: string): Promise<string | null> {
+  const images = await extractPdfImages(bytes);
+  if (!images.length) return null;
+  const { describeImage } = await import("@/lib/ai/gateway.server");
+  const parts: { label: string; text: string }[] = [];
+  for (let i = 0; i < images.length; i += 1) {
+    const img = images[i]!;
+    const text = await describeImage(bytesToBase64(img.bytes), img.mime, prompt, 1200);
+    parts.push({ label: `digitalização ${i + 1}`, text });
+  }
+  return joinImageDescriptions(parts);
 }
 
 /**

@@ -140,6 +140,7 @@ export async function describeImage(
   base64: string,
   mime: string,
   instructions: string = "Descreva a imagem e transcreva o texto visível em português.",
+  maxOutputTokens = 1024,
 ): Promise<string> {
   const { generateText } = await import("ai");
   const result = await generateText({
@@ -153,7 +154,7 @@ export async function describeImage(
         ],
       },
     ],
-    maxOutputTokens: 1024,
+    maxOutputTokens,
   });
   return result.text;
 }

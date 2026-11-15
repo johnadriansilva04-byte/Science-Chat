@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { SectionGuideCard } from "@/components/app/SectionGuideCard";
 import { generatePlan, setPhase, updateTitle } from "@/lib/article.functions";
 
 export function PlanPanel({
@@ -129,6 +130,8 @@ export function PlanPanel({
               Ainda não há um plano. Conclua a entrevista e monte o plano de produção.
             </p>
           )}
+
+          <SectionGuideCard />
 
           <div className="space-y-2">
             <Textarea

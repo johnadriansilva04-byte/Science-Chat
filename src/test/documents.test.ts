@@ -3,7 +3,10 @@ import { deflateRawSync, deflateSync } from "node:zlib";
 import { base64ToBytes, bytesToBase64 } from "@/lib/base64";
 import {
   extractText,
+  extractPdfImages,
+  joinImageDescriptions,
   isImage,
+  isPdf,
   mimeFromFilename,
   cleanImageDescription,
 } from "@/lib/documents.server";
@@ -209,5 +212,88 @@ describe("imagens (visão)", () => {
       "Gráfico de barras com valores 3, 5 e 8.",
     );
     expect(cleanImageDescription("   ")).toBeNull();
+  });
+});
+
+/** PDF sintético com uma imagem embutida (escolhe o filtro). */
+function pdfWithImage(image: Uint8Array, filter: "DCTDecode" | "FlateDecode"): Uint8Array {
+  const dict = `<< /Type /XObject /Subtype /Image /Width 100 /Height 100 /Filter /${filter} >>`;
+  const head = new TextEncoder().encode(`%PDF-1.4\n1 0 obj\n${dict}\nstream\n`);
+  const tail = new TextEncoder().encode(`\nendstream\nendobj\n%%EOF`);
+  const body = filter === "DCTDecode" ? image : new Uint8Array(deflateSync(Buffer.from(image)));
+  const out = new Uint8Array(head.length + body.length + tail.length);
+  out.set(head, 0);
+  out.set(body, head.length);
+  out.set(tail, head.length + body.length);
+  return out;
+}
+
+// JPEG mínimo válido o suficiente para o sniff (FF D8 FF ...). Preenchido para
+// passar do limite de tamanho mínimo (minBytes).
+function fakeJpeg(size = 6000): Uint8Array {
+  const b = new Uint8Array(size);
+  b[0] = 0xff;
+  b[1] = 0xd8;
+  b[2] = 0xff;
+  b[size - 2] = 0xff;
+  b[size - 1] = 0xd9;
+  return b;
+}
+
+function fakePng(size = 6000): Uint8Array {
+  const b = new Uint8Array(size);
+  b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+  return b;
+}
+
+describe("OCR de PDF digitalizado (extração de imagens)", () => {
+  it("extrai imagem JPEG embutida com /DCTDecode", async () => {
+    const pdf = pdfWithImage(fakeJpeg(), "DCTDecode");
+    const imgs = await extractPdfImages(pdf);
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]!.mime).toBe("image/jpeg");
+    expect(imgs[0]!.bytes.length).toBeGreaterThan(1000);
+  });
+
+  it("extrai imagem PNG comprimida com /FlateDecode", async () => {
+    const pdf = pdfWithImage(fakePng(), "FlateDecode");
+    const imgs = await extractPdfImages(pdf);
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]!.mime).toBe("image/png");
+  });
+
+  it("ignora imagens pequenas demais (logos/ícones)", async () => {
+    const pdf = pdfWithImage(fakeJpeg(200), "DCTDecode");
+    expect(await extractPdfImages(pdf)).toHaveLength(0);
+  });
+
+  it("devolve vazio quando o PDF não tem imagem", async () => {
+    const pdf = new TextEncoder().encode("%PDF-1.4\n1 0 obj\n<< >>\nendobj\n%%EOF");
+    expect(await extractPdfImages(pdf)).toHaveLength(0);
+  });
+
+  it("identifica PDF por mime ou extensão", () => {
+    expect(isPdf("application/pdf", "doc")).toBe(true);
+    expect(isPdf("", "scan.PDF")).toBe(true);
+    expect(isPdf("text/plain", "nota.txt")).toBe(false);
+  });
+});
+
+describe("joinImageDescriptions", () => {
+  it("devolve o texto único sem cabeçalho quando há uma só parte", () => {
+    expect(joinImageDescriptions([{ label: "p1", text: "  Olá mundo  " }])).toBe("Olá mundo");
+  });
+
+  it("numera as partes quando há várias", () => {
+    const out = joinImageDescriptions([
+      { label: "digitalização 1", text: "Página A" },
+      { label: "digitalização 2", text: "Página B" },
+    ]);
+    expect(out).toContain("[digitalização 1]\nPágina A");
+    expect(out).toContain("[digitalização 2]\nPágina B");
+  });
+
+  it("ignora partes vazias e devolve null quando nada sobra", () => {
+    expect(joinImageDescriptions([{ label: "p1", text: "   " }])).toBeNull();
   });
 });
