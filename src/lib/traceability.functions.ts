@@ -60,7 +60,7 @@ async function documentText(
   if (doc.text_content) return { name: doc.filename, seq: doc.seq, text: doc.text_content };
   const bytes = await readDocumentBytes(doc.storage_key, doc.content);
   if (!bytes) return { name: doc.filename, seq: doc.seq, text: "" };
-  const text = extractText(doc.filename, doc.mime, bytesToBase64(bytes)) ?? "";
+  const text = (await extractText(doc.filename, doc.mime, bytesToBase64(bytes))) ?? "";
   return { name: doc.filename, seq: doc.seq, text };
 }
 

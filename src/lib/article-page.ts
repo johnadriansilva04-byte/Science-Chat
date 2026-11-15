@@ -10,3 +10,46 @@ export const TARGET_PAGE_WORDS = 550;
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
+
+/** Normaliza um parágrafo para comparação (sem acentos, pontuação ou caixa). */
+function normalizeParagraph(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function jaccard(a: string, b: string): number {
+  const sa = new Set(a.split(" ").filter(Boolean));
+  const sb = new Set(b.split(" ").filter(Boolean));
+  if (!sa.size || !sb.size) return 0;
+  let inter = 0;
+  for (const w of sa) if (sb.has(w)) inter += 1;
+  return inter / (sa.size + sb.size - inter);
+}
+
+/**
+ * Remove parágrafos repetidos de uma página. Modelos pequenos às vezes degeneram
+ * e repetem o mesmo parágrafo; a duplicação não deve chegar ao documento. Mantém a
+ * primeira ocorrência e descarta as seguintes quase idênticas (Jaccard ≥ 0,8).
+ * Títulos e parágrafos curtos (menos de 8 palavras) são preservados.
+ */
+export function dedupeParagraphs(text: string): string {
+  const paragraphs = text.split(/\n{2,}/);
+  const kept: string[] = [];
+  const seen: string[] = [];
+  for (const paragraph of paragraphs) {
+    const trimmed = paragraph.trim();
+    if (!trimmed) continue;
+    const norm = normalizeParagraph(trimmed);
+    const isHeading = /^#{1,6}\s/.test(trimmed);
+    const tooShort = norm.split(" ").filter(Boolean).length < 8;
+    if (!isHeading && !tooShort && seen.some((s) => jaccard(s, norm) >= 0.8)) continue;
+    seen.push(norm);
+    kept.push(trimmed);
+  }
+  return kept.join("\n\n");
+}

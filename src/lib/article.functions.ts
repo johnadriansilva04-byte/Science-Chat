@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
-import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
+import { countWords, dedupeParagraphs, MIN_PAGE_WORDS } from "@/lib/article-page";
 import { base64ToBytes } from "@/lib/base64";
 import * as repo from "@/lib/cf/repo.server";
 
@@ -141,7 +141,7 @@ export const uploadDocument = createServerFn({ method: "POST" })
     if (bytes.length > MAX) throw new Error("Arquivo maior que 8 MB");
     const article = await repo.getArticle(context.user.id, data.articleId);
     if (!article) throw new Error("Artigo não encontrado");
-    const textContent = extractText(data.filename, data.mime, data.base64);
+    const textContent = await extractText(data.filename, data.mime, data.base64);
     const id = newId();
     const mime = data.mime || "application/octet-stream";
     // Arquivo bruto no R2 quando disponível; senão base64 no D1 (fallback).
@@ -300,13 +300,13 @@ export const generatePage = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const content = await generateFinalText(prompt, PAGE_INSTRUCTIONS);
+    const content = dedupeParagraphs(await generateFinalText(prompt, PAGE_INSTRUCTIONS));
     // A página precisa preencher uma folha A4; uma resposta curta demais indica corte
     // ou omissão da IA. Reforçamos o pedido uma vez antes de aceitar.
     let finalContent = content;
     if (countWords(stripMarkers(content)) < MIN_PAGE_WORDS) {
       const retryPrompt = `${prompt}\n\nATENÇÃO: a versão anterior ficou curta demais (menos de ${MIN_PAGE_WORDS} palavras). Escreva novamente a PÁGINA ${number} com pelo menos ${MIN_PAGE_WORDS} palavras, em 3 a 5 parágrafos desenvolvidos, sem repetir ideias.`;
-      finalContent = await generateFinalText(retryPrompt, PAGE_INSTRUCTIONS);
+      finalContent = dedupeParagraphs(await generateFinalText(retryPrompt, PAGE_INSTRUCTIONS));
     }
     await repo.upsertPage(userId, data.articleId, number, finalContent, "draft");
     return { ok: true, pageNumber: number };

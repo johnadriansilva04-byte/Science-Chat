@@ -62,3 +62,10 @@ Prod: **https://sciencechat.sciencechat.workers.dev**. **168 testes** (25 arquiv
 - **R2 do dossiê:** feito e validado em produção (upload→R2, download, delete). Ver log `2026-11-11.md`.
 - **Matriz de rastreabilidade, auditoria científica, config editorial Udelar e exportação DOCX/LaTeX/HTML:** feitos e validados em produção (seção acima). As 4 pendências anteriores estão concluídas.
 - Migration `0005` aplicada no D1 remoto (ledger `schema_migrations` com 5 entradas); 7 artigos preservados.
+
+## Correções 2026-11-15 (verificação geral do app)
+- **Extração de documentos (bug corrigido):** `src/lib/documents.server.ts` só lia DOCX/PDF **não comprimidos**. Word/Acrobat usam ZIP deflate e `/FlateDecode`, então `extractText` devolvia `null` para quase todo anexo real. Agora descomprime via `DecompressionStream` ("deflate-raw" p/ ZIP, "deflate" p/ PDF) e é **assíncrono** (2 chamadores: `article.functions.ts` `uploadDocument`, `traceability.functions.ts`). ⚠️ Usar `ReadableStream` + `pipeThrough`; **`Blob.stream()` NÃO existe no jsdom** (testes quebram). Testes cobrem DOCX/PDF comprimidos (`documents.test.ts`).
+- **Degeneração de páginas (corrigido):** modelo repetia o mesmo parágrafo. `dedupeParagraphs` (`article-page.ts`, Jaccard≥0.8) aplicado no `generatePage` (normal + retry).
+- **Cota Workers AI:** checar via REST `POST /accounts/{acct}/ai/run/{model}`; erro `4006` = cota esgotada, reseta à meia-noite UTC. Em 2026-11-15 18:00 UTC estava esgotada.
+- Token `cfat_*`: funciona só nos endpoints `/accounts/*` (listar accounts/D1/R2/AI); `/user/tokens/verify` responde "Invalid API Token".
+- Estado D1 remoto (15/11): 11 artigos, 14 páginas, 1 publicação, 6 usuários, **0 documentos**, R2 `sciencechat-files` **vazio**.
