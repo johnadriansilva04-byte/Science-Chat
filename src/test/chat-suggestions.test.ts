@@ -38,3 +38,19 @@ describe("suggestReplies", () => {
     expect(suggestReplies("QUAL O DESTINO EDITORIAL?")).toContain("Revista nacional");
   });
 });
+
+describe("sugestões de ensino (mentoria)", () => {
+  it("oferece ver exemplos quando a pergunta é sobre palavras-chave", () => {
+    expect(suggestReplies("Quais palavras-chave você sugere?")).toContain("Ver exemplos");
+  });
+
+  it("oferece aprovar/ajustar quando o Pracinha mostra a estrutura", () => {
+    const out = suggestReplies("Veja a estrutura do artigo. O que achou das seções?");
+    expect(out).toContain("Aprovar estrutura");
+    expect(out).toContain("Quero ajustar");
+  });
+
+  it("confirma o recapitulado da pesquisa", () => {
+    expect(suggestReplies("Entendi sua pesquisa: é sobre X. Está certo?")).toContain("Sim, é isso");
+  });
+});

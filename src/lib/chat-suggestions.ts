@@ -27,6 +27,18 @@ const RULES: Rule[] = [
     options: ["Sugira 3 títulos", "Vou escolher depois"],
   },
   {
+    test: /palavras?.?chave|etiqueta/,
+    options: ["Ver exemplos", "Vou escolher depois"],
+  },
+  {
+    test: /estrutura|sumario|secoes|partes|esqueleto/,
+    options: ["Aprovar estrutura", "Quero ajustar"],
+  },
+  {
+    test: /recapitul|entendi sua pesquisa|esta certo|confirma/,
+    options: ["Sim, é isso", "Quase — quero corrigir"],
+  },
+  {
     test: /referencia|literatura|autores|fontes|o que existe|bibliografia/,
     options: ["Pesquise referências", "Tenho fontes próprias"],
   },
