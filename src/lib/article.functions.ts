@@ -149,15 +149,12 @@ export const uploadDocument = createServerFn({ method: "POST" })
     if (!textContent && isImage(mime, data.filename)) {
       try {
         const { describeImage } = await import("@/lib/ai/gateway.server");
-        const { IMAGE_DESCRIPTION_PROMPT, cleanImageDescription, mimeFromFilename } = await import(
-          "@/lib/documents.server"
-        );
-        const visionMime = mime.startsWith("image/") ? mime : (mimeFromFilename(data.filename) ?? mime);
-        const described = await describeImage(
-          data.base64,
-          visionMime,
-          IMAGE_DESCRIPTION_PROMPT,
-        );
+        const { IMAGE_DESCRIPTION_PROMPT, cleanImageDescription, mimeFromFilename } =
+          await import("@/lib/documents.server");
+        const visionMime = mime.startsWith("image/")
+          ? mime
+          : (mimeFromFilename(data.filename) ?? mime);
+        const described = await describeImage(data.base64, visionMime, IMAGE_DESCRIPTION_PROMPT);
         textContent = cleanImageDescription(described);
       } catch {
         textContent = null;

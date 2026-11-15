@@ -63,7 +63,7 @@ export function buildTools(ctx: ToolContext) {
 
     ler_anexo: tool({
       description:
-        "Lê o texto extraído de um anexo pelo seu número (Anexo N). Use para analisar o conteúdo do documento e decidir onde ele se encaixa no artigo.",
+        "Lê o conteúdo de um anexo pelo seu número (Anexo N). Para imagens (fotos, gráficos, digitalizações), usa o modelo de visão para descrever e transcrever o que aparece. Use para analisar o conteúdo e decidir onde ele se encaixa no artigo.",
       inputSchema: z.object({
         numero: z.number().int().min(1).describe("Número do anexo (Anexo 1 = número 1)."),
       }),
@@ -71,10 +71,34 @@ export function buildTools(ctx: ToolContext) {
         const docs = await repo.listDocuments(ctx.userId, ctx.articleId);
         const doc = docs.find((d) => d.seq === numero);
         if (!doc) return `Não existe Anexo ${numero}.`;
-        if (!doc.text_content) {
-          return `Anexo ${numero} (${doc.filename}) não tem texto legível extraído (talvez seja imagem/PDF digitalizado).`;
+        if (doc.text_content) {
+          return `Anexo ${numero} — ${doc.filename}:\n${doc.text_content.slice(0, 6000)}`;
         }
-        return `Anexo ${numero} — ${doc.filename}:\n${doc.text_content.slice(0, 6000)}`;
+        // Sem texto extraído: se for imagem, tenta a visão sob demanda (ex.: anexada
+        // quando a cota de IA estava esgotada).
+        const { isImage, IMAGE_DESCRIPTION_PROMPT, cleanImageDescription } =
+          await import("@/lib/documents.server");
+        if (isImage(doc.mime, doc.filename)) {
+          try {
+            const full = await repo.getDocument(ctx.userId, ctx.articleId, doc.id);
+            const { readDocumentBytes, toBase64 } = await import("@/lib/cf/storage.server");
+            const bytes = await readDocumentBytes(full?.storage_key ?? null, full?.content ?? null);
+            if (bytes) {
+              const { describeImage } = await import("@/lib/ai/gateway.server");
+              const described = await describeImage(
+                toBase64(bytes),
+                doc.mime,
+                IMAGE_DESCRIPTION_PROMPT,
+              );
+              const text = cleanImageDescription(described);
+              if (text)
+                return `Anexo ${numero} — ${doc.filename} (imagem):\n${text.slice(0, 6000)}`;
+            }
+          } catch {
+            return `Anexo ${numero} (${doc.filename}) é uma imagem, mas não consegui lê-la agora (a IA pode estar em descanso). Tente de novo mais tarde.`;
+          }
+        }
+        return `Anexo ${numero} (${doc.filename}) não tem texto legível extraído.`;
       },
     }),
 

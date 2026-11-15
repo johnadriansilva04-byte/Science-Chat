@@ -118,7 +118,8 @@ export function ChatAttachments({
           </SheetTitle>
           <SheetDescription className="text-xs">
             Solte aqui PDFs, planilhas, fotos ou códigos. Cada anexo recebe um número (Anexo 1, 2,
-            …) e fica disponível para a IA citar e posicionar no artigo.
+            …) e fica disponível para a IA citar e posicionar no artigo. Fotos e gráficos são lidos
+            pelo modelo de visão (descrição + texto transcrito).
           </SheetDescription>
         </SheetHeader>
 
@@ -176,7 +177,11 @@ export function ChatAttachments({
                       <p className="truncate text-xs font-medium">{d.filename}</p>
                       <p className="truncate text-[11px] text-muted-foreground">
                         {formatSize(d.size)}
-                        {d.hasText ? " · texto lido" : " · sem texto legível"}
+                        {d.hasText
+                          ? " · conteúdo lido"
+                          : d.mime.startsWith("image/")
+                            ? " · imagem (não lida ainda)"
+                            : " · sem texto legível"}
                         {d.note ? ` · ${d.note}` : ""}
                       </p>
                     </div>
