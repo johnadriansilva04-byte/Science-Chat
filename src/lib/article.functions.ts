@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
-import { countWords, dedupeParagraphs, MIN_PAGE_WORDS, pickLongerText } from "@/lib/article-page";
+import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@/lib/article-page";
 import { base64ToBytes } from "@/lib/base64";
 import * as repo from "@/lib/cf/repo.server";
 
@@ -327,14 +327,14 @@ export const generatePage = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const content = dedupeParagraphs(await generateFinalText(prompt, PAGE_INSTRUCTIONS));
+    const content = normalizePageText(await generateFinalText(prompt, PAGE_INSTRUCTIONS));
     // A página precisa preencher uma folha A4; uma resposta curta demais indica corte
     // ou omissão da IA. Reforçamos o pedido uma vez e, se a nova tentativa vier menor
     // (retração do modelo), mantemos a primeira versão para não piorar o resultado.
     let finalContent = content;
     if (countWords(stripMarkers(content)) < MIN_PAGE_WORDS) {
-      const retryPrompt = `${prompt}\n\nATENÇÃO: a versão anterior ficou curta demais (menos de ${MIN_PAGE_WORDS} palavras). Escreva novamente a PÁGINA ${number} com pelo menos ${MIN_PAGE_WORDS} palavras, em 3 a 5 parágrafos desenvolvidos, sem repetir ideias.`;
-      const retry = dedupeParagraphs(await generateFinalText(retryPrompt, PAGE_INSTRUCTIONS));
+      const retryPrompt = `${prompt}\n\nATENÇÃO: a versão anterior ficou curta demais (menos de ${MIN_PAGE_WORDS} palavras). Escreva novamente a PÁGINA ${number} com pelo menos ${MIN_PAGE_WORDS} palavras, em 4 a 6 parágrafos separados por linha em branco, sem repetir ideias.`;
+      const retry = normalizePageText(await generateFinalText(retryPrompt, PAGE_INSTRUCTIONS));
       finalContent = pickLongerText(content, retry);
     }
     await repo.upsertPage(userId, data.articleId, number, finalContent, "draft");

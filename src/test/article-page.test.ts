@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { countWords, dedupeParagraphs, MIN_PAGE_WORDS, pickLongerText } from "@/lib/article-page";
+import {
+  countWords,
+  dedupeParagraphs,
+  MIN_PAGE_WORDS,
+  normalizePageText,
+  pickLongerText,
+} from "@/lib/article-page";
 
 describe("countWords", () => {
   it("conta palavras ignorando espaços extras", () => {
@@ -54,5 +60,35 @@ describe("dedupeParagraphs", () => {
 
   it("respeita o mínimo de palavras da página", () => {
     expect(MIN_PAGE_WORDS).toBe(400);
+  });
+});
+
+describe("normalizePageText", () => {
+  it("quebra um bloco gigante em parágrafos", () => {
+    const sentences = [
+      "O trabalho remoto cresceu no setor de tecnologia após a pandemia de COVID-19.",
+      "As equipes de software passaram a colaborar à distância com ferramentas digitais.",
+      "Esse arranjo levanta dúvidas sobre produtividade individual e inovação coletiva.",
+      "A produtividade individual mede a entrega de cada profissional no seu ritmo.",
+      "A inovação coletiva depende da troca informal de conhecimento entre colegas.",
+      "Este artigo investiga esses dois efeitos em equipes de software brasileiras.",
+    ];
+    const out = normalizePageText(sentences.join(" "));
+    expect(out.split("\n\n").length).toBeGreaterThan(1);
+    expect(out).toContain("produtividade individual");
+  });
+
+  it("remove frases quase repetidas dentro do bloco", () => {
+    const repeated =
+      "A justificativa deste estudo é compreender como o trabalho remoto impacta a produtividade das equipes de software no contexto brasileiro. A justificativa deste estudo é compreender como o trabalho remoto impacta a produtividade das equipes de software no contexto brasileiro.";
+    const out = normalizePageText(repeated);
+    const count = (out.match(/justificativa deste estudo/gi) ?? []).length;
+    expect(count).toBe(1);
+  });
+
+  it("preserva títulos e parágrafos já bem formados", () => {
+    const text =
+      "## Introdução\n\nUm parágrafo curto e legível que já está bem dividido no texto original.";
+    expect(normalizePageText(text)).toBe(text);
   });
 });

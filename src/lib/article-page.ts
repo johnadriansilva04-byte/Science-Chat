@@ -62,3 +62,63 @@ export function dedupeParagraphs(text: string): string {
   }
   return kept.join("\n\n");
 }
+
+/** Quebra um parágrafo em frases (mantendo a pontuação no fim de cada frase). */
+function splitSentences(paragraph: string): string[] {
+  const matches = paragraph.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g);
+  return (matches ?? [paragraph]).map((s) => s.trim()).filter(Boolean);
+}
+
+/** Junta frases em parágrafos de até `perParagraph` frases. */
+function groupSentences(sentences: string[], perParagraph = 3): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < sentences.length; i += perParagraph) {
+    out.push(sentences.slice(i, i + perParagraph).join(" "));
+  }
+  return out;
+}
+
+/**
+ * Normaliza a página gerada pela IA. Modelos pequenos às vezes devolvem a página
+ * inteira em um único bloco e repetem frases ("Este artigo visa…" várias vezes).
+ * `dedupeParagraphs` só enxerga repetição entre blocos separados por linha em
+ * branco; aqui tratamos a repetição DENTRO do bloco e refluímos o texto em
+ * parágrafos legíveis: remove frases quase idênticas (Jaccard ≥ 0,75) e agrupa o
+ * restante em parágrafos de até 3 frases. Títulos e blocos já bem divididos ficam
+ * intactos (parágrafo com até 3 frases e ≤ 160 palavras é mantido como está).
+ */
+export function normalizePageText(text: string): string {
+  const deduped = dedupeParagraphs(text);
+  const blocks = deduped.split(/\n{2,}/);
+  const out: string[] = [];
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    if (/^#{1,6}\s/.test(trimmed)) {
+      out.push(trimmed);
+      continue;
+    }
+    const sentences = splitSentences(trimmed);
+    const kept: string[] = [];
+    const seen: string[] = [];
+    for (const sentence of sentences) {
+      const norm = normalizeParagraph(sentence);
+      if (
+        norm.split(" ").filter(Boolean).length >= 6 &&
+        seen.some((s) => jaccard(s, norm) >= 0.75)
+      ) {
+        continue;
+      }
+      seen.push(norm);
+      kept.push(sentence);
+    }
+    const words = countWords(kept.join(" "));
+    // Bloco curto e já legível vira um único parágrafo (não fatiamos por fatiar).
+    if (kept.length <= 3 && words <= 160) {
+      out.push(kept.join(" "));
+      continue;
+    }
+    out.push(...groupSentences(kept));
+  }
+  return out.join("\n\n");
+}
