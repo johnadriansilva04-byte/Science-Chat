@@ -45,6 +45,7 @@ import { ChatAttachments } from "@/components/app/ChatAttachments";
 import { interviewProgress } from "@/lib/interview-progress";
 import { cleanQuestion } from "@/lib/interview-notes";
 import { suggestReplies } from "@/lib/chat-suggestions";
+import { toolFailed, toolLabel, toolOutputText, toolSucceeded } from "@/lib/tool-trace";
 import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
 import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
 import { DEFAULT_DOCK_PREFS, clampDockSize, readDockPrefs, writeDockPrefs } from "@/lib/dock-prefs";
@@ -66,18 +67,7 @@ const THINKING_PRODUCE = [
   "revisando a coerência do texto…",
 ];
 
-/** Nomes amigáveis das ferramentas que o Pracinha pode executar sobre o artigo. */
-const TOOL_LABELS: Record<string, string> = {
-  pesquisar_bases: "pesquisando bases científicas",
-  listar_anexos: "lendo os anexos",
-  ler_anexo: "lendo o anexo",
-  atualizar_titulo: "alterando o título",
-  editar_pagina: "reescrevendo uma página",
-  acrescentar_na_pagina: "acrescentando ao documento",
-  anexar_documento_em_pagina: "posicionando o anexo",
-};
-
-/** Parte de ferramenta do stream (o AI SDK usa `tool-<nome>` como tipo). */
+/** Nomes amigáveis das ferramentas e apresentação: ver `@/lib/tool-trace`. */
 type ToolPart = {
   type: string;
   state?: string;
@@ -89,16 +79,6 @@ const TOOL_ICON: Record<string, typeof Search> = {
   pesquisar_bases: Search,
 };
 
-function toolOutputText(output: unknown): string {
-  if (typeof output === "string") return output;
-  if (output && typeof output === "object") {
-    const value =
-      (output as { value?: unknown; text?: unknown }).value ?? (output as { text?: unknown }).text;
-    if (typeof value === "string") return value;
-  }
-  return "";
-}
-
 /**
  * Mostra uma chamada de ferramenta do Pracinha: enquanto executa, um rótulo
  * animado; ao concluir, o resultado (ex.: as referências encontradas), para o
@@ -106,10 +86,10 @@ function toolOutputText(output: unknown): string {
  */
 function ToolTrace({ part }: { part: ToolPart }) {
   const name = part.type.replace(/^tool-/, "");
-  const label = TOOL_LABELS[name] ?? "alterando o documento";
+  const label = toolLabel(name);
   const Icon = TOOL_ICON[name] ?? Wrench;
-  const done = part.state === "output-available";
-  const failed = part.state === "output-error";
+  const done = toolSucceeded(part.state);
+  const failed = toolFailed(part.state);
   const output = done ? toolOutputText(part.output) : "";
 
   if (done && output) {

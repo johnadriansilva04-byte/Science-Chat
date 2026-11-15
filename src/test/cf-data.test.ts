@@ -90,7 +90,10 @@ describe("camada de dados (D1/SQLite real)", () => {
     expect(current?.id).toBe(user.id);
 
     // expira manualmente a sessão
-    db.prepare("update sessions set expires_at = ? where id = ?").run("2000-01-01T00:00:00.000Z", token);
+    db.prepare("update sessions set expires_at = ? where id = ?").run(
+      "2000-01-01T00:00:00.000Z",
+      token,
+    );
     const expired = await auth.getSessionUser(req);
     expect(expired).toBeNull();
   });
@@ -154,10 +157,14 @@ describe("camada de dados (D1/SQLite real)", () => {
 
     await repo.deleteArticle(u.id, article.id);
 
-    const pages = db.prepare("select count(*) as n from article_pages where article_id = ?").get(article.id) as {
+    const pages = db
+      .prepare("select count(*) as n from article_pages where article_id = ?")
+      .get(article.id) as {
       n: number;
     };
-    const msgs = db.prepare("select count(*) as n from chat_messages where article_id = ?").get(article.id) as {
+    const msgs = db
+      .prepare("select count(*) as n from chat_messages where article_id = ?")
+      .get(article.id) as {
       n: number;
     };
     expect(pages.n).toBe(0);
