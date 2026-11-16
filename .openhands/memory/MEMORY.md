@@ -51,7 +51,9 @@ Migration `0005_audit_traceability_editorial.sql`: tabelas `claims`, `claim_evid
 - **Server fns:** `traceability.functions.ts`, `audit.functions.ts`, `editorial.functions.ts`, `export.functions.ts` (`buildExport` → docx/latex/html/md/txt; `buildDossier` → dossiê+matriz como produto separado).
 - **UI:** `TraceabilityPanel`, `AuditPanel`, `EditorialPanel`, `ExportDialog`; painel lateral do `DocumentCanvas` agora tem 6 abas (Plano/Produção/Anexos/Rastreabilidade/Auditoria/Editorial); botão **Exportar** substitui os antigos .md/.txt.
 - **Migração com ledger:** `scripts/db-migrate.mjs` (`npm run db:migrate:local|remote`) registra em `schema_migrations`; evita reexecutar as destrutivas.
-- **Landing redesenhada:** `src/routes/index.tsx` — tela única `h-screen overflow-hidden`, 2 colunas (promessa+CTA | 4 mecanismos+estante), brilho que segue o ponteiro, shimmer, cards animados. CSS em `styles.css` (`.landing-*`).
+- **Home redesenhada (2026-11-16):** `src/routes/index.tsx` — hero centralizado (promessa + CTA `Começar meu artigo`), depois o **trilho dos 5 atos** (`JOURNEY_ACTS`), depois o Acervo (`PublishedShelf`, só nomes em chips) e o rodapé. Removidos os 4 cards de "mecanismos" e o CSS `.landing-card*`. Fonte do trilho: `src/lib/journey.ts`.
+- **AcervoCard/`acervo-card`:** CSS de cartões e ficha (modal) do acervo em `styles.css`.
+- **Landing (histórico):** a versão antiga era `h-screen overflow-hidden` 2 colunas com cards animados.
 
 ## Acervo (`/publicacoes`) — revisão só com prova (2026-11-16)
 **Regra:** a plataforma NÃO revisa. O selo "revisado por pares" só aparece quando o autor comprova (DOI/registro + documento). Removido o `runPeerReview`/`submitPublication` falsos.
