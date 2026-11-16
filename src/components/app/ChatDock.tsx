@@ -71,15 +71,15 @@ const THINKING_PRODUCE = [
 /** Atalhos mostrados quando o chat ainda está vazio, para começar sem hesitar. */
 const OPENING_PROMPTS: { label: string; text: string }[] = [
   {
-    label: "Quero começar meu primeiro artigo",
+    label: "Começar meu primeiro artigo",
     text: "Olá! Quero começar meu artigo científico.",
   },
   {
-    label: "Tenho uma ideia e quero testá-la como tese",
+    label: "Transformar uma ideia em tese",
     text: "Tenho uma ideia que quero transformar em uma tese de artigo científico. Pode me ajudar a testá-la?",
   },
   {
-    label: "Já tenho dados/resultados para escrever",
+    label: "Já tenho dados para escrever",
     text: "Já tenho dados e resultados de uma pesquisa e quero escrever o artigo. Por onde começamos?",
   },
 ];
@@ -543,26 +543,19 @@ export function ChatDock({
                 <div className="space-y-1">
                   <p className="font-serif text-base font-semibold">Vamos escrever seu artigo</p>
                   <p className="text-sm text-muted-foreground">
-                    Faço uma pergunta de cada vez e o documento à direita vai sendo preenchido ao
-                    vivo. Pule o que quiser — ou converse livremente e peça referências.
+                    Faço uma pergunta de cada vez e o documento vai sendo preenchido ao vivo. Pule o
+                    que quiser ou peça referências.
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => send("Olá! Quero começar meu artigo científico.")}
-                >
-                  <Sparkles className="size-4" />
-                  Começar entrevista
-                </Button>
                 <div className="flex w-full flex-col gap-1.5">
                   {OPENING_PROMPTS.map((p) => (
                     <button
                       key={p.label}
                       type="button"
-                      className="rounded-md border bg-card px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      className="flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                       onClick={() => send(p.text)}
                     >
+                      <Sparkles className="size-3.5 shrink-0 text-primary" />
                       {p.label}
                     </button>
                   ))}

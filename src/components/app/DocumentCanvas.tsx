@@ -72,15 +72,15 @@ function buildDocument(pages: WorkspacePage[], title: string): DocBlock[] {
   return out;
 }
 
-/** Estrutura preliminar (durante a entrevista): título + seções do plano. */
+/** Estrutura preliminar (durante a entrevista): título + seções já alimentadas. */
 function preliminaryDocument(title: string, plan: string | null, notes: InterviewNote[]): Block[] {
   const blocks: Block[] = [{ type: "heading", level: 1, text: title }];
-  blocks.push({
-    type: "paragraph",
-    text: "_Documento em construção ao vivo — organizado por seção conforme o Pracinha entende suas respostas. Ainda não é o texto final: a redação página por página começa após você aprovar o plano._",
-  });
 
-  // Seções do plano (se houver) ou a estrutura científica padrão.
+  const grouped = groupNotesBySection(notes);
+  const bySection = new Map(grouped.map((g) => [g.section, g.notes]));
+
+  // Seções do plano (se houver) ou a estrutura científica padrão, só para ordenar
+  // as seções que já têm conteúdo — nunca para desenhar um esqueleto vazio.
   const planSections = plan
     ? plan
         .split("\n")
@@ -88,22 +88,22 @@ function preliminaryDocument(title: string, plan: string | null, notes: Intervie
         .filter((s): s is string => Boolean(s) && s!.length < 60)
     : [];
   const template = planSections.length >= 3 ? planSections : PRELIMINARY_SECTIONS;
-
-  const grouped = groupNotesBySection(notes);
-  const bySection = new Map(grouped.map((g) => [g.section, g.notes]));
-
-  // Mostra primeiro as seções já alimentadas, depois o restante da estrutura.
   const ordered = [...grouped.map((g) => g.section), ...template.filter((s) => !bySection.has(s))];
 
+  if (notes.length === 0) {
+    blocks.push({
+      type: "paragraph",
+      text: "_As seções vão aparecendo aqui conforme você responde à entrevista._",
+    });
+    return blocks;
+  }
+
   for (const section of ordered) {
-    blocks.push({ type: "heading", level: 2, text: section });
     const sectionNotes = bySection.get(section);
-    if (sectionNotes?.length) {
-      for (const note of sectionNotes) {
-        blocks.push({ type: "paragraph", text: note.answer });
-      }
-    } else {
-      blocks.push({ type: "paragraph", text: "[A preencher durante a entrevista.]" });
+    if (!sectionNotes?.length) continue;
+    blocks.push({ type: "heading", level: 2, text: section });
+    for (const note of sectionNotes) {
+      blocks.push({ type: "paragraph", text: note.answer });
     }
   }
   return blocks;
