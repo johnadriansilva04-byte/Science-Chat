@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
-  BadgeCheck,
   BookOpenText,
   FilePlus2,
   Landmark,
@@ -237,13 +236,13 @@ function Index() {
 
             <div className="landing-shelf-card rounded-xl border bg-white/70 p-3.5 backdrop-blur">
               <div className="mb-2 flex items-center gap-2">
-                <BadgeCheck className="size-4 text-primary" />
-                <h2 className="font-serif text-sm font-semibold">Mural de artigos publicados</h2>
+                <BookOpenText className="size-4 text-primary" />
+                <h2 className="font-serif text-sm font-semibold">Acervo</h2>
                 <Link
                   to="/publicacoes"
                   className="ml-auto text-xs font-medium text-primary hover:underline"
                 >
-                  Ver todos →
+                  Ver tudo →
                 </Link>
               </div>
               <PublishedShelf />

@@ -309,8 +309,10 @@ export async function deleteDocument(userId: string, articleId: string, id: stri
     .run();
 }
 
-export type PublicationStatus =
-  "draft" | "submitted" | "in_review" | "accepted" | "rejected" | "published";
+export type PublicationStatus = "draft" | "published";
+
+/** Revisão por pares: a plataforma NÃO revisa. O autor comprova. */
+export type ReviewStatus = "nao_revisado" | "revisado";
 
 export type Publication = {
   id: string;
@@ -330,6 +332,11 @@ export type Publication = {
   review_report: string | null;
   review_notes: string | null;
   doi: string | null;
+  review_status: ReviewStatus;
+  review_proof_key: string | null;
+  review_proof_filename: string | null;
+  review_proof_mime: string | null;
+  review_claimed_at: string | null;
   submitted_at: string | null;
   reviewed_at: string | null;
   published_at: string | null;
@@ -338,7 +345,7 @@ export type Publication = {
 };
 
 const PUBLICATION_COLUMNS =
-  "id, user_id, article_id, slug, title, abstract, keywords, language, area, author_name, affiliation, orcid, content, status, review_report, review_notes, doi, submitted_at, reviewed_at, published_at, created_at, updated_at";
+  "id, user_id, article_id, slug, title, abstract, keywords, language, area, author_name, affiliation, orcid, content, status, review_report, review_notes, doi, review_status, review_proof_key, review_proof_filename, review_proof_mime, review_claimed_at, submitted_at, reviewed_at, published_at, created_at, updated_at";
 
 /** Publicação de um artigo (no máximo uma por artigo). */
 export async function getPublicationByArticle(
@@ -467,6 +474,11 @@ export async function upsertPublication(
     review_report: null,
     review_notes: null,
     doi: null,
+    review_status: "nao_revisado",
+    review_proof_key: null,
+    review_proof_filename: null,
+    review_proof_mime: null,
+    review_claimed_at: null,
     submitted_at: null,
     reviewed_at: null,
     published_at: null,
@@ -476,38 +488,68 @@ export async function upsertPublication(
 }
 
 /**
- * Atualiza o status da publicação e as datas correspondentes. O fluxo é
- * `draft -> submitted -> in_review -> accepted -> published` (ou `rejected`).
- * Só `published` aparece na área pública.
+ * Marca a revisão por pares como comprovada pelo autor: guarda o identificador
+ * (DOI/registro) e a chave do comprovante no R2. O artigo passa para a seção
+ * "Revisados por pares" do mural.
+ */
+export async function setReviewProof(
+  userId: string,
+  id: string,
+  fields: {
+    doi: string | null;
+    proofKey: string | null;
+    proofFilename: string | null;
+    proofMime: string | null;
+  },
+): Promise<void> {
+  await requireDb()
+    .prepare(
+      `update publications set review_status = 'revisado', doi = ?, review_proof_key = ?,
+         review_proof_filename = ?, review_proof_mime = ?, review_claimed_at = ?, updated_at = ?
+       where id = ? and user_id = ?`,
+    )
+    .bind(
+      fields.doi,
+      fields.proofKey,
+      fields.proofFilename,
+      fields.proofMime,
+      nowIso(),
+      nowIso(),
+      id,
+      userId,
+    )
+    .run();
+}
+
+/** Remove a comprovação: o artigo volta para "Ainda não revisados". */
+export async function clearReviewProof(userId: string, id: string): Promise<void> {
+  await requireDb()
+    .prepare(
+      `update publications set review_status = 'nao_revisado', review_proof_key = null,
+         review_proof_filename = null, review_proof_mime = null, review_claimed_at = null,
+         updated_at = ?
+       where id = ? and user_id = ?`,
+    )
+    .bind(nowIso(), id, userId)
+    .run();
+}
+
+/**
+ * Atualiza o status da publicação. O fluxo agora é simples: `draft` até o
+ * autor publicar (`published`). A revisão por pares é registrada à parte
+ * (`setReviewProof`), pois quem revisa são as revistas, não a plataforma.
  */
 export async function setPublicationStatus(
   userId: string,
   id: string,
   status: PublicationStatus,
-  extras?: { reviewReport?: string | null; doi?: string | null; reviewNotes?: string | null },
 ): Promise<void> {
   const ts = nowIso();
   const sets = ["status = ?", "updated_at = ?"];
   const values: unknown[] = [status, ts];
-  if (status === "submitted") {
-    sets.push("submitted_at = ?");
-    values.push(ts);
-  }
-  if (status === "accepted" || status === "rejected") {
-    sets.push("reviewed_at = ?");
-    values.push(ts);
-    if (extras?.reviewReport !== undefined) {
-      sets.push("review_report = ?");
-      values.push(extras.reviewReport);
-    }
-  }
   if (status === "published") {
     sets.push("published_at = ?");
     values.push(ts);
-    if (extras?.doi !== undefined) {
-      sets.push("doi = ?");
-      values.push(extras.doi);
-    }
   }
   values.push(id, userId);
   await requireDb()

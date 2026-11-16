@@ -1,159 +1,135 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { BadgeCheck, Landmark, Quote, ScrollText } from "lucide-react";
 import { listPublicPublications, type PublicationSummary } from "@/lib/publication.functions";
-import { yearOf } from "@/lib/publication";
+import { buildAcervo, type AcervoItem } from "@/lib/acervo";
 import { cn } from "@/lib/utils";
 
 /**
- * Mural de artigos publicados: uma estante viva. Um livro fica em destaque (capa
- * com título, autoria e resumo) e a fileira de lombadas ao lado gira sozinha —
- * um livro passa, depois o outro. Só entram aqui artigos com status 'published',
- * isto é, que já passaram pela revisão por pares e foram liberados pelo autor.
- * A autoria é sempre preservada: o mural existe para proteger o conhecimento.
+ * Vitrine do acervo na página inicial. Mostra, em linguagem simples, as três
+ * coleções — clássicos do Museu, revisados por pares e ainda não revisados —
+ * com título + resumo, sem poluir. O acervo completo vive em `/publicacoes`.
  */
 export function PublishedShelf({ className }: { className?: string }) {
-  const [items, setItems] = useState<PublicationSummary[] | null>(null);
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const listRef = useRef<HTMLDivElement>(null);
+  const [pubs, setPubs] = useState<PublicationSummary[] | null>(null);
 
   useEffect(() => {
     let active = true;
     listPublicPublications()
-      .then((rows) => active && setItems(rows))
-      .catch(() => active && setItems([]));
+      .then((rows) => active && setPubs(rows))
+      .catch(() => active && setPubs([]));
     return () => {
       active = false;
     };
   }, []);
 
-  const count = items?.length ?? 0;
-  const featured = useMemo(
-    () => (items && count > 0 ? items[index % count] : null),
-    [items, index, count],
-  );
+  const acervo = useMemo(() => buildAcervo(pubs ?? []), [pubs]);
 
-  // O livro da vez troca sozinho, como uma estante que respira. Pausa no hover/foco.
-  useEffect(() => {
-    if (paused || count <= 1) return;
-    const id = window.setInterval(() => setIndex((i) => (i + 1) % count), 5200);
-    return () => window.clearInterval(id);
-  }, [paused, count]);
-
-  useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-spine="${index}"]`);
-    el?.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
-  }, [index]);
-
-  const go = (dir: 1 | -1) => setIndex((i) => (i + dir + count) % count);
-
-  if (items !== null && count === 0) {
+  if (pubs === null) {
     return (
-      <section className={cn("shelf-empty", className)}>
-        <span className="shelf-empty__ruler" aria-hidden />
-        <p className="text-sm text-muted-foreground">
-          O mural está em branco — e isso é uma promessa. Aqui só entra o trabalho que passou pela{" "}
-          <strong>revisão por pares</strong> e recebeu o aval do próprio autor. Seja o primeiro a
-          deixar a sua marca.
-        </p>
-      </section>
+      <p className={cn("py-3 text-sm text-muted-foreground", className)}>Carregando o acervo…</p>
     );
   }
 
   return (
-    <section
-      className={cn("shelf", className)}
-      aria-label="Mural de artigos publicados, revisados por pares"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={() => setPaused(false)}
-    >
-      <header className="shelf__head">
-        <span className="shelf__eyebrow">
-          <BadgeCheck className="size-3.5" />
-          Revisados por pares
-        </span>
-        <span className="shelf__count tabular-nums">
-          {items === null ? "…" : `${count} ${count === 1 ? "artigo" : "artigos"}`}
-        </span>
-      </header>
-
-      <div className="shelf__stage">
-        <div className="shelf__feature" key={featured?.id ?? "empty"}>
-          <span className="shelf__feature-tag">Em destaque</span>
-          <h3 className="shelf__title">
-            {featured ? (
-              <Link to="/publicacoes/$slug" params={{ slug: featured.slug }}>
-                {featured.title}
-              </Link>
-            ) : (
-              "Carregando o acervo…"
-            )}
-          </h3>
-          {featured && (
-            <>
-              <p className="shelf__author">{featured.author_name}</p>
-              {featured.abstract && <p className="shelf__abstract">{featured.abstract}</p>}
-              <div className="shelf__meta">
-                {featured.area && (
-                  <span className="inline-flex items-center gap-1">
-                    <FileText className="size-3.5" />
-                    {featured.area}
-                  </span>
-                )}
-                {featured.published_at && <span>{yearOf(featured.published_at)}</span>}
-                {featured.doi && <span className="font-mono">DOI {featured.doi}</span>}
-                <Link
-                  to="/publicacoes/$slug"
-                  params={{ slug: featured.slug }}
-                  className="ml-auto font-medium text-primary hover:underline"
-                >
-                  Ler o artigo →
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
-
-        {count > 1 && (
-          <div className="shelf__rail-wrap">
-            <button
-              type="button"
-              className="shelf__nav"
-              onClick={() => go(-1)}
-              aria-label="Livro anterior"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <div className="shelf__rail dock-scroll" ref={listRef}>
-              {items?.map((p, i) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  data-spine={i}
-                  onClick={() => setIndex(i)}
-                  aria-label={`Ver ${p.title}`}
-                  aria-current={i === index}
-                  className={cn("shelf__spine", i === index && "shelf__spine--active")}
-                  title={`${p.title} — ${p.author_name}`}
-                >
-                  <span className="shelf__spine-title">{p.title}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="shelf__nav"
-              onClick={() => go(1)}
-              aria-label="Próximo livro"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        )}
-      </div>
+    <section className={cn("space-y-3", className)} aria-label="Acervo da ScienceChat">
+      <Row
+        icon={<Landmark className="size-3.5" />}
+        title="Clássicos do Museu"
+        hint="Obras que mudaram o mundo."
+        items={acervo.classics}
+        tone="classico"
+      />
+      <Row
+        icon={<BadgeCheck className="size-3.5" />}
+        title="Revisados por pares"
+        hint="Com comprovante da revista."
+        items={acervo.reviewed}
+        tone="reviewed"
+      />
+      <Row
+        icon={<ScrollText className="size-3.5" />}
+        title="Ainda não revisados"
+        hint="Publicados, sem comprovação ainda."
+        items={acervo.notReviewed}
+        tone="pending"
+      />
+      <Link
+        to="/publicacoes"
+        className="inline-block text-xs font-medium text-primary hover:underline"
+      >
+        Ver o acervo completo ({acervo.counts.total}) →
+      </Link>
     </section>
+  );
+}
+
+function Row({
+  icon,
+  title,
+  hint,
+  items,
+  tone,
+}: {
+  icon: ReactNode;
+  title: string;
+  hint: string;
+  items: AcervoItem[];
+  tone: "classico" | "reviewed" | "pending";
+}) {
+  const toneClass =
+    tone === "reviewed" ? "text-success" : tone === "classico" ? "text-primary" : "text-foreground";
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 font-serif text-xs font-semibold",
+            toneClass,
+          )}
+        >
+          {icon}
+          {title}
+        </span>
+        <span className="rounded-full bg-muted px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+          {items.length}
+        </span>
+        <span className="text-[11px] text-muted-foreground">{hint}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="rounded-md border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground">
+          Nada aqui ainda.
+        </p>
+      ) : (
+        <ul className="space-y-1">
+          {items.slice(0, 2).map((i) => (
+            <li key={i.id} className="flex items-start gap-2 text-sm">
+              <Quote className="mt-0.5 size-3 shrink-0 text-primary/60" />
+              <span className="min-w-0">
+                <ItemLink item={i} />
+                {i.summary && (
+                  <span className="line-clamp-1 text-xs text-muted-foreground"> — {i.summary}</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ItemLink({ item }: { item: AcervoItem }) {
+  if (item.slug) {
+    return (
+      <Link to="/publicacoes/$slug" params={{ slug: item.slug }}>
+        <span className="font-medium text-foreground hover:text-primary">{item.title}</span>
+      </Link>
+    );
+  }
+  return (
+    <Link to="/publicacoes">
+      <span className="font-medium text-foreground hover:text-primary">{item.title}</span>
+    </Link>
   );
 }

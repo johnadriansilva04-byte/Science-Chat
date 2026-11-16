@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   BookUp,
   ClipboardCheck,
   ExternalLink,
+  FileUp,
   Loader2,
-  Send,
+  ShieldCheck,
   Trash2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { quotaRestMessage } from "@/lib/ai/quota";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,30 +23,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MessageResponse } from "@/components/ai-elements/message";
 import {
+  clearReviewProof,
   deletePublication,
   getArticlePublication,
   preparePublication,
   publishPublication,
-  runPeerReview,
-  submitPublication,
+  submitReviewProof,
   type PublicationView,
 } from "@/lib/publication.functions";
 
 const STATUS_LABEL: Record<string, string> = {
-  draft: "Rascunho",
-  submitted: "Submetido",
-  in_review: "Em revisão por pares",
-  accepted: "Aceito — pronto para publicar",
-  rejected: "Rejeitado na revisão",
-  published: "Publicado",
+  draft: "Rascunho — ainda não publicado",
+  published: "Publicado no mural",
 };
 
+const MAX_PROOF_BYTES = 8 * 1024 * 1024;
+
 /**
- * Ciclo de publicação de um artigo: preparar (a partir das páginas aprovadas),
- * submeter à revisão por pares, receber o parecer e — só então — publicar na
- * área pública. Só o status 'published' aparece em /publicacoes.
+ * Ciclo de publicação de um artigo. Duas etapas independentes:
+ * 1) Publicar no mural — entra na seção "Ainda não revisados".
+ * 2) Comprovar a revisão por pares — o autor informa o DOI/registro do aceite
+ *    e anexa o comprovante da revista/universidade; só então o artigo passa
+ *    para a seção "Revisados por pares". A plataforma não faz a revisão.
  */
 export function PublishDialog({
   articleId,
@@ -70,12 +69,15 @@ export function PublishDialog({
   const [orcid, setOrcid] = useState("");
   const [language, setLanguage] = useState("pt");
   const [area, setArea] = useState("");
-  const [doi, setDoi] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
     setLoading(true);
+    setProofFile(null);
     getArticlePublication({ data: { articleId } })
       .then((row) => {
         if (!active) return;
@@ -86,7 +88,7 @@ export function PublishDialog({
           setOrcid(row.orcid ?? "");
           setLanguage(row.language);
           setArea(row.area ?? "");
-          setDoi(row.doi ?? "");
+          setIdentifier(row.doi ?? "");
         }
       })
       .catch(() => active && setPub(null))
@@ -101,8 +103,7 @@ export function PublishDialog({
     try {
       await fn();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      toast.error(quotaRestMessage(msg) ?? (msg || "Operação falhou"));
+      toast.error(e instanceof Error ? e.message : "Operação falhou");
     } finally {
       setBusy(null);
     }
@@ -117,29 +118,48 @@ export function PublishDialog({
       toast.success("Publicação preparada a partir das páginas aprovadas.");
     });
 
-  const submit = () =>
-    run("submit", async () => {
-      await submitPublication({ data: { articleId } });
-      setPub((p) => (p ? { ...p, status: "submitted" } : p));
-      toast.success("Submetido à revisão por pares.");
-    });
-
-  const review = () =>
-    run("review", async () => {
-      const res = await runPeerReview({ data: { articleId } });
-      setPub((p) =>
-        p ? { ...p, status: res.accepted ? "accepted" : "rejected", review_report: res.report } : p,
-      );
-      toast[res.accepted ? "success" : "error"](
-        res.accepted ? "Parecer favorável — você já pode publicar." : "O revisor pediu ajustes.",
-      );
-    });
-
   const publish = () =>
     run("publish", async () => {
-      const res = await publishPublication({ data: { articleId, doi } });
-      setPub((p) => (p ? { ...p, status: "published", doi: doi || null, slug: res.slug } : p));
-      toast.success("Publicado na área pública de artigos.");
+      const res = await publishPublication({ data: { articleId } });
+      setPub((p) => (p ? { ...p, status: "published", slug: res.slug } : p));
+      toast.success("Publicado no mural — seção “Ainda não revisados”.");
+      onPublished?.();
+    });
+
+  const proveReview = () =>
+    run("prove", async () => {
+      let file: { filename: string; mime: string; base64: string } | undefined;
+      if (proofFile) {
+        if (proofFile.size > MAX_PROOF_BYTES) {
+          toast.error("O comprovante deve ter no máximo 8 MB.");
+          return;
+        }
+        const buf = new Uint8Array(await proofFile.arrayBuffer());
+        let binary = "";
+        for (let i = 0; i < buf.length; i += 0x8000) {
+          binary += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+        }
+        file = {
+          filename: proofFile.name,
+          mime: proofFile.type || "application/octet-stream",
+          base64: btoa(binary),
+        };
+      }
+      await submitReviewProof({
+        data: { articleId, identifier, ...(file ?? {}) },
+      });
+      setPub((p) => (p ? { ...p, review_status: "revisado", doi: identifier || p.doi } : p));
+      setProofFile(null);
+      if (fileRef.current) fileRef.current.value = "";
+      toast.success("Revisão comprovada — o artigo foi para “Revisados por pares”.");
+      onPublished?.();
+    });
+
+  const undoReview = () =>
+    run("undo", async () => {
+      await clearReviewProof({ data: { articleId } });
+      setPub((p) => (p ? { ...p, review_status: "nao_revisado" } : p));
+      toast.success("Comprovação removida — o artigo voltou para “Ainda não revisados”.");
       onPublished?.();
     });
 
@@ -148,12 +168,12 @@ export function PublishDialog({
       await deletePublication({ data: { articleId } });
       setPub(null);
       toast.success("Publicação removida.");
+      onPublished?.();
     });
 
+  const isPublished = pub?.status === "published";
+  const isReviewed = pub?.review_status === "revisado";
   const canPrepare = !pub || pub.status === "draft";
-  const canSubmit = pub?.status === "draft";
-  const canReview = pub?.status === "submitted" || pub?.status === "in_review";
-  const canPublish = pub?.status === "accepted" || pub?.status === "published";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -161,11 +181,12 @@ export function PublishDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-serif">
             <BookUp className="size-5 text-primary" />
-            Publicar artigo
+            Publicar no mural
           </DialogTitle>
           <DialogDescription>
-            O artigo só entra na área pública depois de submeter à revisão por pares e receber
-            parecer favorável. A autoria é sempre sua.
+            Publicar é imediato. A revisão por pares é feita pelas revistas e universidades — quando
+            você tiver o comprovante (DOI ou registro do aceite), anexe aqui para o artigo passar
+            para a seção “Revisados por pares”.
           </DialogDescription>
         </DialogHeader>
 
@@ -176,11 +197,17 @@ export function PublishDialog({
           </p>
         ) : (
           <div className="space-y-5">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">Estado:</span>
-              <Badge variant={pub?.status === "published" ? "default" : "outline"}>
+              <Badge variant={isPublished ? "default" : "outline"}>
                 {pub ? (STATUS_LABEL[pub.status] ?? pub.status) : "Ainda não preparado"}
               </Badge>
+              {isReviewed && (
+                <Badge className="gap-1 bg-success text-success-foreground">
+                  <BadgeCheck className="size-3.5" />
+                  Revisão comprovada
+                </Badge>
+              )}
             </div>
 
             {(canPrepare || !pub) && (
@@ -233,40 +260,58 @@ export function PublishDialog({
               </div>
             )}
 
-            {pub?.review_report && (
-              <div className="rounded-lg border bg-muted/40 p-4">
-                <p className="mb-2 text-sm font-medium">Parecer da revisão</p>
-                <div className="max-h-64 overflow-y-auto text-sm">
-                  <MessageResponse>{pub.review_report}</MessageResponse>
+            {isPublished && (
+              <>
+                <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <ShieldCheck className="size-4 text-primary" />
+                    Comprovar revisão por pares (opcional)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Quem revisa são as revistas e universidades. Informe o DOI ou o registro do
+                    aceite e anexe o comprovante. Sem isso, o artigo continua em “Ainda não
+                    revisados”.
+                  </p>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pub-id">DOI ou registro do aceite</Label>
+                    <Input
+                      id="pub-id"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="Ex.: 10.1234/abcde ou nº do parecer"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pub-proof">Comprovante (PDF, imagem, DOCX…)</Label>
+                    <Input
+                      id="pub-proof"
+                      ref={fileRef}
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt"
+                      onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+                    />
+                    {pub.review_proof_filename && !proofFile && (
+                      <p className="text-xs text-muted-foreground">
+                        Comprovante atual:{" "}
+                        <span className="font-mono">{pub.review_proof_filename}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {canPublish && (
-              <div className="space-y-1.5">
-                <Label htmlFor="pub-doi">DOI (opcional)</Label>
-                <Input
-                  id="pub-doi"
-                  value={doi}
-                  onChange={(e) => setDoi(e.target.value)}
-                  placeholder="10.xxxx/xxxxx — deixe vazio se ainda não tiver"
-                />
-              </div>
-            )}
-
-            {pub?.status === "published" && (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-accent/40 p-3 text-sm">
-                <BadgeCheck className="size-4 text-primary" />
-                Publicado. Link público:
-                <Link
-                  to="/publicacoes/$slug"
-                  params={{ slug: pub.slug }}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                >
-                  /publicacoes/{pub.slug}
-                  <ExternalLink className="size-3.5" />
-                </Link>
-              </div>
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-accent/40 p-3 text-sm">
+                  <BadgeCheck className="size-4 text-primary" />
+                  Link público:
+                  <Link
+                    to="/publicacoes/$slug"
+                    params={{ slug: pub.slug }}
+                    className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                  >
+                    /publicacoes/{pub.slug}
+                    <ExternalLink className="size-3.5" />
+                  </Link>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -275,25 +320,29 @@ export function PublishDialog({
           {canPrepare && (
             <Button onClick={prepare} disabled={busy !== null || !author.trim()}>
               {busy === "prepare" ? <Loader2 className="animate-spin" /> : <ClipboardCheck />}
-              {pub ? "Atualizar publicação" : "Preparar publicação"}
+              {pub ? "Atualizar dados" : "Preparar publicação"}
             </Button>
           )}
-          {canSubmit && (
-            <Button variant="secondary" onClick={submit} disabled={busy !== null}>
-              {busy === "submit" ? <Loader2 className="animate-spin" /> : <Send />}
-              Submeter à revisão
-            </Button>
-          )}
-          {canReview && (
-            <Button variant="secondary" onClick={review} disabled={busy !== null}>
-              {busy === "review" ? <Loader2 className="animate-spin" /> : <ClipboardCheck />}
-              Rodar revisão por pares
-            </Button>
-          )}
-          {canPublish && pub?.status === "accepted" && (
+          {pub?.status === "draft" && (
             <Button onClick={publish} disabled={busy !== null}>
-              {busy === "publish" ? <Loader2 className="animate-spin" /> : <BadgeCheck />}
-              Publicar na área pública
+              {busy === "publish" ? <Loader2 className="animate-spin" /> : <BookUp />}
+              Publicar no mural
+            </Button>
+          )}
+          {isPublished && !isReviewed && (
+            <Button
+              variant="secondary"
+              onClick={proveReview}
+              disabled={busy !== null || (!identifier.trim() && !proofFile)}
+            >
+              {busy === "prove" ? <Loader2 className="animate-spin" /> : <FileUp />}
+              Comprovar revisão
+            </Button>
+          )}
+          {isPublished && isReviewed && (
+            <Button variant="ghost" onClick={undoReview} disabled={busy !== null}>
+              {busy === "undo" ? <Loader2 className="animate-spin" /> : <ShieldCheck />}
+              Remover comprovação
             </Button>
           )}
           {pub && (

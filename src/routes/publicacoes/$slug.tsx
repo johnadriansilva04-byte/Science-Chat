@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BadgeCheck, Copy, Printer } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Copy, Printer, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicPublication } from "@/lib/publication.functions";
 import { publicationCitation, contentHasAbstract, yearOf } from "@/lib/publication";
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/publicacoes/$slug")({
       { title: "Publicação — ScienceChat" },
       {
         name: "description",
-        content: "Artigo científico revisado por pares, publicado na ScienceChat.",
+        content: "Artigo publicado na ScienceChat.",
       },
     ],
   }),
@@ -111,10 +111,17 @@ function PublicationPage() {
       <main className="mx-auto max-w-3xl px-6 pb-20 pt-10">
         <div className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
           <img src={logo} alt="" width={20} height={20} />
-          <span className="inline-flex items-center gap-1 font-medium text-primary">
-            <BadgeCheck className="size-3.5" />
-            Revisado por pares
-          </span>
+          {pub.review_status === "revisado" ? (
+            <span className="inline-flex items-center gap-1 font-medium text-success">
+              <BadgeCheck className="size-3.5" />
+              Revisado por pares
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
+              <ScrollText className="size-3.5" />
+              Ainda não revisado
+            </span>
+          )}
           {pub.area && <span>· {pub.area}</span>}
           <span>· {pub.language.toUpperCase()}</span>
           {year && <span>· {year}</span>}
@@ -128,6 +135,15 @@ function PublicationPage() {
             <span className="ml-2 font-mono text-xs text-muted-foreground">ORCID: {pub.orcid}</span>
           )}
         </p>
+
+        {pub.review_status !== "revisado" && (
+          <p className="mt-5 rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+            Este artigo ainda{" "}
+            <strong className="text-foreground">não passou por revisão por pares</strong>. Ele está
+            publicado no mural para leitura e citação, mas não traz o selo de revisado — a revisão é
+            feita pelas revistas e universidades, não pela ScienceChat.
+          </p>
+        )}
 
         {pub.abstract && !contentHasAbstract(pub.content) && (
           <section className="mt-6 rounded-lg border bg-card p-5">

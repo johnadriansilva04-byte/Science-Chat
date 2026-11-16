@@ -2,13 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import * as repo from "@/lib/cf/repo.server";
 import { slugify } from "@/lib/article-export";
+import { base64ToBytes } from "@/lib/base64";
 import {
   assemblePublicationContent,
   extractAbstract,
   extractKeywords,
   yearOf,
 } from "@/lib/publication";
-import type { PublicationStatus } from "@/lib/cf/repo.server";
+import type { PublicationStatus, ReviewStatus } from "@/lib/cf/repo.server";
 
 export type PublicationView = {
   id: string;
@@ -23,7 +24,8 @@ export type PublicationView = {
   orcid: string | null;
   content: string;
   status: PublicationStatus;
-  review_report: string | null;
+  review_status: ReviewStatus;
+  review_proof_filename: string | null;
   doi: string | null;
   submitted_at: string | null;
   reviewed_at: string | null;
@@ -45,7 +47,8 @@ function toView(p: repo.Publication): PublicationView {
     orcid: p.orcid,
     content: p.content,
     status: p.status,
-    review_report: p.review_report,
+    review_status: p.review_status,
+    review_proof_filename: p.review_proof_filename,
     doi: p.doi,
     submitted_at: p.submitted_at,
     reviewed_at: p.reviewed_at,
@@ -64,6 +67,7 @@ export type PublicationSummary = {
   abstract: string | null;
   published_at: string | null;
   doi: string | null;
+  review_status: ReviewStatus;
 };
 
 function toSummary(p: repo.Publication): PublicationSummary {
@@ -77,10 +81,11 @@ function toSummary(p: repo.Publication): PublicationSummary {
     abstract: p.abstract,
     published_at: p.published_at,
     doi: p.doi,
+    review_status: p.review_status,
   };
 }
 
-/** Público: lista apenas artigos publicados (revisados por pares). */
+/** Público: lista os artigos publicados (revisados e ainda não revisados). */
 export const listPublicPublications = createServerFn({ method: "POST" }).handler(async () => {
   const rows = await repo.listPublished(60);
   return rows.map(toSummary);
@@ -155,63 +160,99 @@ export const preparePublication = createServerFn({ method: "POST" })
     return toView(pub);
   });
 
-/** Submete à revisão por pares. */
-export const submitPublication = createServerFn({ method: "POST" })
+/**
+ * Publica na área pública. Não exige revisão: o artigo entra no mural na
+ * seção "Ainda não revisados". A revisão por pares é comprovada à parte
+ * (`submitReviewProof`), com o registro/DOI e o comprovante da revista.
+ */
+export const publishPublication = createServerFn({ method: "POST" })
   .middleware([requireUser])
   .validator((d: { articleId: string }) => d)
   .handler(async ({ data, context }) => {
     const pub = await repo.getPublicationByArticle(context.user.id, data.articleId);
-    if (!pub) throw new Error("Prepare a publicação antes de submeter.");
-    await repo.setPublicationStatus(context.user.id, pub.id, "submitted");
-    return { ok: true };
-  });
-
-/** Publica na área pública — somente após parecer favorável (accepted). */
-export const publishPublication = createServerFn({ method: "POST" })
-  .middleware([requireUser])
-  .validator((d: { articleId: string; doi?: string }) => d)
-  .handler(async ({ data, context }) => {
-    const pub = await repo.getPublicationByArticle(context.user.id, data.articleId);
     if (!pub) throw new Error("Publicação não encontrada.");
-    if (pub.status !== "accepted" && pub.status !== "published") {
-      throw new Error("O artigo precisa ser aceito na revisão por pares antes de ser publicado.");
-    }
-    await repo.setPublicationStatus(context.user.id, pub.id, "published", {
-      doi: (data.doi || "").trim() || null,
-    });
+    await repo.setPublicationStatus(context.user.id, pub.id, "published");
     return { ok: true, slug: pub.slug };
   });
 
 /**
- * Revisão por pares interna (Pracinha como revisor). Gera um parecer e, se
- * favorável, marca como 'accepted' — liberando a publicação pelo autor.
+ * Comprova a revisão por pares. A plataforma NÃO revisa: quem revisa são as
+ * revistas e universidades. O autor informa o identificador (DOI ou registro
+ * do aceite) e anexa o comprovante. Só então o artigo aparece na seção
+ * "Revisados por pares" do mural.
  */
-export const runPeerReview = createServerFn({ method: "POST" })
+export const submitReviewProof = createServerFn({ method: "POST" })
   .middleware([requireUser])
-  .validator((d: { articleId: string }) => d)
+  .validator(
+    (d: {
+      articleId: string;
+      identifier: string;
+      filename?: string;
+      mime?: string;
+      base64?: string;
+    }) => d,
+  )
   .handler(async ({ data, context }) => {
     const userId = context.user.id;
     const pub = await repo.getPublicationByArticle(userId, data.articleId);
-    if (!pub) throw new Error("Prepare a publicação antes da revisão.");
-    if (pub.status === "published") throw new Error("Este artigo já foi publicado.");
-    const { generateFinalText } = await import("@/lib/ai/gateway.server");
-    const { PEER_REVIEW_INSTRUCTIONS } = await import("@/lib/ai/prompts");
-    await repo.setPublicationStatus(userId, pub.id, "in_review");
-    const prompt = `TÍTULO: ${pub.title}\n\nRESUMO:\n${pub.abstract ?? "(sem resumo)"}\n\nARTIGO:\n${pub.content.slice(0, 12000)}`;
-    let report: string;
-    try {
-      report = await generateFinalText(prompt, PEER_REVIEW_INSTRUCTIONS);
-    } catch (e) {
-      // Não deixar a publicação presa em "em revisão" se a IA falhar (ex.: cota).
-      await repo.setPublicationStatus(userId, pub.id, "submitted");
-      throw e;
+    if (!pub) throw new Error("Publicação não encontrada.");
+    const identifier = (data.identifier || "").trim().slice(0, 120);
+    const hasFile = Boolean(data.base64 && data.filename);
+    if (!identifier && !hasFile) {
+      throw new Error("Informe o DOI/registro ou anexe o comprovante de aceite.");
     }
-    // Parecer favorável quando o relatório traz o veredito "ACEITO".
-    const accepted = /\bACEITO\b/i.test(report) && !/\bREJEITADO\b/i.test(report);
-    await repo.setPublicationStatus(userId, pub.id, accepted ? "accepted" : "rejected", {
-      reviewReport: report,
+    let proofKey = pub.review_proof_key;
+    let proofFilename = pub.review_proof_filename;
+    let proofMime = pub.review_proof_mime;
+    if (hasFile) {
+      const { putDocumentBytes } = await import("@/lib/cf/storage.server");
+      const bytes = base64ToBytes(data.base64!);
+      const MAX = 8 * 1024 * 1024;
+      if (bytes.length === 0) throw new Error("Arquivo vazio");
+      if (bytes.length > MAX) throw new Error("Comprovante maior que 8 MB");
+      const mime = data.mime || "application/octet-stream";
+      const key = `publications/${pub.id}/review-proof`;
+      const stored = await putDocumentBytes(key, bytes, mime);
+      if (!stored) throw new Error("Armazenamento indisponível. Tente novamente.");
+      proofKey = stored;
+      proofFilename = data.filename!.slice(0, 200);
+      proofMime = mime;
+    }
+    await repo.setReviewProof(userId, pub.id, {
+      doi: identifier || pub.doi,
+      proofKey,
+      proofFilename,
+      proofMime,
     });
-    return { ok: true, accepted, report };
+    return { ok: true };
+  });
+
+/** Desfaz a comprovação: o artigo volta para "Ainda não revisados". */
+export const clearReviewProof = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const pub = await repo.getPublicationByArticle(context.user.id, data.articleId);
+    if (!pub) throw new Error("Publicação não encontrada.");
+    await repo.clearReviewProof(context.user.id, pub.id);
+    return { ok: true };
+  });
+
+/** Autor: baixa o comprovante de revisão que ele mesmo anexou. */
+export const getReviewProof = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const pub = await repo.getPublicationByArticle(context.user.id, data.articleId);
+    if (!pub?.review_proof_key) return null;
+    const { readDocumentBytes, toBase64 } = await import("@/lib/cf/storage.server");
+    const bytes = await readDocumentBytes(pub.review_proof_key, null);
+    if (!bytes) return null;
+    return {
+      filename: pub.review_proof_filename ?? "comprovante",
+      mime: pub.review_proof_mime ?? "application/octet-stream",
+      base64: toBase64(bytes),
+    };
   });
 
 export const deletePublication = createServerFn({ method: "POST" })
@@ -219,6 +260,12 @@ export const deletePublication = createServerFn({ method: "POST" })
   .validator((d: { articleId: string }) => d)
   .handler(async ({ data, context }) => {
     const pub = await repo.getPublicationByArticle(context.user.id, data.articleId);
-    if (pub) await repo.deletePublication(context.user.id, pub.id);
+    if (pub) {
+      if (pub.review_proof_key) {
+        const { deleteDocumentBytes } = await import("@/lib/cf/storage.server");
+        await deleteDocumentBytes(pub.review_proof_key).catch(() => {});
+      }
+      await repo.deletePublication(context.user.id, pub.id);
+    }
     return { ok: true };
   });

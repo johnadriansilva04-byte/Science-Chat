@@ -1,118 +1,277 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { BadgeCheck, BookOpenText, FileText, Globe } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { BadgeCheck, BookOpenText, Landmark, ScrollText, Search, Sparkles, X } from "lucide-react";
 import { listPublicPublications, type PublicationSummary } from "@/lib/publication.functions";
-import { yearOf } from "@/lib/publication";
+import { buildAcervo, type AcervoItem } from "@/lib/acervo";
+import { MUSEUM_WINGS } from "@/lib/museum";
+import { AcervoCard } from "@/components/app/AcervoCard";
 import { BrandFooter } from "@/components/app/BrandFooter";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import logo from "@/assets/sciencechat-logo.png";
 
 export const Route = createFileRoute("/publicacoes/")({
   head: () => ({
     meta: [
-      { title: "Publicações — ScienceChat" },
+      { title: "Acervo — ScienceChat" },
       {
         name: "description",
         content:
-          "Área pública de artigos científicos revisados por pares e publicados na ScienceChat.",
+          "O acervo da ScienceChat: clássicos do Museu, artigos revisados por pares e trabalhos ainda não revisados — tudo em um só lugar.",
       },
-      { property: "og:title", content: "Publicações — ScienceChat" },
+      { property: "og:title", content: "Acervo — ScienceChat" },
       {
         property: "og:description",
-        content: "Artigos científicos revisados por pares e publicados na ScienceChat.",
+        content:
+          "Clássicos do Museu, artigos revisados por pares e trabalhos ainda não revisados da ScienceChat.",
       },
     ],
   }),
-  component: PublicationsPage,
+  component: AcervoPage,
 });
 
-function PublicationsPage() {
-  const [items, setItems] = useState<PublicationSummary[] | null>(null);
+type TabId = "todos" | "classicos" | "revisados" | "nao-revisados";
+
+const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
+  { id: "todos", label: "Tudo", icon: <BookOpenText className="size-4" /> },
+  { id: "classicos", label: "Clássicos do Museu", icon: <Landmark className="size-4" /> },
+  { id: "revisados", label: "Revisados por pares", icon: <BadgeCheck className="size-4" /> },
+  { id: "nao-revisados", label: "Ainda não revisados", icon: <ScrollText className="size-4" /> },
+];
+
+function AcervoPage() {
+  const [pubs, setPubs] = useState<PublicationSummary[] | null>(null);
+  const [tab, setTab] = useState<TabId>("todos");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let active = true;
     listPublicPublications()
-      .then((rows) => active && setItems(rows))
-      .catch(() => active && setItems([]));
+      .then((rows) => active && setPubs(rows))
+      .catch(() => active && setPubs([]));
     return () => {
       active = false;
     };
   }, []);
 
+  const acervo = useMemo(() => buildAcervo(pubs ?? []), [pubs]);
+
+  const q = query.trim().toLowerCase();
+  const match = (i: AcervoItem) =>
+    q
+      ? `${i.title} ${i.originalTitle ?? ""} ${i.authors} ${i.venue} ${i.area ?? ""} ${i.tags.join(" ")}`
+          .toLowerCase()
+          .includes(q)
+      : true;
+
+  const counts: Record<TabId, number> = {
+    todos: acervo.counts.total,
+    classicos: acervo.counts.classics,
+    revisados: acervo.counts.reviewed,
+    "nao-revisados": acervo.counts.notReviewed,
+  };
+
+  const loading = pubs === null;
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center gap-2 border-b px-4 py-3">
+    <div className="publications-shell min-h-screen">
+      <header className="flex items-center gap-2 border-b border-border/60 bg-card/60 px-4 py-3 backdrop-blur">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="" width={28} height={28} />
           <span className="font-serif text-lg font-semibold">ScienceChat</span>
         </Link>
-        <nav className="ml-auto text-sm">
-          <Link to="/" className="text-muted-foreground hover:text-foreground">
+        <nav className="ml-auto flex items-center gap-1 text-sm">
+          <Link
+            to="/museu"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
+          >
+            <Landmark className="size-4" />
+            Museu
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
+          >
             Início
           </Link>
         </nav>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pb-16 pt-10">
-        <div className="flex items-center gap-3">
-          <BookOpenText className="size-6 text-primary" />
-          <h1 className="font-serif text-3xl font-semibold">Publicações</h1>
+      <main className="mx-auto max-w-5xl px-6 pb-16 pt-10">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
+            <BookOpenText className="size-6" />
+          </span>
+          <div>
+            <h1 className="font-serif text-3xl font-semibold md:text-4xl">Acervo</h1>
+            <p className="text-sm text-muted-foreground">
+              {loading
+                ? "Carregando…"
+                : `${acervo.counts.total} obras — clássicos, revisados e em construção.`}
+            </p>
+          </div>
         </div>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          Artigos científicos <strong>revisados por pares</strong> e publicados por seus autores
-          nesta plataforma. A revisão avalia problema, método, evidências e fundamentação — nunca a
-          filiação institucional do autor. Aqui só entra o trabalho que passou pela revisão e
-          recebeu o parecer favorável.
+
+        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          Três coleções, uma só estante. Os{" "}
+          <strong className="text-foreground">clássicos do Museu</strong> são obras que mudaram o
+          mundo (metadados reais, com DOI). Os{" "}
+          <strong className="text-foreground">revisados por pares</strong> são artigos cujo autor
+          comprovou a revisão feita pela revista ou universidade. Os{" "}
+          <strong className="text-foreground">ainda não revisados</strong> estão publicados, mas sem
+          essa comprovação — a plataforma não revisa.
         </p>
 
-        {items === null && (
-          <p className="mt-10 text-sm text-muted-foreground">Carregando publicações…</p>
-        )}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por tema, autor, teoria ou DOI…"
+              className="h-11 w-full rounded-md border border-input bg-card pl-9 pr-9 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpar busca"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+        </div>
 
-        {items?.length === 0 && (
-          <div className="mt-10 rounded-lg border bg-card p-6 text-sm text-muted-foreground">
-            Ainda não há artigos publicados. Assim que um artigo passar pela revisão por pares e o
-            autor publicar, ele aparecerá aqui.
+        <div className="mt-4 flex flex-wrap gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "museum-chip inline-flex items-center gap-1.5",
+                tab === t.id && "museum-chip--active",
+              )}
+            >
+              {t.icon}
+              {t.label}
+              <span className="tabular-nums opacity-70">· {counts[t.id]}</span>
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p className="mt-10 text-sm text-muted-foreground">Carregando o acervo…</p>
+        ) : (
+          <div className="mt-8 space-y-10">
+            {(tab === "todos" || tab === "classicos") &&
+              acervo.classicsByWing.map((group) => {
+                const items = group.items.filter(match);
+                if (tab !== "todos" && items.length === 0) return null;
+                const wing = MUSEUM_WINGS.find((w) => w.id === group.wing)!;
+                return (
+                  <Section
+                    key={group.wing}
+                    icon={<Landmark className="size-4" />}
+                    title={wing.label}
+                    hint={wing.subtitle}
+                    tone="classico"
+                    items={items}
+                    empty="Nada aqui para esta busca."
+                  />
+                );
+              })}
+
+            {(tab === "todos" || tab === "revisados") && (
+              <Section
+                icon={<BadgeCheck className="size-4" />}
+                title="Revisados por pares"
+                hint="O autor comprovou a revisão (DOI ou registro do aceite)."
+                tone="reviewed"
+                items={acervo.reviewed.filter(match)}
+                empty="Nenhum artigo com revisão comprovada ainda. Seja o primeiro."
+              />
+            )}
+
+            {(tab === "todos" || tab === "nao-revisados") && (
+              <Section
+                icon={<ScrollText className="size-4" />}
+                title="Ainda não revisados"
+                hint="Publicados, mas ainda sem comprovação de revisão por pares."
+                tone="pending"
+                items={acervo.notReviewed.filter(match)}
+                empty="Nenhum artigo nesta seção."
+              />
+            )}
           </div>
         )}
 
-        <ul className="mt-8 space-y-4">
-          {items?.map((p) => (
-            <li
-              key={p.id}
-              className="rounded-lg border bg-card p-5 transition-colors hover:border-primary/40"
-            >
-              <Link to="/publicacoes/$slug" params={{ slug: p.slug }} className="block">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-serif text-xl font-semibold leading-snug">{p.title}</h2>
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                    <BadgeCheck className="size-3.5" />
-                    Revisado por pares
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">{p.author_name}</p>
-                {p.abstract && (
-                  <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{p.abstract}</p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  {p.area && (
-                    <span className="inline-flex items-center gap-1">
-                      <FileText className="size-3.5" />
-                      {p.area}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1">
-                    <Globe className="size-3.5" />
-                    {p.language.toUpperCase()}
-                  </span>
-                  {p.published_at && <span>{yearOf(p.published_at)}</span>}
-                  {p.doi && <span className="font-mono">DOI: {p.doi}</span>}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-14 rounded-xl border border-primary/25 bg-accent/30 p-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <Sparkles className="size-5 text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Publicou seu artigo? Ele entra no acervo na hora. Tem o comprovante da revisão por
+              pares? Ele ganha o selo de revisado.
+            </p>
+            <Button asChild className="ml-auto">
+              <Link to="/">Criar meu artigo</Link>
+            </Button>
+          </div>
+        </div>
       </main>
       <BrandFooter />
     </div>
+  );
+}
+
+function Section({
+  icon,
+  title,
+  hint,
+  tone,
+  items,
+  empty,
+}: {
+  icon: ReactNode;
+  title: string;
+  hint: string;
+  tone: "classico" | "reviewed" | "pending";
+  items: AcervoItem[];
+  empty: string;
+}) {
+  const toneClass =
+    tone === "reviewed" ? "text-success" : tone === "classico" ? "text-primary" : "text-foreground";
+
+  return (
+    <section>
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 pb-3">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 font-serif text-lg font-semibold",
+            toneClass,
+          )}
+        >
+          {icon}
+          {title}
+        </span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+          {items.length}
+        </span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="rounded-lg border border-dashed bg-card/50 px-4 py-3 text-sm text-muted-foreground">
+          {empty}
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((i) => (
+            <AcervoCard key={i.id} item={i} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
