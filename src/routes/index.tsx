@@ -1,20 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  BookOpenText,
-  FilePlus2,
-  Landmark,
-  Layers,
-  MessageSquareText,
-  Paperclip,
-  Play,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, BookOpenText, FilePlus2, Landmark, Play, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
+import { JOURNEY_ACTS } from "@/lib/journey";
 import { Button } from "@/components/ui/button";
 import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
 import { PublishedShelf } from "@/components/app/PublishedShelf";
@@ -39,33 +29,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-const MECHANISMS = [
-  {
-    icon: MessageSquareText,
-    title: "Entrevista científica",
-    desc: "Perguntas adaptativas, uma por vez. Pule o que não se aplica.",
-    accent: "oklch(0.55 0.16 275)",
-  },
-  {
-    icon: Paperclip,
-    title: "Dossiê documental",
-    desc: "Planilhas, fotos, códigos e PDFs ligados às suas afirmações.",
-    accent: "oklch(0.58 0.14 195)",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Auditoria de rastreabilidade",
-    desc: "Cada afirmação confrontada com a evidência que a sustenta.",
-    accent: "oklch(0.55 0.15 155)",
-  },
-  {
-    icon: Layers,
-    title: "Geração página por página",
-    desc: "Folhas A4 que você aprova uma a uma — sem reescrever tudo.",
-    accent: "oklch(0.58 0.17 40)",
-  },
-];
 
 function Index() {
   const { user, loading } = useAuth();
@@ -113,8 +76,8 @@ function Index() {
   }
 
   return (
-    <div className="landing-shell h-screen overflow-hidden bg-background">
-      <div ref={heroRef} className="landing-hero relative flex h-full flex-col">
+    <div className="landing-shell min-h-screen bg-background">
+      <div ref={heroRef} className="landing-hero relative flex min-h-screen flex-col">
         <header className="relative z-10 flex items-center gap-2 px-4 py-3 sm:px-6">
           <ArticlesMenu />
           <span className="font-serif text-lg font-semibold">ScienceChat</span>
@@ -131,133 +94,122 @@ function Index() {
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
             >
               <BookOpenText className="size-4" />
-              Publicações
+              Acervo
             </Link>
           </nav>
         </header>
 
-        <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 overflow-y-auto px-4 pb-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:overflow-hidden">
-          {/* Coluna esquerda: a promessa e o começo */}
-          <section className="flex min-h-0 flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary shadow-sm backdrop-blur">
+        <main className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 pb-16 pt-6 sm:px-6">
+          <div className="text-center">
+            <span className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary shadow-sm backdrop-blur">
               <Sparkles className="size-3.5" />
               Rascunho científico · entrevista inteligente · normas reais
             </span>
-            <h1 className="font-serif text-4xl font-semibold leading-[1.05] tracking-tight md:text-5xl">
+            <h1 className="font-serif text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
               Uma ideia só é válida se estiver{" "}
               <span className="landing-shimmer">estruturada no papel</span>.
             </h1>
-
-            <p className="mt-5 text-center font-serif text-sm italic text-primary/85 sm:text-base">
-              (A menos que você seja o Stephen Hawking — mas se for, tá dispensado kkkk)
-            </p>
-
-            <p className="mt-4 max-w-lg text-muted-foreground">
+            <p className="mx-auto mt-5 max-w-xl text-balance text-muted-foreground">
               Responda uma entrevista rápida e receba o esqueleto do seu artigo acadêmico — já nas
               normas da sua revista de destino.
             </p>
+          </div>
 
-            <form
-              className="mt-7 flex max-w-xl flex-col gap-2 sm:flex-row"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void ignite();
-              }}
+          <form
+            className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-2 sm:flex-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ignite();
+            }}
+          >
+            <div className="group relative flex-1">
+              <Sparkles className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/70 transition-transform group-focus-within:scale-110" />
+              <input
+                value={idea}
+                onChange={(e) => setIdea(e.target.value)}
+                placeholder="Qual inquietação você quer investigar? (opcional)"
+                className="h-12 w-full rounded-xl border border-input bg-white/80 pl-9 pr-3 text-sm shadow-sm outline-none backdrop-blur transition focus:border-primary focus:ring-2 focus:ring-primary/25"
+              />
+            </div>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={creating}
+              className="landing-cta h-12 gap-1.5 rounded-xl"
             >
-              <div className="group relative flex-1">
-                <Sparkles className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/70 transition-transform group-focus-within:scale-110" />
-                <input
-                  value={idea}
-                  onChange={(e) => setIdea(e.target.value)}
-                  placeholder="Qual inquietação você quer investigar? (opcional)"
-                  className="h-12 w-full rounded-xl border border-input bg-white/80 pl-9 pr-3 text-sm shadow-sm outline-none backdrop-blur transition focus:border-primary focus:ring-2 focus:ring-primary/25"
-                />
-              </div>
-              <Button
-                type="submit"
-                size="lg"
-                disabled={creating}
-                className="landing-cta h-12 gap-1.5 rounded-xl"
-              >
-                <FilePlus2 />
-                {creating ? "Acendendo…" : "Criar Rascunho Científico em 5 Minutos"}
-              </Button>
-            </form>
+              <FilePlus2 />
+              {creating ? "Acendendo…" : "Começar meu artigo"}
+            </Button>
+          </form>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-11 rounded-xl"
-                onClick={continueResearch}
-              >
-                <Play />
-                Continuar pesquisa
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                Seus artigos ficam no menu ⋮ no topo.
-              </span>
-            </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-11 rounded-xl"
+              onClick={continueResearch}
+            >
+              <Play />
+              Continuar pesquisa
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Seus artigos ficam no menu ⋮ no topo.
+            </span>
+          </div>
 
-            <ol className="mt-8 hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
-              {["Ignição e interrogatório", "Estrutura", "Produção e obra"].map((label, i) => (
-                <li key={label} className="flex items-center gap-2">
-                  {i > 0 && <ArrowRight className="size-3 opacity-40" />}
-                  <span className="inline-flex items-center gap-1.5 rounded-full border bg-white/60 px-2.5 py-1 backdrop-blur">
-                    <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                      {i + 1}
-                    </span>
-                    {label}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          {/* Coluna direita: os quatro mecanismos + estante */}
-          <section className="flex min-h-0 flex-col justify-center gap-4">
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {MECHANISMS.map((m, i) => (
-                <article
-                  key={m.title}
-                  className="landing-card group rounded-xl border bg-white/70 p-3.5 backdrop-blur"
-                  style={
-                    { "--accent": m.accent, animationDelay: `${i * 70}ms` } as React.CSSProperties
-                  }
-                >
-                  <span className="landing-card__icon">
-                    <m.icon className="size-4" />
-                  </span>
-                  <h3 className="mt-2.5 text-sm font-semibold">{m.title}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{m.desc}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="landing-shelf-card rounded-xl border bg-white/70 p-3.5 backdrop-blur">
-              <div className="mb-2 flex items-center gap-2">
-                <BookOpenText className="size-4 text-primary" />
-                <h2 className="font-serif text-sm font-semibold">Acervo</h2>
-                <Link
-                  to="/publicacoes"
-                  className="ml-auto text-xs font-medium text-primary hover:underline"
-                >
-                  Ver tudo →
-                </Link>
-              </div>
-              <PublishedShelf />
-            </div>
-          </section>
+          <Journey />
         </main>
+      </div>
 
-        <div className="relative z-10 hidden items-center justify-between px-6 py-3 text-[11px] text-muted-foreground lg:flex">
-          <span>Uma criação Variant · CEO John Adrian</span>
-          <Link to="/museu" className="font-medium text-primary hover:underline">
-            Explorar o Museu de Artigos Científicos →
+      <section className="mx-auto w-full max-w-5xl px-4 pb-14 sm:px-6">
+        <div className="mb-4 flex items-center gap-2">
+          <BookOpenText className="size-4 text-primary" />
+          <h2 className="font-serif text-lg font-semibold">Acervo</h2>
+          <Link
+            to="/publicacoes"
+            className="ml-auto text-xs font-medium text-primary hover:underline"
+          >
+            Ver tudo →
           </Link>
         </div>
-      </div>
-      <BrandFooter className="lg:hidden" />
+        <PublishedShelf />
+      </section>
+
+      <BrandFooter />
     </div>
+  );
+}
+
+/** O caminho, do zero à obra — a mesma jornada de cinco atos usada dentro do app. */
+function Journey() {
+  return (
+    <ol className="mx-auto mt-12 flex w-full max-w-3xl flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-0">
+      {JOURNEY_ACTS.map((act, i) => {
+        const Icon = act.icon;
+        const last = i === JOURNEY_ACTS.length - 1;
+        return (
+          <li key={act.id} className="flex flex-1 items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border bg-white/60 px-3 py-2 backdrop-blur">
+              <span
+                className="grid size-7 shrink-0 place-items-center rounded-lg"
+                style={{
+                  color: act.color,
+                  background: `color-mix(in oklab, ${act.color} 14%, transparent)`,
+                }}
+              >
+                <Icon className="size-4" />
+              </span>
+              <span className="flex min-w-0 flex-col leading-tight">
+                <span className="text-[11px] font-semibold">{act.label}</span>
+                <span className="truncate text-[10px] text-muted-foreground">{act.tagline}</span>
+              </span>
+            </div>
+            {!last && (
+              <ArrowRight className="hidden size-3.5 shrink-0 text-muted-foreground/50 sm:block" />
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
