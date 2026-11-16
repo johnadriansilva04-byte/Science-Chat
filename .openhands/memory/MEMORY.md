@@ -53,17 +53,19 @@ Migration `0005_audit_traceability_editorial.sql`: tabelas `claims`, `claim_evid
 - **Migração com ledger:** `scripts/db-migrate.mjs` (`npm run db:migrate:local|remote`) registra em `schema_migrations`; evita reexecutar as destrutivas.
 - **Landing redesenhada:** `src/routes/index.tsx` — tela única `h-screen overflow-hidden`, 2 colunas (promessa+CTA | 4 mecanismos+estante), brilho que segue o ponteiro, shimmer, cards animados. CSS em `styles.css` (`.landing-*`).
 
-## Publicações públicas (`/publicacoes`)
-Autor só aparece após revisão por pares favorável: `draft → submitted → in_review → accepted → published` (ou `rejected`). Só `published` é público.
-- `publications` (migration `0003`): slug único, título, resumo, palavras-chave, autor, vínculo, ORCID, `content`, parecer, datas.
-- `src/lib/publication.ts` (puro, testado): `assemblePublicationContent`, `extractAbstract`, `extractKeywords`, `contentHasAbstract`, `publicationCitation`, `yearOf`.
-- `publication.functions.ts`: `preparePublication`, `submitPublication`, `runPeerReview` (aceita com `ACEITO`), `publishPublication`, `list/getPublicPublication`.
+## Acervo (`/publicacoes`) — revisão só com prova (2026-11-16)
+**Regra:** a plataforma NÃO revisa. O selo "revisado por pares" só aparece quando o autor comprova (DOI/registro + documento). Removido o `runPeerReview`/`submitPublication` falsos.
+- `publications` (migration `0003` + `0007`): `status = draft|published`; `review_status = nao_revisado|revisado`; campos `doi`, `review_report`, `review_notes`. `repo.server.ts`: `setReviewProof`, `setPublicationStatus`, `upsertPublication`.
+- `src/lib/acervo.ts` (puro, testado): junta **clássicos do Museu** (`museum.ts`, 30 obras, DOI real, `reviewed:false` — NÃO são "revisados por pares" da plataforma) + **contribuições** publicadas; `buildAcervo` → `{classicsByWing, reviewed, notReviewed, counts}`.
+- `/publicacoes` = **Acervo**: 3 coleções na MESMA página (Clássicos do Museu por ala · Revisados por pares · Ainda não revisados), com busca e chips. `AcervoCard.tsx` = cartão + ficha em modal. Home (`PublishedShelf.tsx`) = vitrine das 3 coleções.
+- `src/lib/publication.ts`: `yearOf`, `extractAbstract`, `extractKeywords`, `contentHasAbstract`, `publicationCitation`, `assemblePublicationContent`. (`splitByReview` removido.) `publication.functions.ts`: publish direto + fluxo de comprovação (`base64ToBytes`).
 - Rotas client-rendered (verificar no browser). Gestão: `PublishDialog.tsx`.
 
 ## Estado (2026-11-16)
-Prod: **https://sciencechat.sciencechat.workers.dev**. **253 testes** (33 arquivos) verdes; tsc 0 erros; eslint 0 erros (14 warnings react-refresh do shadcn). Build nitro OK. Deploy feito.
-- UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora, mural de publicações (`PublishedShelf.tsx`), museu (`museum.ts` + `/museu`). Chat: voz (`useVoice` + `speech.ts`), gaveta de anexos (`ChatAttachments.tsx`).
-- Migrations aplicadas no D1 remoto: `0001`–`0006` (ledger `schema_migrations`). Logs diários: `2026-11-11.md`, `2026-11-15.md` (detalhes de cada correção).
+Prod: **https://sciencechat.sciencechat.workers.dev**. **260 testes** (34 arquivos) verdes; tsc 0 erros; eslint 0 erros (14 warnings react-refresh do shadcn). Build nitro OK. Deploy feito.
+- UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora, **Acervo** (`acervo.ts` + `AcervoCard.tsx` + `PublishedShelf.tsx`), museu (`museum.ts` + `/museu`). Chat: voz (`useVoice` + `speech.ts`), gaveta de anexos (`ChatAttachments.tsx`).
+- Migrations aplicadas no D1 remoto: `0001`–`0007` (ledger `schema_migrations`). Logs diários: `2026-11-11.md`, `2026-11-15.md`.
+- ⚠️ **Push GitHub bloqueado:** `GITHUB_TOKEN` (user `johnadriansilva04-byte`) e `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` **sem escopo de escrita** no repo → 403. Deploy Cloudflare OK via `CLOUDFLARE_API_TOKEN` no ambiente.
 
 ## Extração de documentos e visão (resumo)
 - `src/lib/documents.server.ts` descomprime DOCX (ZIP deflate) e PDF (`/FlateDecode`, `/ASCII85Decode`) via `DecompressionStream` — **assíncrono**; ⚠️ `Blob.stream()` NÃO existe no jsdom (usar `ReadableStream`+`pipeThrough`).
