@@ -4,6 +4,7 @@ import { ArrowLeft, BadgeCheck, Copy, Printer, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicPublication } from "@/lib/publication.functions";
 import { publicationCitation, contentHasAbstract, yearOf } from "@/lib/publication";
+import { ACERVO_HOMAGES } from "@/lib/acervo";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
 import { BrandFooter } from "@/components/app/BrandFooter";
@@ -128,6 +129,11 @@ function PublicationPage() {
         </div>
 
         <h1 className="font-serif text-3xl font-semibold leading-tight">{pub.title}</h1>
+        {ACERVO_HOMAGES[pub.slug] && (
+          <p className="acervo-homage__dedication mt-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+            {ACERVO_HOMAGES[pub.slug]!.dedication}
+          </p>
+        )}
         <p className="mt-3 text-sm">
           <span className="font-medium">{pub.author_name}</span>
           {pub.affiliation && <span className="text-muted-foreground"> — {pub.affiliation}</span>}

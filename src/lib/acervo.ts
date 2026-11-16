@@ -20,6 +20,26 @@ import { yearOf } from "@/lib/publication";
  */
 export type AcervoKind = "classico" | "contribuicao";
 
+/**
+ * Homenagens do ScienceChat. São artigos da própria comunidade que a plataforma
+ * eleva como tributo — hoje, o ensaio sobre a adaptação cognitiva de Stephen
+ * Hawking, em memória do cientista. A marca é editorial, não uma revisão.
+ */
+export type AcervoHomage = {
+  /** Quem é homenageado. */
+  honoree: string;
+  /** Linha de dedicação exibida junto ao artigo. */
+  dedication: string;
+};
+
+export const ACERVO_HOMAGES: Record<string, AcervoHomage> = {
+  "calculo-mental-sem-papel-adaptacao-cognitiva-hawking": {
+    honoree: "Stephen Hawking (1942–2018)",
+    dedication:
+      "Em memória de Stephen Hawking: o ScienceChat dedica este ensaio a quem provou que a mente não precisa de lousa para alcançar o universo.",
+  },
+};
+
 export type AcervoItem = {
   id: string;
   kind: AcervoKind;
@@ -41,6 +61,8 @@ export type AcervoItem = {
   slug: string | null;
   reviewed: boolean;
   wing: MuseumWingId | null;
+  /** Presente quando o item é uma homenagem do ScienceChat. */
+  homage: AcervoHomage | null;
 };
 
 export function classicsToAcervo(): AcervoItem[] {
@@ -60,6 +82,7 @@ export function classicsToAcervo(): AcervoItem[] {
     slug: null,
     reviewed: false,
     wing: w.wing,
+    homage: null,
   }));
 }
 
@@ -80,6 +103,7 @@ export function publicationsToAcervo(pubs: PublicationSummary[]): AcervoItem[] {
     slug: p.slug,
     reviewed: p.review_status === "revisado",
     wing: null,
+    homage: ACERVO_HOMAGES[p.slug] ?? null,
   }));
 }
 
@@ -91,10 +115,13 @@ export type Acervo = {
   reviewed: AcervoItem[];
   /** Contribuições ainda sem comprovação. */
   notReviewed: AcervoItem[];
+  /** Artigos elevados a homenagem do ScienceChat (não entram nas demais listas). */
+  homages: AcervoItem[];
   counts: {
     classics: number;
     reviewed: number;
     notReviewed: number;
+    homages: number;
     total: number;
   };
 };
@@ -102,8 +129,10 @@ export type Acervo = {
 export function buildAcervo(pubs: PublicationSummary[]): Acervo {
   const classics = classicsToAcervo();
   const contributions = publicationsToAcervo(pubs);
-  const reviewed = contributions.filter((c) => c.reviewed);
-  const notReviewed = contributions.filter((c) => !c.reviewed);
+  const homages = contributions.filter((c) => c.homage);
+  const others = contributions.filter((c) => !c.homage);
+  const reviewed = others.filter((c) => c.reviewed);
+  const notReviewed = others.filter((c) => !c.reviewed);
 
   const wings: MuseumWingId[] = ["revolucao", "poder", "mente"];
   const classicsByWing = wings
@@ -115,10 +144,12 @@ export function buildAcervo(pubs: PublicationSummary[]): Acervo {
     classics,
     reviewed,
     notReviewed,
+    homages,
     counts: {
       classics: classics.length,
       reviewed: reviewed.length,
       notReviewed: notReviewed.length,
+      homages: homages.length,
       total: classics.length + contributions.length,
     },
   };

@@ -49,6 +49,15 @@ describe("publicationsToAcervo", () => {
     const [x] = publicationsToAcervo([pub({ review_status: "desconhecido" as never })]);
     expect(x!.reviewed).toBe(false);
   });
+
+  it("marca homenagem quando o slug consta em ACERVO_HOMAGES", () => {
+    const [h] = publicationsToAcervo([
+      pub({ slug: "calculo-mental-sem-papel-adaptacao-cognitiva-hawking" }),
+    ]);
+    expect(h!.homage?.honoree).toContain("Hawking");
+    const [plain] = publicationsToAcervo([pub({ slug: "outro-artigo" })]);
+    expect(plain!.homage).toBeNull();
+  });
 });
 
 describe("buildAcervo", () => {
@@ -64,6 +73,18 @@ describe("buildAcervo", () => {
     expect(acervo.reviewed.some((i) => i.kind === "classico")).toBe(false);
   });
 
+  it("retira as homenagens das demais listas e as expõe à parte", () => {
+    const acervo = buildAcervo([
+      pub({ id: "h", slug: "calculo-mental-sem-papel-adaptacao-cognitiva-hawking" }),
+      pub({ id: "n" }),
+    ]);
+    expect(acervo.homages.map((i) => i.id)).toEqual(["contrib:h"]);
+    expect(acervo.counts.homages).toBe(1);
+    expect(acervo.notReviewed.map((i) => i.id)).toEqual(["contrib:n"]);
+    // A homenagem não aparece duplicada em "não revisados".
+    expect(acervo.notReviewed.some((i) => i.homage)).toBe(false);
+  });
+
   it("agrupa os clássicos por ala do museu", () => {
     const acervo = buildAcervo([]);
     expect(acervo.classicsByWing).toHaveLength(3);
@@ -74,6 +95,7 @@ describe("buildAcervo", () => {
     const acervo = buildAcervo([]);
     expect(acervo.counts.reviewed).toBe(0);
     expect(acervo.counts.notReviewed).toBe(0);
+    expect(acervo.counts.homages).toBe(0);
     expect(acervo.counts.classics).toBe(MUSEUM_WORKS.length);
     expect(acervo.counts.total).toBe(MUSEUM_WORKS.length);
   });

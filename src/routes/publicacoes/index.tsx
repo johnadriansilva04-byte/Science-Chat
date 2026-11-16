@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { BadgeCheck, BookOpenText, Landmark, ScrollText, Search, Sparkles, X } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  BookOpenText,
+  Flame,
+  Landmark,
+  ScrollText,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { listPublicPublications, type PublicationSummary } from "@/lib/publication.functions";
 import { buildAcervo, type AcervoItem } from "@/lib/acervo";
 import { MUSEUM_WINGS } from "@/lib/museum";
@@ -166,6 +176,14 @@ function AcervoPage() {
           <p className="mt-10 text-sm text-muted-foreground">Carregando o acervo…</p>
         ) : (
           <div className="mt-8 space-y-10">
+            {acervo.homages.length > 0 && (tab === "todos" || tab === "nao-revisados") && (
+              <div className="space-y-4">
+                {acervo.homages.filter(match).map((item) => (
+                  <HomageBanner key={item.id} item={item} />
+                ))}
+              </div>
+            )}
+
             {(tab === "todos" || tab === "classicos") &&
               acervo.classicsByWing.map((group) => {
                 const items = group.items.filter(match);
@@ -273,5 +291,37 @@ function Section({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Faixa de homenagem: eleva um artigo da comunidade a tributo do ScienceChat.
+ * Aqui, o ensaio sobre a adaptação cognitiva de Stephen Hawking — em memória do
+ * cientista que provou que a mente não precisa de lousa.
+ */
+function HomageBanner({ item }: { item: AcervoItem }) {
+  const homage = item.homage!;
+  return (
+    <article className="acervo-homage">
+      <span className="acervo-homage__flame" aria-hidden>
+        <Flame className="size-5" />
+      </span>
+      <div className="acervo-homage__body">
+        <span className="acervo-homage__kicker">Homenagem do ScienceChat</span>
+        <h3 className="acervo-homage__title">
+          <Link to="/publicacoes/$slug" params={{ slug: item.slug! }}>
+            {item.title}
+          </Link>
+        </h3>
+        <p className="acervo-homage__dedication">{homage.dedication}</p>
+        <p className="acervo-homage__meta">
+          {item.authors} · {item.venue} · {item.year} · {homage.honoree}
+        </p>
+      </div>
+      <Link to="/publicacoes/$slug" params={{ slug: item.slug! }} className="acervo-homage__cta">
+        Ler o ensaio
+        <ArrowRight className="size-4" />
+      </Link>
+    </article>
   );
 }

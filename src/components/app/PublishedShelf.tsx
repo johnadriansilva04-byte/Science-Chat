@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, Landmark, ScrollText } from "lucide-react";
+import { BadgeCheck, Flame, Landmark, ScrollText } from "lucide-react";
 import { listPublicPublications, type PublicationSummary } from "@/lib/publication.functions";
 import { buildAcervo, type AcervoItem } from "@/lib/acervo";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,18 @@ export function PublishedShelf({ className }: { className?: string }) {
 
   return (
     <div className={cn("acervo-mural", className)}>
+      {acervo.homages.length > 0 && (
+        <Link to="/publicacoes" className="acervo-mural__homage">
+          <Flame className="size-4 shrink-0" />
+          <span className="min-w-0">
+            <span className="acervo-mural__homage-kicker">Homenagem do ScienceChat</span>
+            <span className="acervo-mural__homage-title">{acervo.homages[0]!.title}</span>
+            <span className="acervo-mural__homage-honoree">
+              Em memória de {acervo.homages[0]!.homage!.honoree}
+            </span>
+          </span>
+        </Link>
+      )}
       <Collection
         icon={<Landmark className="size-4" />}
         title="Clássicos do Museu"
