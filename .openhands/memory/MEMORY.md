@@ -21,8 +21,10 @@ Detalhes longos, histórico e armadilhas completas: `.openhands/memory/2026-11-1
 
 ## Deploy
 **Cloudflare é o alvo.** `npm run build` + `npx wrangler deploy` → **https://sciencechat.sciencechat.workers.dev**. Bindings ativos: `DB`, `AI`, `FILES` (R2), `ASSETS`. E2E validado em produção.
-- `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`; D1 `sciencechat` = `b8793250-696e-4538-aa50-03796ff8635f`. **R2 habilitado** (o usuário ativou no painel); bucket `sciencechat-files` (binding `FILES`). KV só leitura. Sessões ficam no D1.
-- **Push GitHub**: `$GITHUB_TOKEN` (`ghu_`) e `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` dão **403 mesmo com admin via API** — o token ativo não escreve. O único que funciona é `GH_PAT` (`ghp_`, no ambiente):
+- `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`; D1 `sciencechat` = `b8793250-696e-4538-aa50-03796ff8635f`; R2 `sciencechat-files` (`FILES`); **KV ativo**: namespace `sciencechat_kv` = `bf18af0db8dc44ca9e762875c69843c4` (`KV`, usado pelo rate limit). Sessões ficam no D1.
+- **Rate limit** (`src/lib/cf/rate-limit.server.ts`, janela fixa alinhada; KV com fallback D1 `rate_limits`): chat 40/5min, login 10/15min (IP+e-mail), cadastro 20/h. Falha ABERTO. Validado em prod.
+- **Bundle**: usar Shiki fine-grained (`src/lib/syntax-highlight.ts`, 20 langs) e Mermaid lazy (`src/lib/mermaid-lazy.ts`); NUNCA reimportar `@streamdown/code`/`@streamdown/mermaid` (puxam ~13 MB e estouram o limite de 3 MB do Worker).
+- **Push GitHub**: `$GITHUB_TOKEN` (`ghu_`, GitHub App) e `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` dão **403** mesmo com admin via API. Só funciona com PAT clássico `ghp_` (o `GH_PAT` some do ambiente às vezes):
   `git -c credential.helper= push "https://${GH_PAT}@github.com/johnadriansilva04-byte/Science-Chat.git" main`
   Antes: `git fetch origin -q` + confirmar fast-forward. Repo é **shallow**; NUNCA rebase/force-push.
 - Vercel é caminho alternativo (mesmo código, via REST): detalhes no log diário (Node 24 obrigatório, desligar SSO).
@@ -58,27 +60,12 @@ Autor só aparece após revisão por pares favorável: `draft → submitted → 
 - `publication.functions.ts`: `preparePublication`, `submitPublication`, `runPeerReview` (aceita com `ACEITO`), `publishPublication`, `list/getPublicPublication`.
 - Rotas client-rendered (verificar no browser). Gestão: `PublishDialog.tsx`.
 
-## Estado (2026-11-11)
-Prod: **https://sciencechat.sciencechat.workers.dev**. **168 testes** (25 arquivos) verdes. tsc limpo (fora os 4 pré-existentes), build nitro OK. Deploy feito.
-- UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora com advogado do diabo fundamentado, mural de publicações (`PublishedShelf.tsx`), museu curado (`museum.ts` + `/museu`).
-- Chat: voz fluida (`useVoice` + `src/lib/speech.ts`), gaveta de anexos (`ChatAttachments.tsx`), roteamento de anexo pela IA.
-- **R2 do dossiê:** feito e validado em produção (upload→R2, download, delete). Ver log `2026-11-11.md`.
-- **Matriz de rastreabilidade, auditoria científica, config editorial Udelar e exportação DOCX/LaTeX/HTML:** feitos e validados em produção (seção acima). As 4 pendências anteriores estão concluídas.
-- Migration `0005` aplicada no D1 remoto (ledger `schema_migrations` com 5 entradas); 7 artigos preservados.
+## Estado (2026-11-16)
+Prod: **https://sciencechat.sciencechat.workers.dev**. **253 testes** (33 arquivos) verdes; tsc 0 erros; eslint 0 erros (14 warnings react-refresh do shadcn). Build nitro OK. Deploy feito.
+- UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora, mural de publicações (`PublishedShelf.tsx`), museu (`museum.ts` + `/museu`). Chat: voz (`useVoice` + `speech.ts`), gaveta de anexos (`ChatAttachments.tsx`).
+- Migrations aplicadas no D1 remoto: `0001`–`0006` (ledger `schema_migrations`). Logs diários: `2026-11-11.md`, `2026-11-15.md` (detalhes de cada correção).
 
-## Correções 2026-11-15 (verificação geral do app)
-- **Extração de documentos (bug corrigido):** `src/lib/documents.server.ts` só lia DOCX/PDF **não comprimidos**. Word/Acrobat usam ZIP deflate e `/FlateDecode`, então `extractText` devolvia `null` para quase todo anexo real. Agora descomprime via `DecompressionStream` ("deflate-raw" p/ ZIP, "deflate" p/ PDF) e é **assíncrono** (2 chamadores: `article.functions.ts` `uploadDocument`, `traceability.functions.ts`). ⚠️ Usar `ReadableStream` + `pipeThrough`; **`Blob.stream()` NÃO existe no jsdom** (testes quebram). Testes cobrem DOCX/PDF comprimidos (`documents.test.ts`).
-- **Degeneração de páginas (corrigido):** modelo repetia o mesmo parágrafo. `dedupeParagraphs` (`article-page.ts`, Jaccard≥0.8) aplicado no `generatePage` (normal + retry).
-- **Cota Workers AI:** checar via REST `POST /accounts/{acct}/ai/run/{model}`; erro `4006` = cota esgotada, reseta à meia-noite UTC. Em 2026-11-15 18:00 UTC estava esgotada.
-- Token `cfat_*`: funciona só nos endpoints `/accounts/*` (listar accounts/D1/R2/AI); `/user/tokens/verify` responde "Invalid API Token".
-- Estado D1 remoto (15/11): 11 artigos, 14 páginas, 1 publicação, 6 usuários, **0 documentos**, R2 `sciencechat-files` **vazio**.
-- **Anexos validados em produção** (server fn `uploadDocument` chamada direto, corpo seroval): TXT e DOCX reais → R2 + texto extraído OK. Detalhes no log `2026-11-15.md`.
-- Suíte: **218 testes** (30 arquivos) verdes; `tsc` 0 erros; `eslint` 0 erros (só 14 warnings react-refresh shadcn).
-
-## Correções 2026-11-15 (4ª passada — neurônios voltaram)
-- **Neurônios RESTAURADOS em produção** (Pracinha respondeu ao vivo).
-- **OCR de PDF digitalizado:** bug de pixels crus corrigido (ver "Armadilhas conhecidas"). Suíte **236 testes** (31 arquivos).
-- **Qualidade da página:** `PAGE_INSTRUCTIONS` reforçado + `normalizePageText()`. Commit 5ca8433.
-- **Deploy:** sem `CLOUDFLARE_API_TOKEN` no ambiente → não há como publicar. `main` local **22 commits à frente** de `origin/main`.
-- **Imagens (visão):** `uploadDocument` detecta imagem (`isImage`) e chama `describeImage()` (`@cf/meta/llama-3.2-11b-vision-instruct`, env `AI_VISION_MODEL`) para descrever + transcrever, guardando como `text_content`. Se a IA falhar (ex.: cota), o anexo é salvo sem texto e a tool `ler_anexo` tenta a visão **sob demanda** (lê os bytes do R2 via `readDocumentBytes`).
-- **PDF digitalizado (OCR) — NOVO (15/11):** PDF sem camada de texto → `extractPdfImages()` acha as imagens embutidas (`/DCTDecode` JPEG, `/FlateDecode`, e **`/ASCII85Decode`** — obrigatório p/ ReportLab/scanners) e `describePdfImages()` transcreve via visão. Ligado no upload e no `ler_anexo`. Não cobre `/JPXDecode` (JPEG2000) nem `/CCITTFaxDecode` (fax). Detalhes no log `2026-11-15.md`.
+## Extração de documentos e visão (resumo)
+- `src/lib/documents.server.ts` descomprime DOCX (ZIP deflate) e PDF (`/FlateDecode`, `/ASCII85Decode`) via `DecompressionStream` — **assíncrono**; ⚠️ `Blob.stream()` NÃO existe no jsdom (usar `ReadableStream`+`pipeThrough`).
+- **Imagens/PDF digitalizado:** `uploadDocument` descreve via visão (`AI_VISION_MODEL` = `llama-3.2-11b-vision`); PDF sem texto → `extractPdfImages()` + `describePdfImages()`. Não cobre `/JPXDecode` (JPEG2000) nem CCITT/fax. `ler_anexo` tenta visão sob demanda se faltar texto.
+- **Degeneração de página:** `dedupeParagraphs` (Jaccard≥0.8) no `generatePage`. Página A4 ≈ 500 palavras; `PAGE_INSTRUCTIONS` + `normalizePageText()`.
