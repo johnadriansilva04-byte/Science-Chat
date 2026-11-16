@@ -7,6 +7,7 @@ import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
 import { getSessionUser } from "@/lib/cf/auth.server";
+import { CHAT_POLICY, consumeRateLimit, tooManyRequests } from "@/lib/cf/rate-limit.server";
 import * as repo from "@/lib/cf/repo.server";
 
 /**
@@ -36,6 +37,9 @@ async function handle(request: Request) {
   const article = await repo.getArticle(user.id, body.articleId);
   if (!article) return new Response("Artigo não encontrado", { status: 404 });
 
+  const limit = await consumeRateLimit(`chat:${user.id}`, CHAT_POLICY);
+  if (!limit.ok) return tooManyRequests(limit);
+
   const last = body.messages[body.messages.length - 1];
   if (last?.role === "user") {
     const parts = last.parts.filter((p) => p.type === "text");
@@ -58,13 +62,14 @@ async function handle(request: Request) {
   // Na entrevista o documento ainda é preliminar: forçamos a BUSCA (provocação/
   // evidência) e a LEITURA de anexos (o pesquisador anexa documentos durante a
   // entrevista). Edições de título/página só são forçadas na fase de produção.
-  const interviewTools = new Set(["pesquisar_bases", "ler_anexo", "ler_todos_anexos", "listar_anexos"]);
+  const interviewTools = new Set([
+    "pesquisar_bases",
+    "ler_anexo",
+    "ler_todos_anexos",
+    "listar_anexos",
+  ]);
   const forcedTool =
-    article.phase === "interview"
-      ? forced && interviewTools.has(forced)
-        ? forced
-        : null
-      : forced;
+    article.phase === "interview" ? (forced && interviewTools.has(forced) ? forced : null) : forced;
   const { result } = startResponses(
     request,
     await convertToModelMessages(sanitized),

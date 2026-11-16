@@ -21,11 +21,9 @@ binding = "FILES"
 bucket_name = "sciencechat-files"
 
 # Cache/estado efêmero (sessões, rate limit).
-# Descomentar depois de criar o namespace (precisa de permissão de escrita em KV):
-#   npx wrangler kv namespace create sciencechat_kv
-# [[kv_namespaces]]
-# binding = "KV"
-# id = "PREENCHER_APOS_wrangler_kv_namespace_create"
+[[kv_namespaces]]
+binding = "KV"
+id = "bf18af0db8dc44ca9e762875c69843c4"
 
 # Inferência de IA (Workers AI).
 [ai]

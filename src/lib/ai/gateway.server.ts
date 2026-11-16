@@ -1,11 +1,5 @@
 import { createWorkersAI } from "workers-ai-provider";
-import {
-  streamText,
-  stepCountIs,
-  type ModelMessage,
-  type TextStreamPart,
-  type ToolSet,
-} from "ai";
+import { streamText, stepCountIs, type ModelMessage, type TextStreamPart, type ToolSet } from "ai";
 import { getEnv, requireAi, type AiBinding } from "@/lib/cf/bindings.server";
 import { drainLeakedCalls } from "@/lib/ai/leak-filter";
 

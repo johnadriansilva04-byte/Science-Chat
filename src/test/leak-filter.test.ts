@@ -57,12 +57,25 @@ describe("drainLeakedCalls", () => {
 
   it("segura a chave parcial e libera quando não vira chamada", () => {
     // `{` sozinho chega num delta e o resto vem depois como objeto comum.
-    const out = feed(['valor ', "{", '"name": "x", "ano": 1}', " fim"]);
+    const out = feed(["valor ", "{", '"name": "x", "ano": 1}', " fim"]);
     expect(out).toBe('valor {"name": "x", "ano": 1} fim');
   });
 
   it("segura a chave partida byte a byte até virar chamada", () => {
-    const out = feed(["Ok ", "{", '"', "na", "me", '"', ":", ' "x"', ",", ' "parameters": {}', "}", "!"]);
+    const out = feed([
+      "Ok ",
+      "{",
+      '"',
+      "na",
+      "me",
+      '"',
+      ":",
+      ' "x"',
+      ",",
+      ' "parameters": {}',
+      "}",
+      "!",
+    ]);
     expect(out).not.toContain("name");
     expect(out).toBe("Ok !");
   });
@@ -73,7 +86,7 @@ describe("drainLeakedCalls", () => {
     expect(safe + rest).toContain("texto");
   });
 
-  it("remove a forma {\"type\":\"function\", ...}", () => {
+  it('remove a forma {"type":"function", ...}', () => {
     const text = 'Vou ler.\n{"type": "function", "name": "listar_anexos", "parameters": {}}\nFim.';
     const { safe, rest } = drainLeakedCalls(text);
     expect(safe).toBe("Vou ler.\n\nFim.");
