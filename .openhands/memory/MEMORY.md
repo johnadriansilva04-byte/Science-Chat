@@ -73,3 +73,9 @@ Prod: **https://sciencechat.sciencechat.workers.dev**. **260 testes** (34 arquiv
 - `src/lib/documents.server.ts` descomprime DOCX (ZIP deflate) e PDF (`/FlateDecode`, `/ASCII85Decode`) via `DecompressionStream` — **assíncrono**; ⚠️ `Blob.stream()` NÃO existe no jsdom (usar `ReadableStream`+`pipeThrough`).
 - **Imagens/PDF digitalizado:** `uploadDocument` descreve via visão (`AI_VISION_MODEL` = `llama-3.2-11b-vision`); PDF sem texto → `extractPdfImages()` + `describePdfImages()`. Não cobre `/JPXDecode` (JPEG2000) nem CCITT/fax. `ler_anexo` tenta visão sob demanda se faltar texto.
 - **Degeneração de página:** `dedupeParagraphs` (Jaccard≥0.8) no `generatePage`. Página A4 ≈ 500 palavras; `PAGE_INSTRUCTIONS` + `normalizePageText()`.
+
+## Homenagens do ScienceChat (2026-11-16)
+- `ACERVO_HOMAGES` em `src/lib/acervo.ts`: mapa slug→{honoree, dedication}. Artigos da comunidade elevados a tributo; **saem** de revisados/não-revisados e viram `acervo.homages`.
+- Hoje: `calculo-mental-sem-papel-adaptacao-cognitiva-hawking` → homenagem a Stephen Hawking (1942–2018).
+- UI: `HomageBanner` (faixa dourada + chama) em `/publicacoes`; faixa compacta `.acervo-mural__homage` no `PublishedShelf` (home); dedicatória em `$slug.tsx`.
+- **D1 local vazio por padrão** (dev usa `--local`): para validar visualmente, semear usuário (FK `publications.user_id`) + publicações. Usuários remotos: variant@sciencechat.local, autor@sciencechat.local (ids em /tmp/users.json).
