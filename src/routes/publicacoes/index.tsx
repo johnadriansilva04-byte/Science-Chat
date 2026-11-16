@@ -13,13 +13,13 @@ import logo from "@/assets/sciencechat-logo.png";
 export const Route = createFileRoute("/publicacoes/")({
   head: () => ({
     meta: [
-      { title: "Acervo — ScienceChat" },
+      { title: "Coletânea de artigos — ScienceChat" },
       {
         name: "description",
         content:
-          "O acervo da ScienceChat: clássicos do Museu, artigos revisados por pares e trabalhos ainda não revisados — tudo em um só lugar.",
+          "A coletânea da ScienceChat: clássicos do Museu, artigos revisados por pares e trabalhos ainda não revisados — tudo em uma só estante.",
       },
-      { property: "og:title", content: "Acervo — ScienceChat" },
+      { property: "og:title", content: "Coletânea de artigos — ScienceChat" },
       {
         property: "og:description",
         content:
@@ -103,19 +103,19 @@ function AcervoPage() {
             <BookOpenText className="size-6" />
           </span>
           <div>
-            <h1 className="font-serif text-3xl font-semibold md:text-4xl">Acervo</h1>
+            <h1 className="font-serif text-3xl font-semibold md:text-4xl">Coletânea de artigos</h1>
             <p className="text-sm text-muted-foreground">
               {loading
                 ? "Carregando…"
-                : `${acervo.counts.total} obras — clássicos, revisados e em construção.`}
+                : `${acervo.counts.total} artigos — clássicos que mudaram o mundo e contribuições da comunidade.`}
             </p>
           </div>
         </div>
 
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Três coleções, uma só estante. Os{" "}
-          <strong className="text-foreground">clássicos do Museu</strong> são obras que mudaram o
-          mundo (metadados reais, com DOI). Os{" "}
+          Uma só estante, três coleções. Os{" "}
+          <strong className="text-foreground">clássicos do Museu</strong> são obras que reescreveram
+          o que era possível pensar — metadados reais, com DOI, dignos de reverência. Os{" "}
           <strong className="text-foreground">revisados por pares</strong> são artigos cujo autor
           comprovou a revisão feita pela revista ou universidade. Os{" "}
           <strong className="text-foreground">ainda não revisados</strong> estão publicados, mas sem
@@ -212,7 +212,7 @@ function AcervoPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Sparkles className="size-5 text-primary" />
             <p className="text-sm text-muted-foreground">
-              Publicou seu artigo? Ele entra no acervo na hora. Tem o comprovante da revisão por
+              Publicou seu artigo? Ele entra na coletânea na hora. Tem o comprovante da revisão por
               pares? Ele ganha o selo de revisado.
             </p>
             <Button asChild className="ml-auto">

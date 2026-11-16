@@ -93,7 +93,7 @@ function Index() {
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
             >
               <BookOpenText className="size-4" />
-              Acervo
+              Coletânea
             </Link>
           </nav>
         </header>
@@ -182,12 +182,13 @@ function Index() {
           {/* Coluna direita: o mural do acervo */}
           <section className="flex min-h-0 flex-col justify-center">
             <div className="landing-shelf-card rounded-2xl border bg-white/70 p-4 backdrop-blur">
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="size-4 text-primary" />
-                <h2 className="font-serif text-sm font-semibold">Acervo</h2>
+                <h2 className="font-serif text-base font-semibold">Coletânea de artigos</h2>
+                <span className="text-[11px] text-muted-foreground">clássicos e contribuições</span>
                 <Link
                   to="/publicacoes"
-                  className="ml-auto text-xs font-medium text-primary hover:underline"
+                  className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
                 >
                   Ver tudo →
                 </Link>
