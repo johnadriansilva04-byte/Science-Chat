@@ -149,7 +149,11 @@ function Index() {
               <span className="landing-shimmer">estruturada no papel</span>.
             </h1>
 
-            <p className="mt-5 max-w-lg text-muted-foreground">
+            <p className="mt-5 text-center font-serif text-sm italic text-primary/85 sm:text-base">
+              (A menos que você seja o Stephen Hawking — mas se for, tá dispensado kkkk)
+            </p>
+
+            <p className="mt-4 max-w-lg text-muted-foreground">
               Responda uma entrevista rápida e receba o esqueleto do seu artigo acadêmico — já nas
               normas da sua revista de destino.
             </p>
