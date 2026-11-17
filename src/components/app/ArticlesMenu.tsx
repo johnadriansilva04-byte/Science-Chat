@@ -22,11 +22,15 @@ const PHASE: Record<string, string> = {
 
 export async function createArticle(navigate: ReturnType<typeof useNavigate>, seed?: string) {
   try {
-    const { id } = await createArticleFn();
+    const clean = seed?.trim();
+    // A inquietação digitada na home vira o título inicial do artigo (o
+    // pesquisador pode renomear depois). Sem isto, todo artigo nascia como
+    // "Novo artigo" mesmo quando ele já tinha escrito o tema.
+    const { id } = await createArticleFn({ data: clean ? { title: clean } : {} });
     navigate({
       to: "/a/$articleId",
       params: { articleId: id },
-      search: seed && seed.trim() ? { seed: seed.trim() } : {},
+      search: clean ? { seed: clean } : {},
     });
   } catch {
     toast.error("Não foi possível criar o artigo");

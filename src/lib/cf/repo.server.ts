@@ -57,19 +57,20 @@ export async function getArticle(userId: string, articleId: string): Promise<Art
     .first<Article>();
 }
 
-export async function createArticle(userId: string): Promise<Article> {
+export async function createArticle(userId: string, title?: string): Promise<Article> {
   const id = newId();
   const ts = nowIso();
+  const cleanTitle = title?.trim().slice(0, 200) || "Novo artigo";
   await requireDb()
     .prepare(
-      "insert into articles (id, user_id, title, phase, created_at, updated_at) values (?, ?, 'Novo artigo', 'interview', ?, ?)",
+      "insert into articles (id, user_id, title, phase, created_at, updated_at) values (?, ?, ?, 'interview', ?, ?)",
     )
-    .bind(id, userId, ts, ts)
+    .bind(id, userId, cleanTitle, ts, ts)
     .run();
   return {
     id,
     user_id: userId,
-    title: "Novo artigo",
+    title: cleanTitle,
     phase: "interview",
     plan: null,
     created_at: ts,

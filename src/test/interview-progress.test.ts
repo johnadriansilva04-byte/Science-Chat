@@ -73,4 +73,17 @@ describe("interviewProgress", () => {
     expect(progress.asked).toBe(0);
     expect(progress.ratio).toBe(0);
   });
+
+  it("nunca conta mais respostas do que perguntas (evita '5/4')", () => {
+    const progress = interviewProgress([
+      assistant("Qual é o tema?\n_Etapa: Entrevista_"),
+      user("Primeira parte da resposta"),
+      user("Complemento colado depois"),
+      user("Mais um complemento"),
+    ]);
+    expect(progress.asked).toBe(1);
+    expect(progress.answered).toBe(1);
+    expect(progress.answered).toBeLessThanOrEqual(progress.asked);
+    expect(progress.ratio).toBe(1);
+  });
 });

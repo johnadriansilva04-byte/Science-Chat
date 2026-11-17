@@ -71,8 +71,9 @@ export const listArticles = createServerFn({ method: "POST" })
 
 export const createArticle = createServerFn({ method: "POST" })
   .middleware([requireUser])
-  .handler(async ({ context }) => {
-    const article = await repo.createArticle(context.user.id);
+  .validator((d: { title?: string } | undefined) => d ?? {})
+  .handler(async ({ data, context }) => {
+    const article = await repo.createArticle(context.user.id, data?.title);
     return { id: article.id };
   });
 

@@ -94,8 +94,8 @@ export function buildTools(ctx: ToolContext) {
           .describe("Máximo de resultados (padrão 8)."),
       }),
       execute: async ({ consulta, limite }) => {
-        const hits = await searchLiterature(consulta, limite ?? 8);
-        return formatHits(hits);
+        const { hits, degraded } = await searchLiterature(consulta, limite ?? 8);
+        return formatHits(hits, degraded);
       },
     }),
 

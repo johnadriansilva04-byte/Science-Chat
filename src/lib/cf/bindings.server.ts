@@ -56,6 +56,8 @@ export interface Env {
   ASSETS?: { fetch: (request: Request) => Promise<Response> };
   APP_ENV?: string;
   SESSION_SECRET?: string;
+  /** Chave opcional do OpenAlex: eleva a cota da busca bibliográfica. */
+  OPENALEX_API_KEY?: string;
 }
 
 type GlobalWithEnv = typeof globalThis & { __env__?: Partial<Env> };
@@ -92,6 +94,8 @@ export function getEnv(): Env {
     ASSETS: env["ASSETS"] as Env["ASSETS"],
     APP_ENV: (env["APP_ENV"] as string | undefined) ?? process.env["APP_ENV"] ?? "development",
     SESSION_SECRET: (env["SESSION_SECRET"] as string | undefined) ?? process.env["SESSION_SECRET"],
+    OPENALEX_API_KEY:
+      (env["OPENALEX_API_KEY"] as string | undefined) ?? process.env["OPENALEX_API_KEY"],
   } as Env;
 }
 

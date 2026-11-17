@@ -62,7 +62,12 @@ export function interviewProgress(messages: MessageLike[]): InterviewProgress {
     }
   }
 
+  // O pesquisador pode mandar mais de uma mensagem por pergunta (ex.: cola um
+  // texto longo, ou complementa a resposta). Sem este teto, o contador exibiria
+  // "5/4" — respostas acima do número de perguntas feitas.
+  const cappedSkipped = Math.min(skipped, asked);
+  const cappedAnswered = Math.min(answered, Math.max(asked - cappedSkipped, 0));
   const denominator = Math.max(asked, 1);
-  const ratio = asked === 0 ? 0 : Math.min(1, (answered + skipped) / denominator);
-  return { asked, answered, skipped, ratio, stage };
+  const ratio = asked === 0 ? 0 : Math.min(1, (cappedAnswered + cappedSkipped) / denominator);
+  return { asked, answered: cappedAnswered, skipped: cappedSkipped, ratio, stage };
 }

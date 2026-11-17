@@ -114,6 +114,19 @@ describe("camada de dados (D1/SQLite real)", () => {
     expect(after?.title).toBe("Novo artigo");
   });
 
+  it("usa o título informado na criação e cai em 'Novo artigo' sem ele", async () => {
+    const auth = await import("@/lib/cf/auth.server");
+    const repo = await import("@/lib/cf/repo.server");
+    const u = await auth.createUser("t@b.com", "senha123");
+
+    const named = await repo.createArticle(u.id, "  A mente sob pressão  ");
+    expect(named.title).toBe("A mente sob pressão");
+    expect((await repo.getArticle(u.id, named.id))?.title).toBe("A mente sob pressão");
+
+    const blank = await repo.createArticle(u.id, "   ");
+    expect(blank.title).toBe("Novo artigo");
+  });
+
   it("grava páginas com upsert e controla o status", async () => {
     const auth = await import("@/lib/cf/auth.server");
     const repo = await import("@/lib/cf/repo.server");

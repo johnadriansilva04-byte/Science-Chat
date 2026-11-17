@@ -84,7 +84,10 @@ const SECTION_RULES: { section: string; words: string[] }[] = [
     words: ["result", "análise", "analise", "achado", "experiment", "medid"],
   },
   { section: "Discussão", words: ["discuss", "interpreta", "signific"] },
-  { section: "Conclusão", words: ["conclus", "considera", "fechamento"] },
+  // "considera" sozinho casa com "considerar" em perguntas comuns ("como você
+  // pode considerar...") e jogava a resposta na Conclusão. Só "consideraç"
+  // (considerações finais) é sinal real de conclusão.
+  { section: "Conclusão", words: ["conclus", "consideraç", "fechamento"] },
   { section: "Referências", words: ["referênc", "referenc", "fonte", "bibliograf"] },
   {
     section: "Introdução",

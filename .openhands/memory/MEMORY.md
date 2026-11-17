@@ -87,3 +87,12 @@ Prod: **https://sciencechat.sciencechat.workers.dev**. **260 testes** (34 arquiv
 - **A norma NÃO é fixa:** vem da config editorial (`standard: "abnt"|"apa"|"ieee"|"udelar"…`). O código apenas lê e aplica — nunca cravar ABNT. `docx.ts`, `export-formats.ts`, `export.functions.ts`, `a4.ts`, `A4Sheet.tsx` são profile-aware.
 - **`a4.ts` mudou de API:** margens agora por lado (`A4.leftMm/rightMm/topMm/bottomMm`), não `marginXMm/marginYMm`.
 - **`BookReader`** aceita `pages?` (produção) **ou** `content?` (publicação, dividido por seções via `splitContentIntoLeaves` em `publication.ts`). Folha longa rola (`max-h-[82vh] overflow-y-auto`) — antes era recortada. Aberto por "Ler o ensaio" (faixa de homenagem) e por "Ler como livro" em `/publicacoes/$slug`.
+
+## Correções da rodada no chat real (2026-11-16)
+Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigidos (detalhes no log `2026-11-16.md`):
+- **Contador "5/4":** `interview-progress.ts` contava toda msg `user` como resposta → teto `answered ≤ asked − skipped`.
+- **Seção errada:** `interview-notes.ts` regra de Conclusão casava "considerar"; agora só "consideraç".
+- **RAG silencioso:** OpenAlex responde **429** (cota gratuita diária esgotada) e o código caía no Crossref **sem avisar**. `research.server.ts` agora lança `RateLimitedError` (429/403), `searchLiterature` devolve `{hits, degraded, source}` e `formatHits(hits, degraded)` injeta aviso. Chave opcional `OPENALEX_API_KEY` (Env + `bindings.server.ts`).
+- **Título:** `repo.createArticle(userId, title?)` + server fn aceitam título; `ArticlesMenu.createArticle` usa o seed da home como título inicial (antes ficava "Novo artigo").
+- ⚠️ **Workers AI cota diária (erro 4006)** esgota rápido (10k neurons grátis); reseta meia-noite UTC — bloqueia testar IA no fim do dia.
+- **Aviso:** digitar texto longo com `\n` na UI envia várias mensagens (Enter = enviar). Ao automatizar via browser, usar Shift+Enter ou colar.

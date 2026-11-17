@@ -169,6 +169,17 @@ describe("formatHits", () => {
   it("informa quando nada foi encontrado", () => {
     expect(formatHits([])).toMatch(/Nenhum resultado/);
   });
+
+  it("avisa quando a busca caiu no Crossref (degradada)", () => {
+    const out = formatHits([hit], true);
+    expect(out).toMatch(/AVISO/);
+    expect(out).toMatch(/OpenAlex/);
+    expect(out).toContain("1. Burocracia e violência institucional");
+  });
+
+  it("avisa que a busca falhou sem inventar referências", () => {
+    expect(formatHits([], true)).toMatch(/NÃO invente referências/);
+  });
 });
 
 describe("anexo markers", () => {

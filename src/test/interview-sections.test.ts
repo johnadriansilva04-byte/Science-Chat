@@ -21,6 +21,13 @@ describe("sectionForQuestion", () => {
   it("cai em Outras informações quando não reconhece", () => {
     expect(sectionForQuestion("Você prefere trabalhar à noite?")).toBe("Outras informações");
   });
+  it("não joga na Conclusão perguntas que só contêm 'considerar'", () => {
+    expect(sectionForQuestion("Como você pode considerar esses confundidores?")).toBe(
+      "Outras informações",
+    );
+    expect(sectionForQuestion("O que você quer considerar na análise?")).toBe("Resultados");
+    expect(sectionForQuestion("Quais são as considerações finais?")).toBe("Conclusão");
+  });
 });
 
 describe("groupNotesBySection", () => {
