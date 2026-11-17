@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  generateId,
+  type UIMessage,
+} from "ai";
 import { startResponses } from "@/lib/ai/gateway.server";
 import { INTERVIEW_INSTRUCTIONS, WRITING_CHAT_INSTRUCTIONS } from "@/lib/ai/prompts";
 import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
 import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
+import { parsePageCommand, type PageCommand } from "@/lib/ai/page-command";
 import { getSessionUser } from "@/lib/cf/auth.server";
 import { CHAT_POLICY, consumeRateLimit, tooManyRequests } from "@/lib/cf/rate-limit.server";
 import * as repo from "@/lib/cf/repo.server";
@@ -22,6 +29,64 @@ function sanitizeMessages(messages: UIMessage[]): UIMessage[] {
       part.type === "text" ? { ...part, text: stripLeakedToolCalls(part.text, TOOL_NAMES) } : part,
     );
     return { ...message, parts };
+  });
+}
+
+/**
+ * Executa um comando de página reconhecido (editar/acrescentar com conteúdo
+ * literal) DIRETAMENTE no banco, sem depender de o modelo emitir o tool call.
+ * Emite, no stream, o mesmo par de partes que uma ferramenta real produziria
+ * (`tool-input-available` + `tool-output-available`) e uma confirmação curta —
+ * assim a folha recarrega na tela e o pesquisador vê exatamente o que mudou.
+ */
+function runPageCommand(userId: string, articleId: string, cmd: PageCommand) {
+  const toolName = cmd.action === "edit" ? "editar_pagina" : "acrescentar_na_pagina";
+  const toolCallId = `pgcmd-${generateId()}`;
+  return createUIMessageStream({
+    execute: async ({ writer }) => {
+      let result: string;
+      let ok = true;
+      try {
+        const current = await repo.getPage(userId, articleId, cmd.pagina);
+        const next =
+          cmd.action === "edit"
+            ? cmd.conteudo.trim()
+            : current?.content
+              ? `${current.content.trimEnd()}\n\n${cmd.conteudo.trim()}`
+              : cmd.conteudo.trim();
+        await repo.upsertPage(userId, articleId, cmd.pagina, next, current?.status ?? "draft");
+        result =
+          cmd.action === "edit"
+            ? `Página ${cmd.pagina} reescrita (${next.split(/\s+/).length} palavras).`
+            : `Conteúdo acrescentado à página ${cmd.pagina}.`;
+      } catch (error) {
+        ok = false;
+        result = error instanceof Error ? error.message : "Não foi possível alterar a página.";
+      }
+
+      const input =
+        cmd.action === "edit"
+          ? { pagina: cmd.pagina, conteudo: cmd.conteudo }
+          : { pagina: cmd.pagina, texto: cmd.conteudo };
+      writer.write({ type: "tool-input-available", toolCallId, toolName, input });
+      writer.write(
+        ok
+          ? { type: "tool-output-available", toolCallId, output: result }
+          : { type: "tool-output-error", toolCallId, errorText: result },
+      );
+
+      const textId = generateId();
+      const delta = ok
+        ? `Feito — página ${cmd.pagina} ${cmd.action === "edit" ? "reescrita" : "atualizada"}.`
+        : `Não consegui alterar a página ${cmd.pagina}.`;
+      writer.write({ type: "text-start", id: textId });
+      writer.write({ type: "text-delta", id: textId, delta });
+      writer.write({ type: "text-end", id: textId });
+
+      await repo.addMessage(userId, articleId, "assistant", [{ type: "text", text: delta }]);
+      await repo.updateArticle(userId, articleId, {});
+    },
+    onError: () => "Não foi possível alterar a página. Tente novamente.",
   });
 }
 
@@ -58,6 +123,17 @@ async function handle(request: Request) {
     ?.parts.filter((p) => p.type === "text")
     .map((p) => (p as { text: string }).text)
     .join(" ");
+
+  // Caminho determinístico: quando o pedido traz um conteúdo LITERAL inequívoco
+  // ("página 1, com a palavra exata: X"), aplicamos a edição direto no banco. Isso
+  // contorna a falha do llama-3.3, que narra a chamada em vez de emitir o tool call
+  // e deixa o documento intacto — obrigando o pesquisador a nomear a ferramenta.
+  if (article.phase !== "interview") {
+    const cmd = parsePageCommand(lastUserText ?? "");
+    if (cmd)
+      return createUIMessageStreamResponse({ stream: runPageCommand(user.id, article.id, cmd) });
+  }
+
   const forced = pickForcedTool(lastUserText ?? "");
   // Na entrevista o documento ainda é preliminar: forçamos a BUSCA (provocação/
   // evidência) e a LEITURA de anexos (o pesquisador anexa documentos durante a
