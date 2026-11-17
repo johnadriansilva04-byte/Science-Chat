@@ -54,4 +54,17 @@ describe("BookReader", () => {
     fireEvent.click(screen.getByLabelText("Próxima página"));
     expect(screen.getByText(/Um\./)).toBeInTheDocument();
   });
+
+  it("nunca corta a folha: rola no overlay e na própria folha", () => {
+    render(<BookReader title="Meu artigo" pages={pages} onClose={() => {}} />);
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("overflow-y-auto");
+    expect(dialog.className).not.toContain("overflow-hidden");
+
+    // A folha longa tem altura máxima e rolagem própria, em vez de recortar o texto.
+    const leaf = dialog.querySelector("article");
+    expect(leaf?.className).toContain("max-h-[82vh]");
+    expect(leaf?.className).toContain("overflow-y-auto");
+  });
 });
