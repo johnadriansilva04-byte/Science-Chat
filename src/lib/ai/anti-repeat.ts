@@ -1,0 +1,251 @@
+/**
+ * Filtro anti-repetição e anti-clichê para as respostas do chat.
+ *
+ * O llama-3.3 (Workers AI) tem dois vícios que transformam o diálogo num loop:
+ *  1. encerra quase todo turno com a MESMA fórmula ("Qual é o próximo passo?",
+ *     "O que mais você gostaria de acrescentar?", "Como posso ajudar?");
+ *  2. repete frases — dentro da mesma resposta e entre turnos.
+ *
+ * Pedir educadamente no prompt não basta: o modelo volta ao vício assim que o
+ * histórico fica longo (e o histórico envenenado o reensina). Este módulo remove
+ * o vício de forma DETERMINÍSTICA, na saída — ao vivo (stream) e no histórico
+ * salvo. É puro, sem I/O, para poder ser testado e reaplicado.
+ *
+ * Regra de segurança: NUNCA produzir resposta vazia. Um clichê de fecho só é
+ * descartado quando a mesma resposta traz conteúdo de verdade; se a filtragem
+ * zeraria o texto, o clichê é liberado.
+ */
+
+import type { ModelMessage, TextStreamPart, ToolSet } from "ai";
+
+/** Abreviações comuns em texto científico que NÃO encerram uma frase. */
+const ABBREVIATION_RE =
+  /\b(?:et al|etc|cf|fig|figs|apud|op|cit|vs|sr|sra|dr|dra|prof|ed|pp?|no)\.$/i;
+
+/**
+ * Fórmulas de fecho VAZIAS: não trazem informação, só empurram a conversa de
+ * volta para o pesquisador ("Qual é o próximo passo?"). São o que o pesquisador
+ * mais reclama. Descartadas quando a resposta tem conteúdo de verdade.
+ */
+const CLOSER_PATTERNS: RegExp[] = [
+  /qual (?:é|e) o pr[óo]ximo passo/i,
+  /(?:o )?que (?:mais )?(?:voc[êe] )?(?:gostaria|quer|deseja) (?:de )?(?:acrescentar|adicionar|fazer|ver|mudar|alterar|explorar)/i,
+  /(?:voc[êe] )?(?:gostaria|quer|deseja) que eu (?:continue|prossiga|siga|avance)/i,
+  /como (?:posso|podemos) (?:ajudar|prosseguir|continuar|seguir)/i,
+  /posso (?:ajudar|fazer) (?:em|com)? ?(?:mais )?(?:alguma coisa|algo)/i,
+  /(?:h[áa]|tem) algo mais (?:que|para|em|a)/i,
+  /por onde (?:voc[êe] )?(?:quer|gostaria|deseja) (?:começar|seguir|continuar)/i,
+  /(?:me )?(?:diga|diz) (?:o que|qual|por onde) (?:fazer|seguir|quer)/i,
+  /o que (?:voc[êe] )?(?:gostaria|quer|deseja) (?:que eu )?(?:faça|fazer) (?:a seguir|agora|em seguida)/i,
+  // "Você gostaria de <verbo vago> …?" — convite vazio. Verbos CONCRETOS
+  // (incluir/adicionar um item real) ficam de fora: aí a oferta tem conteúdo.
+  /(?:voc[êe] )?(?:gostaria|quer|deseja) de (?:explorar|falar|conversar|discutir|saber|entender|ver|seguir|continuar|prosseguir|começar|saber mais)/i,
+  /(?:podemos|vamos) (?:prosseguir|continuar|seguir|avançar)\??$/i,
+];
+
+/** Normaliza uma frase para comparar igualdade (sem acento, pontuação ou caixa). */
+export function normalizeSentence(sentence: string): string {
+  return sentence
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** A frase é uma fórmula de fecho vazia (clichê que trava a conversa)? */
+export function isCloserSentence(sentence: string): boolean {
+  const text = sentence.trim();
+  if (!text) return false;
+  // Um parágrafo longo e argumentativo não é clichê de fecho, mesmo que cite a
+  // expressão de passagem.
+  if (text.length > 160) return false;
+  return CLOSER_PATTERNS.some((re) => re.test(text));
+}
+
+/** Frase com conteúdo suficiente para valer como "repetível". */
+export function isSubstantive(norm: string): boolean {
+  return norm.length >= 15;
+}
+
+type Piece = { sentence: string; sep: string };
+
+/**
+ * Separa o texto em frases completas (terminador + espaço/fim) e o resto ainda
+ * em aberto. Ignora abreviações (`et al.`, `etc.`) para não cortar no meio.
+ */
+export function extractComplete(text: string): { parts: Piece[]; rest: string } {
+  const parts: Piece[] = [];
+  let start = 0;
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i]!;
+    if (ch === "." || ch === "!" || ch === "?" || ch === "…") {
+      let j = i + 1;
+      while (j < text.length && /["')\]»]/.test(text[j]!)) j += 1;
+      const atEnd = j >= text.length;
+      if (atEnd || /\s/.test(text[j]!)) {
+        const sentence = text.slice(start, j);
+        if (!ABBREVIATION_RE.test(sentence.trimEnd())) {
+          let k = j;
+          while (k < text.length && /\s/.test(text[k]!)) k += 1;
+          parts.push({ sentence, sep: text.slice(j, k) });
+          start = k;
+          i = k;
+          continue;
+        }
+      }
+    }
+    i += 1;
+  }
+  return { parts, rest: text.slice(start) };
+}
+
+/**
+ * Decide o que fazer com um bloco de frases completas + o resto em aberto.
+ * `seen` guarda as frases já ditas (é atualizado com o que for mantido).
+ * Devolve o texto seguro a exibir.
+ */
+export function filterText(
+  text: string,
+  seen: Set<string>,
+  remember: boolean,
+): { safe: string; rest: string } {
+  const { parts, rest } = extractComplete(text);
+  const kept: Piece[] = [];
+  const closers: Piece[] = [];
+  for (const piece of parts) {
+    const norm = normalizeSentence(piece.sentence);
+    if (isSubstantive(norm) && seen.has(norm)) continue; // repetição entre turnos
+    if (isCloserSentence(piece.sentence)) {
+      closers.push(piece);
+      continue;
+    }
+    kept.push(piece);
+    // Marca já aqui para pegar repetições DENTRO da mesma mensagem.
+    if (remember && isSubstantive(norm)) seen.add(norm);
+  }
+  const chosen = kept.length ? kept : closers;
+  let safe = "";
+  for (const piece of chosen) safe += piece.sentence + piece.sep;
+  return { safe, rest };
+}
+
+/**
+ * Versão para texto completo (histórico salvo / mensagens antigas): remove os
+ * clichês de fecho quando há conteúdo, e as frases repetidas — sem zerar o texto.
+ */
+export function cleanAssistantText(text: string, seed?: Iterable<string>): string {
+  const seen = new Set(seed ?? []);
+  const { safe, rest } = filterText(text, seen, true);
+  let out = safe;
+  if (rest.trim()) {
+    const norm = normalizeSentence(rest);
+    if (!(isSubstantive(norm) && seen.has(norm))) out += rest;
+  }
+  return out.trim();
+}
+
+/**
+ * Constrói o TransformStream do filtro (usado pelos testes e pelo adaptador).
+ * Os clichês de fecho são retidos por id de texto: se o mesmo id trouxer depois
+ * conteúdo substantivo, eles são descartados; se não, são liberados no fim (a
+ * resposta nunca fica vazia).
+ */
+export function buildAntiRepeatStream(
+  seedSentences: Iterable<string> = [],
+): TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>> {
+  const seen = new Set(seedSentences);
+  const buffers = new Map<string, string>();
+  const heldClosers = new Map<string, Piece[]>();
+  const substantive = new Map<string, boolean>();
+  return new TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>>({
+    transform(part, controller) {
+      if (part.type !== "text-delta") {
+        controller.enqueue(part);
+        return;
+      }
+      const buffer = (buffers.get(part.id) ?? "") + part.text;
+      const { parts, rest } = extractComplete(buffer);
+      buffers.set(part.id, rest);
+      const closers = heldClosers.get(part.id) ?? [];
+      let out = "";
+      for (const piece of parts) {
+        const norm = normalizeSentence(piece.sentence);
+        if (isSubstantive(norm) && seen.has(norm)) continue;
+        if (isCloserSentence(piece.sentence)) {
+          closers.push(piece);
+          continue;
+        }
+        out += piece.sentence + piece.sep;
+        substantive.set(part.id, true);
+        if (isSubstantive(norm)) seen.add(norm);
+      }
+      heldClosers.set(part.id, closers);
+      if (out) controller.enqueue({ ...part, text: out });
+    },
+    flush(controller) {
+      for (const [id, rest] of buffers) {
+        const closers = heldClosers.get(id) ?? [];
+        // Nada substantivo saiu para este id: libera os clichês retidos.
+        const head = substantive.get(id) ? "" : closers.map((p) => p.sentence + p.sep).join("");
+        buffers.delete(id);
+        heldClosers.delete(id);
+        substantive.delete(id);
+        const text = head + rest;
+        if (!text.trim()) continue;
+        const norm = normalizeSentence(text);
+        if (isSubstantive(norm) && seen.has(norm)) continue;
+        controller.enqueue({ type: "text-delta", id, text });
+      }
+    },
+  });
+}
+
+/**
+ * Adaptador no formato que o AI SDK espera em `experimental_transform`: uma
+ * FUNÇÃO que devolve o TransformStream (e recebe os `tools`/`stopStream`).
+ */
+export function antiRepeatTransform(seedSentences: Iterable<string> = []) {
+  const seed = [...seedSentences];
+  return () => buildAntiRepeatStream(seed);
+}
+
+/** Texto de uma mensagem do modelo (string ou lista de partes). */
+function messageText(message: ModelMessage): string {
+  const content = message.content as unknown;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (part && typeof part === "object" && "type" in part) {
+          const typed = part as { type?: unknown; text?: unknown };
+          if (typed.type === "text") return String(typed.text ?? "");
+        }
+        return "";
+      })
+      .join(" ");
+  }
+  return "";
+}
+
+/**
+ * Frases já ditas pelo assistente no histórico, normalizadas — servem de semente
+ * para o filtro evitar repetir, entre turnos, uma pergunta que já foi feita.
+ * Clichês de fecho NÃO entram na semente: eles têm regra própria (só são
+ * descartados quando há conteúdo), e mantê-los aqui zeraria respostas curtas.
+ */
+export function collectAssistantSentences(messages: ModelMessage[]): string[] {
+  const seen = new Set<string>();
+  for (const message of messages) {
+    if (message.role !== "assistant") continue;
+    const { parts } = extractComplete(messageText(message));
+    for (const { sentence } of parts) {
+      if (isCloserSentence(sentence)) continue;
+      const norm = normalizeSentence(sentence);
+      if (isSubstantive(norm)) seen.add(norm);
+    }
+  }
+  return [...seen];
+}

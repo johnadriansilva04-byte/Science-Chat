@@ -2,6 +2,7 @@ import { createWorkersAI } from "workers-ai-provider";
 import { streamText, stepCountIs, type ModelMessage, type TextStreamPart, type ToolSet } from "ai";
 import { getEnv, requireAi, type AiBinding } from "@/lib/cf/bindings.server";
 import { drainLeakedCalls } from "@/lib/ai/leak-filter";
+import { antiRepeatTransform } from "@/lib/ai/anti-repeat";
 
 /**
  * Inferência via Cloudflare Workers AI (binding `AI`), no lugar de um gateway externo.
@@ -214,15 +215,19 @@ export function startResponses(
   maxOutputTokens: number = DEFAULT_MAX_OUTPUT_TOKENS,
   tools?: ToolSet,
   forcedTool?: string | null,
+  antiRepeatSeed?: Iterable<string>,
 ) {
   const result = streamText({
     model: model(),
     system: instructions,
     messages,
     maxOutputTokens,
-    // Segura/deduz o JSON de chamadas de ferramenta que o modelo vaza como texto,
-    // para ele nunca aparecer cru no chat (ver `leak-filter.ts`).
-    experimental_transform: stripLeakedCallsTransform,
+    // Dois filtros de saída, nesta ordem:
+    //  1) segura/deduz o JSON de chamadas de ferramenta vazado como texto, para
+    //     ele nunca aparecer cru no chat (ver `leak-filter.ts`);
+    //  2) remove clichês de fecho ("Qual é o próximo passo?") e frases repetidas,
+    //     que fazem o diálogo girar em círculo (ver `anti-repeat.ts`).
+    experimental_transform: [stripLeakedCallsTransform, antiRepeatTransform(antiRepeatSeed)],
     ...(tools
       ? {
           tools,

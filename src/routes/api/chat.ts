@@ -10,6 +10,7 @@ import { startResponses } from "@/lib/ai/gateway.server";
 import { INTERVIEW_INSTRUCTIONS, WRITING_CHAT_INSTRUCTIONS } from "@/lib/ai/prompts";
 import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
 import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
+import { cleanAssistantText, collectAssistantSentences } from "@/lib/ai/anti-repeat";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
 import { parsePageCommand, type PageCommand } from "@/lib/ai/page-command";
@@ -26,7 +27,9 @@ function sanitizeMessages(messages: UIMessage[]): UIMessage[] {
   return messages.map((message) => {
     if (message.role !== "assistant") return message;
     const parts = message.parts.map((part) =>
-      part.type === "text" ? { ...part, text: stripLeakedToolCalls(part.text, TOOL_NAMES) } : part,
+      part.type === "text"
+        ? { ...part, text: cleanAssistantText(stripLeakedToolCalls(part.text, TOOL_NAMES)) }
+        : part,
     );
     return { ...message, parts };
   });
@@ -146,13 +149,18 @@ async function handle(request: Request) {
   ]);
   const forcedTool =
     article.phase === "interview" ? (forced && interviewTools.has(forced) ? forced : null) : forced;
+  const modelMessages = await convertToModelMessages(sanitized);
+  // Semeia o filtro anti-repetição com o que o Pracinha JÁ disse no histórico,
+  // para ele não repetir, turno após turno, a mesma pergunta ou o mesmo fecho.
+  const antiRepeatSeed = collectAssistantSentences(modelMessages);
   const { result } = startResponses(
     request,
-    await convertToModelMessages(sanitized),
+    modelMessages,
     instructions,
     undefined,
     buildTools({ userId: user.id, articleId: article.id }),
     forcedTool,
+    antiRepeatSeed,
   );
   return result.toUIMessageStreamResponse({
     originalMessages: sanitized,
@@ -168,7 +176,7 @@ async function handle(request: Request) {
     onFinish: async ({ responseMessage }) => {
       const parts = responseMessage.parts
         .filter((p) => p.type === "text")
-        .map((p) => ({ ...p, text: stripLeakedToolCalls(p.text, TOOL_NAMES) }))
+        .map((p) => ({ ...p, text: cleanAssistantText(stripLeakedToolCalls(p.text, TOOL_NAMES)) }))
         .filter((p) => p.text.trim().length > 0);
       if (!parts.length) return;
       await repo.addMessage(user.id, article.id, "assistant", parts);
