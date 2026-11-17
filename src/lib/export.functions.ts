@@ -6,10 +6,13 @@ import { buildDocx } from "@/lib/docx";
 import { markdownToHtml, markdownToLatex } from "@/lib/export-formats";
 import { bytesToBase64 } from "@/lib/base64";
 import { stateLabel, categoryLabel, type ClaimState, type ClaimCategory } from "@/lib/traceability";
+import type { CitationStandard } from "@/lib/editorial";
 
 export type ExportBundle = {
   title: string;
   author: string;
+  /** Norma de formatação aplicada (ABNT, APA, IEEE, …). */
+  standard: CitationStandard;
   markdown: string;
   plainText: string;
   html: string;
@@ -26,6 +29,8 @@ export const buildExport = createServerFn({ method: "POST" })
     const article = await repo.getArticle(userId, data.articleId);
     if (!article) throw new Error("Artigo não encontrado");
     const pages = await repo.listPages(userId, data.articleId);
+    const editorial = await repo.getEditorialConfig(userId, data.articleId);
+    const standard = (editorial?.standard ?? "abnt") as CitationStandard;
 
     const markdown = assembleMarkdown(
       article.title,
@@ -36,15 +41,16 @@ export const buildExport = createServerFn({ method: "POST" })
       })),
     );
     const author = data.author?.trim() || "Pesquisador(a) independente";
-    const docx = buildDocx({ title: article.title, author, markdown });
+    const docx = buildDocx({ title: article.title, author, markdown, standard });
 
     return {
       title: article.title,
       author,
+      standard,
       markdown,
       plainText: markdownToPlainText(markdown),
-      html: markdownToHtml(markdown, article.title, author),
-      latex: markdownToLatex(markdown, article.title, author),
+      html: markdownToHtml(markdown, article.title, author, standard),
+      latex: markdownToLatex(markdown, article.title, author, standard),
       docxBase64: bytesToBase64(docx),
     };
   });

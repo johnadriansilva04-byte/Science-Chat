@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   BadgeCheck,
+  BookOpen,
   BookOpenText,
   Flame,
   Landmark,
@@ -11,10 +12,16 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { listPublicPublications, type PublicationSummary } from "@/lib/publication.functions";
+import { toast } from "sonner";
+import {
+  getPublicPublication,
+  listPublicPublications,
+  type PublicationSummary,
+} from "@/lib/publication.functions";
 import { buildAcervo, type AcervoItem } from "@/lib/acervo";
 import { MUSEUM_WINGS } from "@/lib/museum";
 import { AcervoCard } from "@/components/app/AcervoCard";
+import { BookReader } from "@/components/app/BookReader";
 import { BrandFooter } from "@/components/app/BrandFooter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -301,6 +308,28 @@ function Section({
  */
 function HomageBanner({ item }: { item: AcervoItem }) {
   const homage = item.homage!;
+  const [reading, setReading] = useState(false);
+  const [content, setContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function openBook() {
+    if (!item.slug) return;
+    setLoading(true);
+    try {
+      const pub = await getPublicPublication({ data: { slug: item.slug } });
+      if (pub?.content) {
+        setContent(pub.content);
+        setReading(true);
+      } else {
+        toast.error("Não foi possível abrir o ensaio");
+      }
+    } catch {
+      toast.error("Não foi possível abrir o ensaio");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <article className="acervo-homage">
       <span className="acervo-homage__flame" aria-hidden>
@@ -318,10 +347,24 @@ function HomageBanner({ item }: { item: AcervoItem }) {
           {item.authors} · {item.venue} · {item.year} · {homage.honoree}
         </p>
       </div>
-      <Link to="/publicacoes/$slug" params={{ slug: item.slug! }} className="acervo-homage__cta">
-        Ler o ensaio
-        <ArrowRight className="size-4" />
-      </Link>
+      <div className="acervo-homage__actions">
+        <button
+          type="button"
+          className="acervo-homage__cta"
+          onClick={() => void openBook()}
+          disabled={loading}
+        >
+          <BookOpen className="size-4" />
+          Ler o ensaio
+          <ArrowRight className="size-4" />
+        </button>
+        <Link to="/publicacoes/$slug" params={{ slug: item.slug! }} className="acervo-homage__link">
+          Ver ficha completa
+        </Link>
+      </div>
+      {reading && content && (
+        <BookReader title={item.title} content={content} onClose={() => setReading(false)} />
+      )}
     </article>
   );
 }

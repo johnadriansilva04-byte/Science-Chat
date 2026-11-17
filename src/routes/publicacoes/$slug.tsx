@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BadgeCheck, Copy, Printer, ScrollText } from "lucide-react";
+import { ArrowLeft, BadgeCheck, BookOpen, Copy, Printer, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicPublication } from "@/lib/publication.functions";
 import { publicationCitation, contentHasAbstract, yearOf } from "@/lib/publication";
 import { ACERVO_HOMAGES } from "@/lib/acervo";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { BookReader } from "@/components/app/BookReader";
 import { Button } from "@/components/ui/button";
 import { BrandFooter } from "@/components/app/BrandFooter";
 import logo from "@/assets/sciencechat-logo.png";
@@ -29,6 +30,7 @@ function PublicationPage() {
   const { slug } = Route.useParams();
   const [pub, setPub] = useState<PublicationData>(null);
   const [state, setState] = useState<"loading" | "ok" | "missing">("loading");
+  const [reading, setReading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -89,6 +91,10 @@ function PublicationPage() {
           Publicações
         </Link>
         <div className="ml-auto flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setReading(true)}>
+            <BookOpen />
+            Ler como livro
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -185,6 +191,9 @@ function PublicationPage() {
         </section>
       </main>
       <BrandFooter />
+      {reading && (
+        <BookReader title={pub.title} content={pub.content} onClose={() => setReading(false)} />
+      )}
     </div>
   );
 }

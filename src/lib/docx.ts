@@ -5,6 +5,14 @@
  * levar as páginas JÁ APROVADAS para o Word sem reescrever o texto com IA.
  */
 import { parseBlocks, type Block } from "@/lib/article-blocks";
+import {
+  formatProfile,
+  lineToTwips,
+  mmToTwips,
+  ptToHalfPoints,
+  type FormatProfile,
+} from "@/lib/format-profile";
+import type { CitationStandard } from "@/lib/editorial";
 
 /** CRC-32 (IEEE) — exigido pelo cabeçalho de cada entrada do ZIP. */
 const CRC_TABLE = (() => {
@@ -127,9 +135,17 @@ function runs(text: string): string {
     .join("");
 }
 
-function paragraph(text: string, style?: string, opts: { bullet?: boolean } = {}): string {
+function paragraph(
+  text: string,
+  style: string | undefined,
+  p: FormatProfile,
+  opts: { bullet?: boolean; indent?: boolean } = {},
+): string {
   const ppr = [
     style ? `<w:pStyle w:val="${style}"/>` : "",
+    opts.indent && p.firstLineIndentMm
+      ? `<w:ind w:firstLine="${mmToTwips(p.firstLineIndentMm)}"/>`
+      : "",
     opts.bullet ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : "",
   ].join("");
   return `<w:p>${ppr ? `<w:pPr>${ppr}</w:pPr>` : ""}${runs(text)}</w:p>`;
@@ -156,16 +172,22 @@ function tableXml(rows: string[][]): string {
   return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>${borders}</w:tblPr>${body}</w:tbl>`;
 }
 
-function blockXml(block: Block): string {
+function blockXml(block: Block, p: FormatProfile, inReferences: boolean): string {
   switch (block.type) {
     case "heading":
-      return paragraph(block.text, `Heading${block.level}`);
+      return paragraph(
+        p.headingUppercase ? block.text.toUpperCase() : block.text,
+        `Heading${block.level}`,
+        p,
+      );
     case "paragraph":
-      return paragraph(block.text);
+      return paragraph(block.text, inReferences ? "References" : undefined, p, {
+        indent: !inReferences,
+      });
     case "list":
-      return block.items.map((it) => paragraph(it, undefined, { bullet: true })).join("");
+      return block.items.map((it) => paragraph(it, undefined, p, { bullet: true })).join("");
     case "quote":
-      return paragraph(block.text, "Quote");
+      return paragraph(block.text, "Quote", p);
     case "table":
       return tableXml(block.rows);
     case "rule":
@@ -173,16 +195,34 @@ function blockXml(block: Block): string {
   }
 }
 
-/** Converte o Markdown aprovado em Markdown de blocos → WordprocessingML. */
-export function markdownToDocumentXml(markdown: string): string {
+/** Um título inicia a seção de referências (onde vale espaço simples). */
+function isReferencesHeading(block: Block): boolean {
+  return block.type === "heading" && /^refer[êe]ncias?$/i.test(block.text.trim());
+}
+
+/**
+ * Converte o Markdown aprovado em WordprocessingML, aplicando o perfil de
+ * formatação escolhido (ABNT, APA, IEEE, …).
+ */
+export function markdownToDocumentXml(markdown: string, profile?: FormatProfile): string {
+  const p = profile ?? formatProfile("abnt");
   const blocks = parseBlocks(markdown);
-  return blocks.map(blockXml).join("");
+  let inReferences = false;
+  return blocks
+    .map((block) => {
+      if (isReferencesHeading(block)) inReferences = true;
+      else if (block.type === "heading" && inReferences) inReferences = false;
+      return blockXml(block, p, inReferences);
+    })
+    .join("");
 }
 
 export type DocxOptions = {
   title: string;
   author?: string;
   markdown: string;
+  /** Norma de formatação (ABNT por padrão). */
+  standard?: CitationStandard;
 };
 
 const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -191,6 +231,8 @@ const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Default Extension="xml" ContentType="application/xml"/>
 <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>
+<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>
 <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
 </Types>`;
 
@@ -203,18 +245,52 @@ const RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 const DOC_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>
+<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>
 </Relationships>`;
 
-const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+/** Campo PAGE (número da página atual) do Word. */
+const PAGE_FIELD = `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+
+const EMPTY_HDR = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p/></w:hdr>`;
+
+function headerXml(p: FormatProfile): string {
+  if (p.pageNumber !== "top-right") return EMPTY_HDR;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:pPr><w:jc w:val="right"/></w:pPr>${PAGE_FIELD}</w:p></w:hdr>`;
+}
+
+function footerXml(p: FormatProfile): string {
+  if (p.pageNumber !== "bottom-center")
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p/></w:ftr>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:pPr><w:jc w:val="center"/></w:pPr>${PAGE_FIELD}</w:p></w:ftr>`;
+}
+
+function stylesXml(p: FormatProfile): string {
+  const bodySz = ptToHalfPoints(p.fontSizePt);
+  const refSz = ptToHalfPoints(p.references.fontSizePt);
+  const line = lineToTwips(p.lineSpacing);
+  const refLine = lineToTwips(p.references.lineSpacing);
+  const jc = p.justify ? "both" : "left";
+  const h1Sz = ptToHalfPoints(p.fontSizePt + 4);
+  const h2Sz = ptToHalfPoints(p.fontSizePt + 2);
+  const h3Sz = ptToHalfPoints(p.fontSizePt + 1);
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:sz w:val="24"/></w:rPr></w:rPrDefault>
-<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="360" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr></w:pPrDefault></w:docDefaults>
-<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:pPr><w:spacing w:before="240" w:after="120"/><w:jc w:val="left"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style>
-<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:pPr><w:spacing w:before="200" w:after="100"/><w:jc w:val="left"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:style>
-<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:pPr><w:spacing w:before="160" w:after="80"/><w:jc w:val="left"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style>
-<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:pPr><w:ind w:left="720"/><w:jc w:val="left"/></w:pPr><w:rPr><w:i/></w:rPr></w:style>
+<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${p.fontFamily}" w:hAnsi="${p.fontFamily}" w:cs="${p.fontFamily}"/><w:sz w:val="${bodySz}"/><w:szCs w:val="${bodySz}"/></w:rPr></w:rPrDefault>
+<w:pPrDefault><w:pPr><w:spacing w:after="${ptToHalfPoints(p.spaceAfterPt)}" w:line="${line}" w:lineRule="auto"/><w:jc w:val="${jc}"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="${ptToHalfPoints(p.spaceAfterPt)}" w:line="${line}" w:lineRule="auto"/><w:jc w:val="${jc}"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:pPr><w:spacing w:before="240" w:after="120"/><w:jc w:val="left"/></w:pPr><w:rPr><w:b/><w:sz w:val="${h1Sz}"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:pPr><w:spacing w:before="200" w:after="100"/><w:jc w:val="left"/></w:pPr><w:rPr><w:b/><w:sz w:val="${h2Sz}"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:pPr><w:spacing w:before="160" w:after="80"/><w:jc w:val="left"/></w:pPr><w:rPr><w:b/><w:sz w:val="${h3Sz}"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:pPr><w:ind w:left="${mmToTwips(p.longQuote.indentMm)}"/><w:spacing w:line="${lineToTwips(p.longQuote.lineSpacing)}" w:lineRule="auto" w:before="120" w:after="120"/><w:jc w:val="left"/></w:pPr><w:rPr><w:sz w:val="${ptToHalfPoints(p.longQuote.fontSizePt)}"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="References"><w:name w:val="References"/><w:pPr><w:spacing w:after="0" w:line="${refLine}" w:lineRule="auto"/><w:jc w:val="left"/>${p.references.hangingIndentMm ? `<w:ind w:left="${mmToTwips(p.references.hangingIndentMm)}" w:hanging="${mmToTwips(p.references.hangingIndentMm)}"/>` : ""}</w:pPr><w:rPr><w:sz w:val="${refSz}"/></w:rPr></w:style>
 <w:style w:type="numbering" w:styleId="ListBullet"/>
 </w:styles>`;
+}
 
 function coreXml(title: string, author: string): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -226,13 +302,15 @@ function coreXml(title: string, author: string): string {
 </cp:coreProperties>`;
 }
 
-/** Gera o .docx (bytes) a partir do Markdown aprovado. */
+/** Gera o .docx (bytes) a partir do Markdown aprovado, na norma escolhida. */
 export function buildDocx(options: DocxOptions): Uint8Array {
   const encoder = new TextEncoder();
+  const p = formatProfile(options.standard);
+  const m = p.margins;
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:body>${markdownToDocumentXml(options.markdown)}
-<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1247" w:bottom="1134" w:left="1247"/></w:sectPr>
+<w:body>${markdownToDocumentXml(options.markdown, p)}
+<w:sectPr><w:headerReference w:type="default" r:id="rId2" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><w:footerReference w:type="default" r:id="rId3" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${mmToTwips(m.topMm)}" w:right="${mmToTwips(m.rightMm)}" w:bottom="${mmToTwips(m.bottomMm)}" w:left="${mmToTwips(m.leftMm)}" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>
 </w:body></w:document>`;
 
   return zipStore([
@@ -240,7 +318,9 @@ export function buildDocx(options: DocxOptions): Uint8Array {
     { name: "_rels/.rels", data: encoder.encode(RELS) },
     { name: "word/_rels/document.xml.rels", data: encoder.encode(DOC_RELS) },
     { name: "word/document.xml", data: encoder.encode(documentXml) },
-    { name: "word/styles.xml", data: encoder.encode(STYLES) },
+    { name: "word/styles.xml", data: encoder.encode(stylesXml(p)) },
+    { name: "word/header1.xml", data: encoder.encode(headerXml(p)) },
+    { name: "word/footer1.xml", data: encoder.encode(footerXml(p)) },
     {
       name: "docProps/core.xml",
       data: encoder.encode(coreXml(options.title, options.author ?? "ScienceChat")),

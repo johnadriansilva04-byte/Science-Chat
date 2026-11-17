@@ -69,10 +69,15 @@ describe("documentSections", () => {
 });
 
 describe("A4 geometry", () => {
-  it("uses real A4 dimensions", () => {
+  it("uses real A4 dimensions with ABNT margins", () => {
     expect(A4.widthMm).toBe(210);
     expect(A4.heightMm).toBe(297);
-    expect(A4_CONTENT_HEIGHT_MM).toBe(297 - 20 * 2);
+    // ABNT NBR 14724: 3 cm no topo/esquerda, 2 cm na base/direita.
+    expect(A4.topMm).toBe(30);
+    expect(A4.leftMm).toBe(30);
+    expect(A4.bottomMm).toBe(20);
+    expect(A4.rightMm).toBe(20);
+    expect(A4_CONTENT_HEIGHT_MM).toBe(297 - 30 - 20);
   });
 
   it("converts millimetres to CSS pixels", () => {

@@ -175,8 +175,10 @@
   /* Folha A4 real: largura/altura vêm do componente (mm); aqui só o acabamento. */
   .a4-sheet {
     padding: 0;
-    font-size: 1.02rem;
-    line-height: 1.55;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
     overflow: hidden;
   }
   .a4-sheet .a4-block {
@@ -184,18 +186,33 @@
   }
   .a4-sheet p {
     margin: 0;
+    text-align: justify;
+    text-indent: 1.25cm;
+  }
+  .a4-sheet h1,
+  .a4-sheet h2,
+  .a4-sheet h3,
+  .a4-sheet h4 {
+    text-transform: uppercase;
+  }
+  .a4-sheet blockquote {
+    text-indent: 0;
+    font-size: 10pt;
+    line-height: 1.2;
+    margin-left: 4cm;
   }
   .a4-block--active {
     background: color-mix(in oklab, var(--accent) 55%, transparent);
     border-radius: 2px;
     outline: 1px solid var(--accent);
   }
+  /* ABNT: número da página no canto superior direito. */
   .a4-page-number {
     position: absolute;
-    bottom: 8mm;
-    left: 0;
-    right: 0;
-    text-align: center;
+    top: 8mm;
+    right: 20mm;
+    left: auto;
+    text-align: right;
     font-size: 0.7rem;
     color: var(--color-muted-foreground);
   }
@@ -1219,6 +1236,25 @@
 }
 .acervo-homage__cta:hover {
   transform: translateX(2px);
+}
+.acervo-homage__cta:disabled {
+  opacity: 0.6;
+}
+.acervo-homage__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  flex: none;
+}
+.acervo-homage__link {
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.acervo-homage__link:hover {
+  color: var(--color-foreground);
 }
 
 /* Versão compacta: faixa no mural da home. */

@@ -39,4 +39,19 @@ describe("BookReader", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("abre o conteúdo integral (publicação) dividido por seções", () => {
+    render(
+      <BookReader
+        title="Ensaio"
+        content={"# Ensaio\n\nAbertura.\n\n## Introdução\n\nUm.\n\n## Conclusão\n\nFim."}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByText("1 / 5")).toBeInTheDocument(); // capa + 3 seções + assinatura
+    fireEvent.click(screen.getByLabelText("Próxima página"));
+    expect(screen.getByText(/Abertura/)).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Próxima página"));
+    expect(screen.getByText(/Um\./)).toBeInTheDocument();
+  });
 });

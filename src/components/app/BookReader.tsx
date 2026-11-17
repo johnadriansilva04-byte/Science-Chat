@@ -4,34 +4,48 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
 import { stripMarkers } from "@/lib/article-marker";
 import { ARTICLE_SIGNATURE, type ExportPage } from "@/lib/article-export";
+import { splitContentIntoLeaves } from "@/lib/publication";
 
 type Leaf =
   { kind: "cover" } | { kind: "page"; number: number; content: string } | { kind: "signature" };
 
-/** Leitura do artigo montado como um livro: capa, uma folha por página aprovada e a assinatura da Variant. */
+/**
+ * Leitura do artigo montado como um livro: capa, uma folha por página aprovada
+ * (ou por seção, quando o texto vem de uma publicação) e a assinatura da Variant.
+ */
 export function BookReader({
   title,
   pages,
+  content,
   onClose,
 }: {
   title: string;
-  pages: ExportPage[];
+  pages?: ExportPage[];
+  /** Conteúdo integral (Markdown). Usado quando não há páginas separadas. */
+  content?: string;
   onClose: () => void;
 }) {
   const leaves = useMemo<Leaf[]>(() => {
-    const approved = pages
-      .filter((p) => p.status === "approved")
-      .sort((a, b) => a.page_number - b.page_number);
+    let body: { number: number; content: string }[];
+    if (pages && pages.length) {
+      body = pages
+        .filter((p) => p.status === "approved")
+        .sort((a, b) => a.page_number - b.page_number)
+        .map((p) => ({ number: p.page_number, content: stripMarkers(p.content) }));
+    } else if (content) {
+      body = splitContentIntoLeaves(stripMarkers(content)).map((leaf, i) => ({
+        number: i + 1,
+        content: leaf.title ? `## ${leaf.title}\n\n${leaf.body}` : leaf.body,
+      }));
+    } else {
+      body = [];
+    }
     return [
       { kind: "cover" },
-      ...approved.map((p) => ({
-        kind: "page" as const,
-        number: p.page_number,
-        content: stripMarkers(p.content),
-      })),
+      ...body.map((p) => ({ kind: "page" as const, number: p.number, content: p.content })),
       { kind: "signature" },
     ];
-  }, [pages]);
+  }, [pages, content]);
 
   const [index, setIndex] = useState(0);
   const [flip, setFlip] = useState<"next" | "prev" | null>(null);
@@ -106,7 +120,7 @@ export function BookReader({
 
         <article
           key={index}
-          className={`paper-sheet book-leaf mx-auto min-h-[70vh] max-w-3xl rounded-lg border ${
+          className={`paper-sheet book-leaf mx-auto max-h-[82vh] max-w-3xl overflow-y-auto rounded-lg border ${
             flip === "next" ? "book-flip-next" : flip === "prev" ? "book-flip-prev" : ""
           }`}
         >

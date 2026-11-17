@@ -101,10 +101,10 @@ export function A4Sheet({
   onDeleteBlock: (index: number) => void;
 }) {
   const contentStyle = {
-    paddingLeft: `${A4.marginXMm}mm`,
-    paddingRight: `${A4.marginXMm}mm`,
-    paddingTop: `${A4.marginYMm}mm`,
-    paddingBottom: `${A4.marginYMm}mm`,
+    paddingLeft: `${A4.leftMm}mm`,
+    paddingRight: `${A4.rightMm}mm`,
+    paddingTop: `${A4.topMm}mm`,
+    paddingBottom: `${A4.bottomMm}mm`,
   } as const;
 
   const lastIndex = blocks.length - 1;
@@ -161,8 +161,8 @@ export function A4Measure({
         className="a4-sheet paper-sheet flex flex-col gap-[0.85em]"
         style={{
           width: `${A4.widthMm}mm`,
-          paddingLeft: `${A4.marginXMm}mm`,
-          paddingRight: `${A4.marginXMm}mm`,
+          paddingLeft: `${A4.leftMm}mm`,
+          paddingRight: `${A4.rightMm}mm`,
         }}
       >
         {blocks.map((block, index) => (

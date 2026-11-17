@@ -61,6 +61,34 @@ describe("exportação DOCX (ZIP/OOXML)", () => {
     expect(text).toContain("docProps/core.xml");
     expect(readUint32(docx, 0)).toBe(0x04034b50);
   });
+
+  it("aplica ABNT: Times New Roman 12, margens 3/2 cm e entrelinha 1,5", () => {
+    const docx = buildDocx({ title: "T", author: "A", markdown: MARKDOWN, standard: "abnt" });
+    const text = new TextDecoder("latin1").decode(docx);
+    expect(text).toContain('w:ascii="Times New Roman"');
+    expect(text).toContain('<w:sz w:val="24"/>');
+    expect(text).toContain('w:line="360"');
+    expect(text).toContain('w:top="1701"');
+    expect(text).toContain('w:left="1701"');
+    expect(text).toContain('w:bottom="1134"');
+    expect(text).toContain('w:right="1134"');
+    expect(text).toContain("word/header1.xml");
+  });
+
+  it("aplica recuo de primeira linha e referencias em espaco simples (ABNT)", () => {
+    const md =
+      "## Introducao\n\nTexto normal.\n\n## Referencias\n\nSILVA, A. Obra. Sao Paulo, 2020.";
+    const xml = markdownToDocumentXml(md);
+    expect(xml).toContain("<w:ind w:firstLine=");
+    expect(xml).toContain('w:pStyle w:val="References"');
+  });
+
+  it("respeita o perfil APA (margens iguais e entrelinha dupla)", () => {
+    const docx = buildDocx({ title: "T", markdown: MARKDOWN, standard: "apa" });
+    const text = new TextDecoder("latin1").decode(docx);
+    expect(text).toContain('w:line="480"');
+    expect(text).toContain('w:top="1440"');
+  });
 });
 
 describe("exportação LaTeX", () => {

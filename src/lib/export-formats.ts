@@ -4,6 +4,8 @@
  * assinatura. Serve para a exportação em formatos acadêmicos.
  */
 import { parseBlocks, parseInline, type Block } from "@/lib/article-blocks";
+import { formatProfile, type FormatProfile } from "@/lib/format-profile";
+import type { CitationStandard } from "@/lib/editorial";
 
 function latexEscape(text: string): string {
   return text
@@ -48,18 +50,37 @@ function latexBlock(block: Block): string {
   }
 }
 
-/** Converte o Markdown aprovado em um documento LaTeX completo. */
-export function markdownToLatex(markdown: string, title: string, author?: string): string {
+/** Converte o Markdown aprovado em um documento LaTeX completo, na norma dada. */
+export function markdownToLatex(
+  markdown: string,
+  title: string,
+  author?: string,
+  standard: CitationStandard = "abnt",
+): string {
+  const p = formatProfile(standard);
   const body = parseBlocks(markdown).map(latexBlock).join("\n\n");
-  return `\\documentclass[12pt,a4paper]{article}
+  const spacing =
+    p.lineSpacing >= 1.9
+      ? "\\doublespacing"
+      : p.lineSpacing >= 1.4
+        ? "\\onehalfspacing"
+        : "\\singlespacing";
+  const indent = p.firstLineIndentMm
+    ? `\\setlength{\\parindent}{${(p.firstLineIndentMm / 10).toFixed(2)}cm}`
+    : "\\setlength{\\parindent}{0pt}";
+  const m = p.margins;
+  const cm = (mm: number) => (mm / 10).toFixed(2);
+  return `\\documentclass[${p.fontSizePt}pt,a4paper]{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
 \\usepackage[brazilian]{babel}
-\\usepackage[margin=2.5cm]{geometry}
+\\usepackage[top=${cm(m.topMm)}cm,bottom=${cm(m.bottomMm)}cm,left=${cm(m.leftMm)}cm,right=${cm(m.rightMm)}cm]{geometry}
 \\usepackage{booktabs}
 \\usepackage{hyperref}
 \\usepackage{setspace}
-\\onehalfspacing
+\\usepackage{times}
+${spacing}
+${indent}
 \\title{${latexEscape(title)}}
 ${author ? `\\author{${latexEscape(author)}}` : ""}
 \\date{\\today}
@@ -110,9 +131,19 @@ function htmlBlock(block: Block): string {
   }
 }
 
-/** Documento HTML autocontido, pronto para imprimir ou publicar. */
-export function markdownToHtml(markdown: string, title: string, author?: string): string {
+/** Documento HTML autocontido, pronto para imprimir ou publicar, na norma dada. */
+export function markdownToHtml(
+  markdown: string,
+  title: string,
+  author?: string,
+  standard: CitationStandard = "abnt",
+): string {
+  const p = formatProfile(standard);
   const body = parseBlocks(markdown).map(htmlBlock).join("\n");
+  const m = p.margins;
+  const cm = (mm: number) => (mm / 10).toFixed(2);
+  const align = p.justify ? "justify" : "left";
+  const h1Transform = p.headingUppercase ? "uppercase" : "none";
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -121,21 +152,23 @@ export function markdownToHtml(markdown: string, title: string, author?: string)
 <title>${htmlEscape(title)}</title>
 <style>
 :root { color-scheme: light; }
-body { font-family: Georgia, "Times New Roman", serif; line-height: 1.6; max-width: 46rem; margin: 0 auto; padding: 3rem 1.5rem; color: #1a1a1a; text-align: justify; }
-h1 { font-size: 1.9rem; text-align: center; }
-h2 { font-size: 1.4rem; margin-top: 2rem; }
-h3 { font-size: 1.15rem; }
+body { font-family: "${p.fontFamily}", "Times New Roman", serif; font-size: ${p.fontSizePt}pt; line-height: ${p.lineSpacing}; max-width: 21cm; margin: 0 auto; padding: ${cm(m.topMm)}cm ${cm(m.rightMm)}cm ${cm(m.bottomMm)}cm ${cm(m.leftMm)}cm; color: #000; text-align: ${align}; }
+h1 { font-size: ${p.fontSizePt + 4}pt; text-align: center; text-transform: ${h1Transform}; }
+h2 { font-size: ${p.fontSizePt + 2}pt; margin-top: 1.5em; text-transform: ${h1Transform}; }
+h3 { font-size: ${p.fontSizePt + 1}pt; text-transform: ${h1Transform}; }
+p { text-indent: ${cm(p.firstLineIndentMm)}cm; margin: 0; }
 table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
 th, td { border: 1px solid #bbb; padding: .4rem .6rem; text-align: left; }
-blockquote { border-left: 3px solid #999; margin: 1rem 0; padding-left: 1rem; color: #444; }
+blockquote { margin: 1rem 0 1rem ${cm(p.longQuote.indentMm)}cm; font-size: ${p.longQuote.fontSizePt}pt; line-height: ${p.longQuote.lineSpacing}; }
 hr { border: none; border-top: 1px solid #ccc; margin: 2rem 0; }
-@media print { body { padding: 0; } }
+@page { size: A4; margin: ${cm(m.topMm)}cm ${cm(m.rightMm)}cm ${cm(m.bottomMm)}cm ${cm(m.leftMm)}cm; }
+@media print { body { padding: 0; max-width: none; } }
 </style>
 </head>
 <body>
 <header>
 <h1>${htmlEscape(title)}</h1>
-${author ? `<p style="text-align:center">${htmlEscape(author)}</p>` : ""}
+${author ? `<p style="text-align:center;text-indent:0">${htmlEscape(author)}</p>` : ""}
 </header>
 ${body}
 </body>

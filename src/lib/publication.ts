@@ -72,3 +72,33 @@ export function yearOf(iso: string | null | undefined): string {
   const match = iso.match(/^(\d{4})/);
   return match ? match[1]! : "";
 }
+
+/**
+ * Divide o conteúdo publicado em "folhas" de leitura (modo livro), cortando nos
+ * títulos de seção (`## …`). O título principal (`# …`), quando existe, vira a
+ * primeira folha. Cada folha nunca corta um parágrafo ao meio.
+ */
+export function splitContentIntoLeaves(content: string): { title: string; body: string }[] {
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const leaves: { title: string; body: string }[] = [];
+  let title = "";
+  let buffer: string[] = [];
+
+  const flush = () => {
+    const body = buffer.join("\n").trim();
+    if (title || body) leaves.push({ title, body });
+    buffer = [];
+  };
+
+  for (const line of lines) {
+    const heading = line.match(/^#{1,6}\s+(.+)$/);
+    if (heading) {
+      flush();
+      title = heading[1]!.trim();
+    } else {
+      buffer.push(line);
+    }
+  }
+  flush();
+  return leaves.filter((l) => l.title || l.body);
+}

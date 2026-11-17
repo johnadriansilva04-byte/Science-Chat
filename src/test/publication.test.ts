@@ -5,6 +5,7 @@ import {
   extractAbstract,
   extractKeywords,
   publicationCitation,
+  splitContentIntoLeaves,
   yearOf,
 } from "@/lib/publication";
 
@@ -99,5 +100,26 @@ describe("yearOf", () => {
   it("extrai o ano", () => {
     expect(yearOf("2026-11-11T12:00:00Z")).toBe("2026");
     expect(yearOf(null)).toBe("");
+  });
+});
+
+describe("splitContentIntoLeaves", () => {
+  it("corta nos títulos de seção, sem perder parágrafos", () => {
+    const md = "# Obra\n\nAbertura.\n\n## Introdução\n\nUm.\n\nDois.\n\n## Conclusão\n\nFim.";
+    const leaves = splitContentIntoLeaves(md);
+    expect(leaves.map((l) => l.title)).toEqual(["Obra", "Introdução", "Conclusão"]);
+    expect(leaves[0]!.body).toBe("Abertura.");
+    expect(leaves[1]!.body).toContain("Dois.");
+    expect(leaves[2]!.body).toBe("Fim.");
+  });
+
+  it("devolve uma única folha quando não há títulos", () => {
+    const leaves = splitContentIntoLeaves("Apenas texto corrido.");
+    expect(leaves).toEqual([{ title: "", body: "Apenas texto corrido." }]);
+  });
+
+  it("ignora linhas vazias nas bordas", () => {
+    const leaves = splitContentIntoLeaves("\n\n# T\n\n\n");
+    expect(leaves).toEqual([{ title: "T", body: "" }]);
   });
 });

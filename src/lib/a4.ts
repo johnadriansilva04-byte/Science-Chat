@@ -1,16 +1,21 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { Block } from "@/lib/article-blocks";
 
-/** Dimensões físicas reais de uma folha A4, em milímetros. */
+/**
+ * Dimensões físicas reais de uma folha A4, em milímetros. As margens seguem a
+ * ABNT (NBR 14724): 3 cm na esquerda e no topo, 2 cm na direita e na base.
+ */
 export const A4 = {
   widthMm: 210,
   heightMm: 297,
-  marginXMm: 22,
-  marginYMm: 20,
+  topMm: 30,
+  rightMm: 20,
+  bottomMm: 20,
+  leftMm: 30,
 } as const;
 
 /** Altura útil do conteúdo em mm (A4 menos as margens superior e inferior). */
-export const A4_CONTENT_HEIGHT_MM = A4.heightMm - A4.marginYMm * 2;
+export const A4_CONTENT_HEIGHT_MM = A4.heightMm - A4.topMm - A4.bottomMm;
 
 const MM_PER_INCH = 25.4;
 const CSS_DPI = 96;
