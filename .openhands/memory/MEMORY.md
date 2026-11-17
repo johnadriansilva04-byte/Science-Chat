@@ -69,7 +69,7 @@ Migration `0005_audit_traceability_editorial.sql`: tabelas `claims`, `claim_evid
 Prod: **https://sciencechat.sciencechat.workers.dev**. **260 testes** (34 arquivos) verdes; tsc 0 erros; eslint 0 erros (14 warnings react-refresh do shadcn). Build nitro OK. Deploy feito.
 - UX: **jornada em 5 atos** (`src/lib/journey.ts` + `JourneyRail.tsx` + `PhaseTransition.tsx`), documento ao vivo por seção, abas Chat/Documento no mobile, entrevista interrogadora, **Acervo** (`acervo.ts` + `AcervoCard.tsx` + `PublishedShelf.tsx`), museu (`museum.ts` + `/museu`). Chat: voz (`useVoice` + `speech.ts`), gaveta de anexos (`ChatAttachments.tsx`).
 - Migrations aplicadas no D1 remoto: `0001`–`0007` (ledger `schema_migrations`). Logs diários: `2026-11-11.md`, `2026-11-15.md`.
-- ⚠️ **Push GitHub bloqueado:** `GITHUB_TOKEN` (user `johnadriansilva04-byte`) e `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` **sem escopo de escrita** no repo → 403. Deploy Cloudflare OK via `CLOUDFLARE_API_TOKEN` no ambiente.
+- ⚠️ **Push GitHub:** o `GITHUB_TOKEN` do ambiente e o `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` vêm **sem escopo de escrita** (`x-oauth-scopes` vazio) → 403 mesmo sendo o dono do repo. Para publicar, usar um PAT com escopo `repo` (o usuário forneceu um em 2026-11-16 e o push passou). Deploy Cloudflare OK via `CLOUDFLARE_API_TOKEN` no ambiente.
 
 ## Extração de documentos e visão (resumo)
 - `src/lib/documents.server.ts` descomprime DOCX (ZIP deflate) e PDF (`/FlateDecode`, `/ASCII85Decode`) via `DecompressionStream` — **assíncrono**; ⚠️ `Blob.stream()` NÃO existe no jsdom (usar `ReadableStream`+`pipeThrough`).
