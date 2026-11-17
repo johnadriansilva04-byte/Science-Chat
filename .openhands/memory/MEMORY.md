@@ -96,3 +96,9 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Título:** `repo.createArticle(userId, title?)` + server fn aceitam título; `ArticlesMenu.createArticle` usa o seed da home como título inicial (antes ficava "Novo artigo").
 - ⚠️ **Workers AI cota diária (erro 4006)** esgota rápido (10k neurons grátis); reseta meia-noite UTC — bloqueia testar IA no fim do dia.
 - **Aviso:** digitar texto longo com `\n` na UI envia várias mensagens (Enter = enviar). Ao automatizar via browser, usar Shift+Enter ou colar.
+
+## Deploy & push (importante)
+- **`npm run deploy` exige `CLOUDFLARE_API_TOKEN` (secret `cfat_*`) no ambiente.** Sem ele o build roda mas **não publica** — foi assim que a produção ficou servindo build antigo (sintoma "modo livro corta o texto", 16/11: prod era anterior ao commit do recurso). Sempre conferir o **Version ID novo** no `wrangler deploy` e validar no navegador.
+- **Push GitHub:** token do remote / `GITHUB_TOKEN` / `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` são **read-only (403)**. Usar o **`GH_PUSH_TOKEN`** (escopo `repo`) sem gravar no remote:
+  `git -c credential.helper= push "https://x-access-token:${GH_PUSH_TOKEN}@github.com/johnadriansilva04-byte/Science-Chat.git" main`
+- **Modo livro (`BookReader`):** overlay `overflow-y-auto` + wrapper `min-h-full … justify-center`; cada folha `max-h-[82vh] overflow-y-auto` (rola, nunca corta). Teste de regressão em `book-reader.test.tsx`.
