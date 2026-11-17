@@ -34,6 +34,10 @@ export type FormatProfile = {
   pageNumber: "top-right" | "bottom-center";
   /** Títulos de seção: caixa alta (ABNT) ou capitalizados. */
   headingUppercase: boolean;
+  /** Gera capa e folha de rosto (elementos pré-textuais) na montagem. */
+  frontMatter: boolean;
+  /** Numera as seções progressivamente (1, 1.1, 1.1.1). */
+  numberedSections: boolean;
 };
 
 const ABNT: FormatProfile = {
@@ -50,6 +54,8 @@ const ABNT: FormatProfile = {
   references: { fontSizePt: 12, lineSpacing: 1, hangingIndentMm: 0 },
   pageNumber: "top-right",
   headingUppercase: true,
+  frontMatter: true,
+  numberedSections: true,
 };
 
 const APA: FormatProfile = {
@@ -66,6 +72,8 @@ const APA: FormatProfile = {
   references: { fontSizePt: 12, lineSpacing: 2, hangingIndentMm: 12.7 },
   pageNumber: "top-right",
   headingUppercase: false,
+  frontMatter: true,
+  numberedSections: false,
 };
 
 const IEEE: FormatProfile = {
@@ -82,6 +90,8 @@ const IEEE: FormatProfile = {
   references: { fontSizePt: 8, lineSpacing: 1, hangingIndentMm: 3.5 },
   pageNumber: "bottom-center",
   headingUppercase: false,
+  frontMatter: false,
+  numberedSections: false,
 };
 
 const VANCOUVER: FormatProfile = {
@@ -98,6 +108,8 @@ const VANCOUVER: FormatProfile = {
   references: { fontSizePt: 11, lineSpacing: 1, hangingIndentMm: 0 },
   pageNumber: "top-right",
   headingUppercase: false,
+  frontMatter: false,
+  numberedSections: false,
 };
 
 const CHICAGO: FormatProfile = {
@@ -114,6 +126,8 @@ const CHICAGO: FormatProfile = {
   references: { fontSizePt: 12, lineSpacing: 2, hangingIndentMm: 12.7 },
   pageNumber: "top-right",
   headingUppercase: false,
+  frontMatter: false,
+  numberedSections: false,
 };
 
 /** Normas sem perfil próprio (Udelar/própria) herdam a base ABNT, ajustável. */

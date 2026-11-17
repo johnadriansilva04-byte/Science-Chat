@@ -32,6 +32,9 @@ import { documentSections, parseBlocks, serializeBlocks, type Block } from "@/li
 import { useA4Pagination } from "@/lib/a4";
 import { stripMarkers } from "@/lib/article-marker";
 import { ARTICLE_SIGNATURE, startsWithTitleHeading } from "@/lib/article-export";
+import { buildFrontMatter, frontMatterBlocks, numberSections } from "@/lib/front-matter";
+import { formatProfile } from "@/lib/format-profile";
+import { getEditorial, type EditorialView } from "@/lib/editorial.functions";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
 import { groupNotesBySection, interviewNotes, type InterviewNote } from "@/lib/interview-notes";
 import {
@@ -42,7 +45,7 @@ import {
 } from "@/lib/article.functions";
 
 /** Bloco do documento com a página (unidade de produção) que o originou. */
-type DocBlock = { block: Block; dbPage: number; dbIndex: number };
+type DocBlock = { block: Block; dbPage: number; dbIndex: number; editable: boolean };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -57,19 +60,29 @@ const PRELIMINARY_SECTIONS = [
   "Referências",
 ];
 
-function buildDocument(pages: WorkspacePage[], title: string): DocBlock[] {
+function buildDocument(pages: WorkspacePage[], title: string, decorate = false): DocBlock[] {
   const sorted = [...pages].sort((a, b) => a.page_number - b.page_number);
   const out: DocBlock[] = [];
   const first = sorted[0];
   const needsTitle = !first || !startsWithTitleHeading(stripMarkers(first.content));
   if (needsTitle) {
-    out.push({ block: { type: "heading", level: 1, text: title }, dbPage: 0, dbIndex: -1 });
+    out.push({
+      block: { type: "heading", level: 1, text: title },
+      dbPage: 0,
+      dbIndex: -1,
+      editable: true,
+    });
   }
   for (const p of sorted) {
     const blocks = parseBlocks(stripMarkers(p.content));
-    blocks.forEach((block, dbIndex) => out.push({ block, dbPage: p.page_number, dbIndex }));
+    blocks.forEach((block, dbIndex) =>
+      out.push({ block, dbPage: p.page_number, dbIndex, editable: true }),
+    );
   }
-  return out;
+  // Numeração de seções (1, 1.1) — só a exibição muda; o texto gravado fica intacto.
+  if (!decorate) return out;
+  const numbered = numberSections(out.map((d) => d.block));
+  return out.map((d, i) => ({ ...d, block: numbered[i]! }));
 }
 
 /** Estrutura preliminar (durante a entrevista): título + seções já alimentadas. */
@@ -155,12 +168,33 @@ export function DocumentCanvas({
   const [celebrateFirst, setCelebrateFirst] = useState(false);
   const [panelTab, setPanelTab] = useState<
     "plan" | "pages" | "docs" | "trace" | "audit" | "editorial"
-  >(phase === "interview" ? "plan" : "pages");
+  >("plan");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [highlight, setHighlight] = useState<string | null>(null);
   const [activeSheet, setActiveSheet] = useState(0);
+  const [editorial, setEditorial] = useState<EditorialView | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const sheetRefs = useRef<Record<number, HTMLElement | null>>({});
+
+  const reloadEditorial = useCallback(() => {
+    getEditorial({ data: { articleId } })
+      .then(setEditorial)
+      .catch(() => {
+        /* configuração ainda não criada */
+      });
+  }, [articleId]);
+
+  useEffect(() => {
+    reloadEditorial();
+  }, [reloadEditorial]);
+
+  // Ao sair da aba Editorial (onde os dados são salvos), relê a configuração
+  // para que a capa/numeração reflitam as alterações na hora.
+  const prevPanelTab = useRef(panelTab);
+  useEffect(() => {
+    if (prevPanelTab.current === "editorial" && panelTab !== "editorial") reloadEditorial();
+    prevPanelTab.current = panelTab;
+  }, [panelTab, reloadEditorial]);
 
   // Abre o painel contextual quando o pesquisador pede o plano (ou já está escrevendo),
   // mantendo plano e produção fora do chat.
@@ -178,17 +212,41 @@ export function DocumentCanvas({
 
   const isPreliminary = pages.length === 0;
 
+  // Elementos pré-textuais (capa/folha de rosto) só quando a norma os prevê.
+  const profile = formatProfile(editorial?.standard ?? "abnt");
+  const showFrontMatter = !isPreliminary && profile.frontMatter;
+  const frontBlocks = useMemo<Block[]>(() => {
+    if (!showFrontMatter) return [];
+    const meta = editorial?.document;
+    if (!meta) return [];
+    return frontMatterBlocks(buildFrontMatter(meta, title));
+  }, [showFrontMatter, editorial?.document, title]);
+
   const approvedPages = useMemo(
     () =>
       pages.filter((p) => p.status === "approved").sort((a, b) => a.page_number - b.page_number),
     [pages],
   );
 
-  const doc = useMemo(
-    () => (isPreliminary ? [] : buildDocument(pages, title)),
-    [isPreliminary, pages, title],
+  const doc = useMemo(() => {
+    const built = isPreliminary ? [] : buildDocument(pages, title, profile.numberedSections);
+    // Com capa/folha de rosto, o título já aparece no pré-texto: não repetir o
+    // título (H1) no início do corpo.
+    if (frontBlocks.length && built[0]?.block.type === "heading" && built[0].block.level === 1) {
+      return built.slice(1);
+    }
+    return built;
+  }, [isPreliminary, pages, title, profile.numberedSections, frontBlocks.length]);
+  // Blocos pré-textuais + corpo, para paginação e medição. Os pré-textuais não
+  // são editáveis (são derivados da configuração editorial).
+  const fullDoc = useMemo<DocBlock[]>(
+    () => [
+      ...frontBlocks.map((block) => ({ block, dbPage: 0, dbIndex: -1, editable: false })),
+      ...doc,
+    ],
+    [frontBlocks, doc],
   );
-  const flatBlocks = useMemo(() => doc.map((d) => d.block), [doc]);
+  const flatBlocks = useMemo(() => fullDoc.map((d) => d.block), [fullDoc]);
   const notes = useMemo(() => interviewNotes(messages), [messages]);
   const prelimBlocks = useMemo(
     () => (isPreliminary ? preliminaryDocument(title, plan, notes) : []),
@@ -197,8 +255,8 @@ export function DocumentCanvas({
 
   const revision = useMemo(
     () =>
-      `${pages.map((p) => `${p.page_number}:${p.status}:${p.content.length}`).join("|")}|${title}|${notes.length}`,
-    [pages, title, notes.length],
+      `${pages.map((p) => `${p.page_number}:${p.status}:${p.content.length}`).join("|")}|${title}|${notes.length}|${frontBlocks.length}|${profile.numberedSections}`,
+    [pages, title, notes.length, frontBlocks.length, profile.numberedSections],
   );
 
   const measureBlocks = isPreliminary ? prelimBlocks : flatBlocks;
@@ -275,8 +333,8 @@ export function DocumentCanvas({
 
   const changeBlock = useCallback(
     (globalIndex: number, block: Block) => {
-      const target = doc[globalIndex];
-      if (!target) return;
+      const target = fullDoc[globalIndex];
+      if (!target || !target.editable) return;
       if (target.dbPage === 0) {
         void (async () => {
           setSaveState("saving");
@@ -298,13 +356,13 @@ export function DocumentCanvas({
       next[target.dbIndex] = block;
       void persist(target.dbPage, next);
     },
-    [doc, articleId, title, onPagesChanged, persist],
+    [fullDoc, doc, articleId, title, onPagesChanged, persist],
   );
 
   const deleteBlock = useCallback(
     (globalIndex: number) => {
-      const target = doc[globalIndex];
-      if (!target || target.dbPage === 0) return;
+      const target = fullDoc[globalIndex];
+      if (!target || !target.editable || target.dbPage === 0) return;
       const pageBlocks = doc.filter((d) => d.dbPage === target.dbPage).map((d) => d.block);
       pageBlocks.splice(target.dbIndex, 1);
       if (!pageBlocks.length) {
@@ -313,7 +371,7 @@ export function DocumentCanvas({
       }
       void persist(target.dbPage, pageBlocks);
     },
-    [doc, persist],
+    [fullDoc, doc, persist],
   );
 
   function scrollToSheet(index: number) {

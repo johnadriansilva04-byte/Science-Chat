@@ -70,7 +70,47 @@ export function BlockBody({ block }: { block: Block }) {
     }
     case "rule":
       return <hr className="border-border" />;
+    case "pagebreak":
+      return <hr className="border-dashed border-border" aria-label="Quebra de página" />;
+    case "frontmatter":
+      return <FrontMatterBody block={block} />;
   }
+}
+
+/** Capa / folha de rosto no padrão ABNT (autor, título, nota, local/ano). */
+function FrontMatterBody({ block }: { block: Extract<Block, { type: "frontmatter" }> }) {
+  // Ocupa a altura útil da folha (menos uma folga de arredondamento) para
+  // empurrar o corpo para a folha seguinte, sem disparar o aviso de transbordo.
+  const fullHeight = { minHeight: `calc(${A4_CONTENT_HEIGHT_MM}mm - 8px)` } as const;
+  if (block.kind === "cover") {
+    return (
+      <div
+        style={fullHeight}
+        className="flex flex-col items-center justify-between py-10 text-center"
+      >
+        <p className="font-serif font-bold uppercase">{block.author}</p>
+        <h1 className="font-serif text-[1.55rem] font-bold uppercase leading-snug">
+          {block.title}
+        </h1>
+        <p className="font-serif uppercase">{block.place}</p>
+      </div>
+    );
+  }
+  return (
+    <div style={fullHeight} className="flex flex-col items-center py-6 text-center">
+      <p className="font-serif font-bold uppercase">{block.author}</p>
+      <h1 className="mt-10 font-serif text-[1.55rem] font-bold uppercase leading-snug">
+        {block.title}
+      </h1>
+      {block.institution && <p className="mt-6 font-serif">{block.institution}</p>}
+      {block.nature && (
+        <p className="mt-8 max-w-[9cm] self-end text-left font-serif text-[0.95rem] leading-snug">
+          {block.nature}
+        </p>
+      )}
+      <p className="mt-auto pt-10 font-serif uppercase">{block.place}</p>
+    </div>
+  );
 }
 
 function renderInline(text: string) {
@@ -108,6 +148,9 @@ export function A4Sheet({
   } as const;
 
   const lastIndex = blocks.length - 1;
+  // Folhas pré-textuais (capa/folha de rosto) não levam número de página nem
+  // entram no modo de edição: derivam da configuração editorial.
+  const isFront = blocks.length > 0 && blocks.every(({ block }) => block.type === "frontmatter");
 
   return (
     <section
@@ -116,29 +159,32 @@ export function A4Sheet({
       aria-label={`Folha ${pageNumber}`}
     >
       <div style={contentStyle} className="flex h-full flex-col gap-[0.85em]">
-        {blocks.map(({ block, index }) => (
-          <div
-            key={index}
-            data-block-index={index}
-            className={`a4-block group/block relative ${
-              sectionHighlight && block.type === "heading" && block.text === sectionHighlight
-                ? "a4-block--active"
-                : ""
-            } ${live && index === lastIndex ? "a4-writing-caret" : ""}`}
-          >
-            {editing ? (
-              <BlockEditor
-                block={block}
-                onChange={(b) => onChangeBlock(index, b)}
-                onDelete={() => onDeleteBlock(index)}
-              />
-            ) : (
-              <BlockBody block={block} />
-            )}
-          </div>
-        ))}
+        {blocks.map(({ block, index }) => {
+          const editable = editing && block.type !== "frontmatter" && block.type !== "pagebreak";
+          return (
+            <div
+              key={index}
+              data-block-index={index}
+              className={`a4-block group/block relative ${
+                sectionHighlight && block.type === "heading" && block.text === sectionHighlight
+                  ? "a4-block--active"
+                  : ""
+              } ${live && index === lastIndex ? "a4-writing-caret" : ""}`}
+            >
+              {editable ? (
+                <BlockEditor
+                  block={block}
+                  onChange={(b) => onChangeBlock(index, b)}
+                  onDelete={() => onDeleteBlock(index)}
+                />
+              ) : (
+                <BlockBody block={block} />
+              )}
+            </div>
+          );
+        })}
       </div>
-      <span className="a4-page-number">{pageNumber}</span>
+      {!isFront && <span className="a4-page-number">{pageNumber}</span>}
     </section>
   );
 }

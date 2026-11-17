@@ -1,11 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import * as repo from "@/lib/cf/repo.server";
-import { assembleMarkdown, markdownToPlainText } from "@/lib/article-export";
+import { assembleBody, markdownToPlainText } from "@/lib/article-export";
 import { buildDocx } from "@/lib/docx";
 import { markdownToHtml, markdownToLatex } from "@/lib/export-formats";
 import { bytesToBase64 } from "@/lib/base64";
 import { stateLabel, categoryLabel, type ClaimState, type ClaimCategory } from "@/lib/traceability";
+import { formatProfile } from "@/lib/format-profile";
+import {
+  buildFrontMatter,
+  frontMatterMarkdown,
+  resolveDocumentMeta,
+  type DocumentMeta,
+} from "@/lib/front-matter";
 import type { CitationStandard } from "@/lib/editorial";
 
 export type ExportBundle = {
@@ -20,6 +27,20 @@ export type ExportBundle = {
   docxBase64: string;
 };
 
+/** Lê o JSON de identificação do trabalho gravado na configuração editorial. */
+function parseLayout(raw: string | null): Partial<DocumentMeta> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object" && "document" in parsed) {
+      return (parsed as { document: Partial<DocumentMeta> }).document;
+    }
+    return parsed as Partial<DocumentMeta>;
+  } catch {
+    return null;
+  }
+}
+
 /** Reúne as páginas APROVADAS e monta todos os formatos, sem reescrever texto. */
 export const buildExport = createServerFn({ method: "POST" })
   .middleware([requireUser])
@@ -31,17 +52,31 @@ export const buildExport = createServerFn({ method: "POST" })
     const pages = await repo.listPages(userId, data.articleId);
     const editorial = await repo.getEditorialConfig(userId, data.articleId);
     const standard = (editorial?.standard ?? "abnt") as CitationStandard;
+    const profile = formatProfile(standard);
+    const fallbackAuthor =
+      data.author?.trim() || context.user.display_name || "Pesquisador(a) independente";
 
-    const markdown = assembleMarkdown(
+    // Elementos pré-textuais só entram quando a norma os prevê (ABNT, APA, …).
+    const meta = resolveDocumentMeta(parseLayout(editorial?.layout_json ?? null), fallbackAuthor);
+    const frontMatter = profile.frontMatter
+      ? buildFrontMatter({ ...meta, author: meta.author || fallbackAuthor }, article.title)
+      : null;
+
+    const body = assembleBody(
       article.title,
       pages.map((p) => ({
         page_number: p.page_number,
         content: p.content,
         status: p.status,
       })),
+      { numberedSections: profile.numberedSections, omitTitle: frontMatter !== null },
     );
-    const author = data.author?.trim() || "Pesquisador(a) independente";
-    const docx = buildDocx({ title: article.title, author, markdown, standard });
+    // O Markdown (texto) recebe a capa/folha de rosto como cabeçalho textual; os
+    // formatos com layout (DOCX/HTML/LaTeX) recebem os blocos pré-textuais.
+    const markdown = frontMatter ? `${frontMatterMarkdown(frontMatter)}\n${body}` : body;
+
+    const author = frontMatter?.author ?? fallbackAuthor;
+    const docx = buildDocx({ title: article.title, author, markdown: body, standard, frontMatter });
 
     return {
       title: article.title,
@@ -49,8 +84,8 @@ export const buildExport = createServerFn({ method: "POST" })
       standard,
       markdown,
       plainText: markdownToPlainText(markdown),
-      html: markdownToHtml(markdown, article.title, author, standard),
-      latex: markdownToLatex(markdown, article.title, author, standard),
+      html: markdownToHtml(body, article.title, author, standard, frontMatter),
+      latex: markdownToLatex(body, article.title, author, standard, frontMatter),
       docxBase64: bytesToBase64(docx),
     };
   });

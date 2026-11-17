@@ -879,6 +879,8 @@ export type EditorialRow = {
   guidelines: string | null;
   notes: string | null;
   verified_at: string | null;
+  /** JSON com a identificação do trabalho (capa/folha de rosto). */
+  layout_json: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -889,7 +891,7 @@ export async function getEditorialConfig(
 ): Promise<EditorialRow | null> {
   return requireDb()
     .prepare(
-      `select article_id, user_id, destination, unit, standard, language, guidelines, notes, verified_at, created_at, updated_at
+      `select article_id, user_id, destination, unit, standard, language, guidelines, notes, verified_at, layout_json, created_at, updated_at
        from editorial_configs where article_id = ? and user_id = ?`,
     )
     .bind(articleId, userId)
@@ -906,6 +908,7 @@ export async function upsertEditorialConfig(
     language: string;
     guidelines: string | null;
     notes: string | null;
+    layoutJson?: string | null;
   },
 ): Promise<EditorialRow> {
   const db = requireDb();
@@ -913,10 +916,12 @@ export async function upsertEditorialConfig(
   const existing = await getEditorialConfig(userId, articleId);
   // A data de verificação é marcada sempre que o pesquisador registra diretrizes.
   const verifiedAt = fields.guidelines?.trim() ? ts : null;
+  const layoutJson =
+    fields.layoutJson === undefined ? (existing?.layout_json ?? null) : fields.layoutJson;
   if (existing) {
     await db
       .prepare(
-        `update editorial_configs set destination = ?, unit = ?, standard = ?, language = ?, guidelines = ?, notes = ?, verified_at = ?, updated_at = ?
+        `update editorial_configs set destination = ?, unit = ?, standard = ?, language = ?, guidelines = ?, notes = ?, verified_at = ?, layout_json = ?, updated_at = ?
          where article_id = ? and user_id = ?`,
       )
       .bind(
@@ -927,17 +932,29 @@ export async function upsertEditorialConfig(
         fields.guidelines,
         fields.notes,
         verifiedAt,
+        layoutJson,
         ts,
         articleId,
         userId,
       )
       .run();
-    return { ...existing, ...fields, verified_at: verifiedAt, updated_at: ts };
+    return {
+      ...existing,
+      destination: fields.destination,
+      unit: fields.unit,
+      standard: fields.standard,
+      language: fields.language,
+      guidelines: fields.guidelines,
+      notes: fields.notes,
+      layout_json: layoutJson,
+      verified_at: verifiedAt,
+      updated_at: ts,
+    };
   }
   await db
     .prepare(
-      `insert into editorial_configs (article_id, user_id, destination, unit, standard, language, guidelines, notes, verified_at, created_at, updated_at)
-       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `insert into editorial_configs (article_id, user_id, destination, unit, standard, language, guidelines, notes, verified_at, layout_json, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       articleId,
@@ -949,6 +966,7 @@ export async function upsertEditorialConfig(
       fields.guidelines,
       fields.notes,
       verifiedAt,
+      layoutJson,
       ts,
       ts,
     )
@@ -956,7 +974,13 @@ export async function upsertEditorialConfig(
   return {
     article_id: articleId,
     user_id: userId,
-    ...fields,
+    destination: fields.destination,
+    unit: fields.unit,
+    standard: fields.standard,
+    language: fields.language,
+    guidelines: fields.guidelines,
+    notes: fields.notes,
+    layout_json: layoutJson,
     verified_at: verifiedAt,
     created_at: ts,
     updated_at: ts,

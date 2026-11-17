@@ -13,6 +13,7 @@ import {
   type EditorialConfig,
   type EditorialDestination,
 } from "@/lib/editorial";
+import { resolveDocumentMeta, type DocumentMeta } from "@/lib/front-matter";
 
 export type EditorialView = EditorialConfig & {
   requirements: { label: string; level: "obrigatorio" | "recomendado" | "verificar" }[];
@@ -20,7 +21,21 @@ export type EditorialView = EditorialConfig & {
   summary: string;
 };
 
-function toView(row: repo.EditorialRow | null): EditorialView {
+/** Lê o JSON de identificação do trabalho, ignorando valores inválidos. */
+function parseLayout(raw: string | null): Partial<DocumentMeta> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === "object" && "document" in parsed) {
+      return (parsed as { document: Partial<DocumentMeta> }).document;
+    }
+    return parsed as Partial<DocumentMeta>;
+  } catch {
+    return null;
+  }
+}
+
+function toView(row: repo.EditorialRow | null, fallbackAuthor: string): EditorialView {
   const config: EditorialConfig = row
     ? {
         destination: row.destination as EditorialDestination,
@@ -30,8 +45,9 @@ function toView(row: repo.EditorialRow | null): EditorialView {
         guidelines: row.guidelines,
         notes: row.notes,
         verified_at: row.verified_at,
+        document: resolveDocumentMeta(parseLayout(row.layout_json), fallbackAuthor),
       }
-    : { ...DEFAULT_EDITORIAL };
+    : { ...DEFAULT_EDITORIAL, document: resolveDocumentMeta(null, fallbackAuthor) };
   // A estrutura depende da natureza da pesquisa; o pesquisador pode ter
   // informado "empírica" nas diretrizes — sinal simples e conservador.
   const empirical = /experiment|dados|amostra|quantitativ|qualitativ|emp[íi]ric/i.test(
@@ -50,7 +66,7 @@ export const getEditorial = createServerFn({ method: "POST" })
   .validator((d: { articleId: string }) => d)
   .handler(async ({ data, context }): Promise<EditorialView> => {
     const row = await repo.getEditorialConfig(context.user.id, data.articleId);
-    return toView(row);
+    return toView(row, context.user.display_name ?? context.user.email);
   });
 
 export const saveEditorial = createServerFn({ method: "POST" })
@@ -64,9 +80,12 @@ export const saveEditorial = createServerFn({ method: "POST" })
       language: string;
       guidelines?: string;
       notes?: string;
+      document?: Partial<DocumentMeta>;
     }) => d,
   )
   .handler(async ({ data, context }): Promise<EditorialView> => {
+    const fallbackAuthor = context.user.display_name ?? context.user.email;
+    const document = resolveDocumentMeta(data.document ?? null, fallbackAuthor);
     const row = await repo.upsertEditorialConfig(context.user.id, data.articleId, {
       destination: data.destination,
       unit: data.unit?.trim() || null,
@@ -74,8 +93,9 @@ export const saveEditorial = createServerFn({ method: "POST" })
       language: data.language || "pt",
       guidelines: data.guidelines?.trim() || null,
       notes: data.notes?.trim() || null,
+      layoutJson: JSON.stringify({ document }),
     });
-    return toView(row);
+    return toView(row, fallbackAuthor);
   });
 
 /** Formata referências (das bases públicas ou informadas) conforme a norma. */

@@ -57,6 +57,15 @@ describe("assembleMarkdown", () => {
   it("omits the signature when there is no approved page", () => {
     expect(assembleMarkdown("Meu artigo", [])).not.toContain(ARTICLE_SIGNATURE);
   });
+
+  it("remove o título (H1) do corpo quando omitTitle está ligado", () => {
+    const withHeading = [
+      { page_number: 1, content: "# Meu artigo\n\n## Introdução\n\nTexto.", status: "approved" },
+    ];
+    const md = assembleMarkdown("Meu artigo", withHeading, { omitTitle: true });
+    expect(md).not.toMatch(/^#\s+Meu artigo$/m);
+    expect(md).toContain("## Introdução");
+  });
 });
 
 describe("markdownToPlainText", () => {

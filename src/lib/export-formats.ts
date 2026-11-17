@@ -3,7 +3,8 @@
  * reembala as páginas já aprovadas, preservando títulos, listas, tabelas e a
  * assinatura. Serve para a exportação em formatos acadêmicos.
  */
-import { parseBlocks, parseInline, type Block } from "@/lib/article-blocks";
+import { parseBlocks, parseInline, type Align, type Block } from "@/lib/article-blocks";
+import { frontMatterSequence, type FrontMatter } from "@/lib/front-matter";
 import { formatProfile, type FormatProfile } from "@/lib/format-profile";
 import type { CitationStandard } from "@/lib/editorial";
 
@@ -47,6 +48,30 @@ function latexBlock(block: Block): string {
     }
     case "rule":
       return "\\par\\noindent\\rule{\\linewidth}{0.4pt}\\par";
+    case "pagebreak":
+      return "\\newpage";
+    case "frontmatter": {
+      const center = (t: string, size = "\\large") =>
+        `\\begin{center}${size} ${latexEscape(t)}\\end{center}`;
+      const parts: string[] = ["\\thispagestyle{empty}"];
+      if (block.kind === "cover") {
+        parts.push(center(block.author, "\\large"), "\\vspace*{4cm}");
+        parts.push(center(block.title, "\\Large\\bfseries"), "\\vfill");
+        parts.push(center(block.place, "\\large"));
+      } else {
+        parts.push(center(block.author, "\\large"), "\\vspace*{2cm}");
+        parts.push(center(block.title, "\\Large\\bfseries"), "\\vspace*{1.5cm}");
+        if (block.institution) parts.push(center(block.institution, "\\normalsize"));
+        parts.push("\\vspace*{1cm}");
+        if (block.nature) {
+          parts.push(
+            `\\begin{flushright}\\begin{minipage}{0.5\\textwidth}\\small ${latexEscape(block.nature)}\\end{minipage}\\end{flushright}`,
+          );
+        }
+        parts.push("\\vfill", center(block.place, "\\large"));
+      }
+      return parts.join("\n");
+    }
   }
 }
 
@@ -56,9 +81,14 @@ export function markdownToLatex(
   title: string,
   author?: string,
   standard: CitationStandard = "abnt",
+  frontMatter?: FrontMatter | null,
 ): string {
   const p = formatProfile(standard);
-  const body = parseBlocks(markdown).map(latexBlock).join("\n\n");
+  const blocks = [
+    ...(frontMatter ? frontMatterSequence(frontMatter) : []),
+    ...parseBlocks(markdown),
+  ];
+  const body = blocks.map(latexBlock).join("\n\n");
   const spacing =
     p.lineSpacing >= 1.9
       ? "\\doublespacing"
@@ -70,6 +100,13 @@ export function markdownToLatex(
     : "\\setlength{\\parindent}{0pt}";
   const m = p.margins;
   const cm = (mm: number) => (mm / 10).toFixed(2);
+  // Com elementos pré-textuais, a capa/folha de rosto substituem o \maketitle.
+  const titleBlock = frontMatter
+    ? ""
+    : `\\title{${latexEscape(title)}}
+${author ? `\\author{${latexEscape(author)}}` : ""}
+\\date{\\today}
+`;
   return `\\documentclass[${p.fontSizePt}pt,a4paper]{article}
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
@@ -81,12 +118,8 @@ export function markdownToLatex(
 \\usepackage{times}
 ${spacing}
 ${indent}
-\\title{${latexEscape(title)}}
-${author ? `\\author{${latexEscape(author)}}` : ""}
-\\date{\\today}
-\\begin{document}
-\\maketitle
-${body}
+${titleBlock}\\begin{document}
+${frontMatter ? "" : "\\maketitle\n"}${body}
 \\end{document}
 `;
 }
@@ -105,12 +138,16 @@ function htmlInline(text: string): string {
     .join("");
 }
 
+function alignStyle(align: Align | undefined): string {
+  return align ? ` style="text-align:${align}"` : "";
+}
+
 function htmlBlock(block: Block): string {
   switch (block.type) {
     case "heading":
-      return `<h${block.level}>${htmlInline(block.text)}</h${block.level}>`;
+      return `<h${block.level}${alignStyle(block.align)}>${htmlInline(block.text)}</h${block.level}>`;
     case "paragraph":
-      return `<p>${htmlInline(block.text)}</p>`;
+      return `<p${alignStyle(block.align)}>${htmlInline(block.text)}</p>`;
     case "list": {
       const tag = block.ordered ? "ol" : "ul";
       return `<${tag}>${block.items.map((i) => `<li>${htmlInline(i)}</li>`).join("")}</${tag}>`;
@@ -128,6 +165,24 @@ function htmlBlock(block: Block): string {
     }
     case "rule":
       return "<hr/>";
+    case "pagebreak":
+      return '<div class="page-break"></div>';
+    case "frontmatter": {
+      const cover = block.kind === "cover";
+      const nature =
+        !cover && block.nature ? `<p class="nature">${htmlEscape(block.nature)}</p>` : "";
+      const institution =
+        !cover && block.institution
+          ? `<p class="institution">${htmlEscape(block.institution)}</p>`
+          : "";
+      return `<section class="frontmatter ${cover ? "cover" : "titlepage"}">
+<p class="author">${htmlEscape(block.author)}</p>
+<h1 class="front-title">${htmlEscape(block.title)}</h1>
+${institution}
+${nature}
+<p class="place">${htmlEscape(block.place)}</p>
+</section>`;
+    }
   }
 }
 
@@ -137,9 +192,14 @@ export function markdownToHtml(
   title: string,
   author?: string,
   standard: CitationStandard = "abnt",
+  frontMatter?: FrontMatter | null,
 ): string {
   const p = formatProfile(standard);
-  const body = parseBlocks(markdown).map(htmlBlock).join("\n");
+  const blocks = [
+    ...(frontMatter ? frontMatterSequence(frontMatter) : []),
+    ...parseBlocks(markdown),
+  ];
+  const body = blocks.map(htmlBlock).join("\n");
   const m = p.margins;
   const cm = (mm: number) => (mm / 10).toFixed(2);
   const align = p.justify ? "justify" : "left";
@@ -161,15 +221,27 @@ table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
 th, td { border: 1px solid #bbb; padding: .4rem .6rem; text-align: left; }
 blockquote { margin: 1rem 0 1rem ${cm(p.longQuote.indentMm)}cm; font-size: ${p.longQuote.fontSizePt}pt; line-height: ${p.longQuote.lineSpacing}; }
 hr { border: none; border-top: 1px solid #ccc; margin: 2rem 0; }
+.page-break { page-break-after: always; break-after: page; height: 0; }
+.frontmatter { text-align: center; text-indent: 0; }
+.frontmatter .author { font-weight: 700; text-indent: 0; }
+.frontmatter .front-title { font-weight: 700; text-transform: uppercase; margin: 3em 0; }
+.frontmatter .place { text-indent: 0; margin-top: 3em; }
+.frontmatter.titlepage { display: flex; flex-direction: column; justify-content: space-between; min-height: 22cm; }
+.frontmatter.titlepage .nature { text-align: right; text-indent: 0; margin: 1.5em 0 0 auto; max-width: 8cm; font-size: ${p.fontSizePt - 1}pt; }
+.frontmatter.titlepage .place { margin-top: 0; }
 @page { size: A4; margin: ${cm(m.topMm)}cm ${cm(m.rightMm)}cm ${cm(m.bottomMm)}cm ${cm(m.leftMm)}cm; }
 @media print { body { padding: 0; max-width: none; } }
 </style>
 </head>
 <body>
-<header>
+${
+  frontMatter
+    ? ""
+    : `<header>
 <h1>${htmlEscape(title)}</h1>
 ${author ? `<p style="text-align:center;text-indent:0">${htmlEscape(author)}</p>` : ""}
-</header>
+</header>`
+}
 ${body}
 </body>
 </html>

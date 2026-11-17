@@ -128,3 +128,57 @@ describe("exportação HTML", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 });
+
+describe("elementos pré-textuais (ABNT)", () => {
+  const fm = {
+    author: "John Adrian",
+    title: "Relatório Técnico",
+    institution: "UFSC",
+    nature: "Trabalho apresentado ao Programa de Pós-Graduação.",
+    place: "FLORIANÓPOLIS — 2026",
+  };
+
+  it("HTML inclui capa e folha de rosto com nota e quebra de página", () => {
+    const html = markdownToHtml(
+      "## Introdução\n\nTexto.",
+      "Relatório Técnico",
+      "John Adrian",
+      "abnt",
+      fm,
+    );
+    expect(html).toContain('class="frontmatter cover"');
+    expect(html).toContain('class="frontmatter titlepage"');
+    expect(html).toContain("Trabalho apresentado ao Programa");
+    expect(html).toContain("FLORIANÓPOLIS — 2026");
+    expect(html).toContain('class="page-break"');
+    // Sem cabeçalho automático quando há elementos pré-textuais.
+    expect(html).not.toContain("<header>");
+  });
+
+  it("DOCX insere quebra de página e o texto da nota", () => {
+    const docx = buildDocx({
+      title: "Relatório Técnico",
+      author: "John Adrian",
+      markdown: "## Introdução\n\nTexto.",
+      standard: "abnt",
+      frontMatter: fm,
+    });
+    const text = new TextDecoder("latin1").decode(docx);
+    expect(text).toContain('w:br w:type="page"');
+    expect(text).toContain("Trabalho apresentado ao Programa");
+    expect(text).toContain("UFSC");
+  });
+
+  it("LaTeX substitui o \\maketitle pela capa", () => {
+    const tex = markdownToLatex(
+      "## Introdução\n\nTexto.",
+      "Relatório Técnico",
+      "John Adrian",
+      "abnt",
+      fm,
+    );
+    expect(tex).toContain("\\thispagestyle{empty}");
+    expect(tex).toContain("\\newpage");
+    expect(tex).not.toContain("\\maketitle");
+  });
+});

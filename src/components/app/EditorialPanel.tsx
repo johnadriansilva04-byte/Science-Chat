@@ -47,6 +47,11 @@ export function EditorialPanel({ articleId }: { articleId: string }) {
   const [standard, setStandard] = useState<CitationStandard>("abnt");
   const [guidelines, setGuidelines] = useState("");
   const [notes, setNotes] = useState("");
+  const [author, setAuthor] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [city, setCity] = useState("");
+  const [year, setYear] = useState("");
+  const [nature, setNature] = useState("");
 
   const apply = useCallback((view: EditorialView) => {
     setConfig(view);
@@ -55,6 +60,11 @@ export function EditorialPanel({ articleId }: { articleId: string }) {
     setStandard(view.standard);
     setGuidelines(view.guidelines ?? "");
     setNotes(view.notes ?? "");
+    setAuthor(view.document.author);
+    setInstitution(view.document.institution ?? "");
+    setCity(view.document.city ?? "");
+    setYear(view.document.year ?? "");
+    setNature(view.document.nature);
   }, []);
 
   useEffect(() => {
@@ -67,7 +77,16 @@ export function EditorialPanel({ articleId }: { articleId: string }) {
     setBusy(true);
     try {
       const view = await saveEditorial({
-        data: { articleId, destination, unit, standard, language: "pt", guidelines, notes },
+        data: {
+          articleId,
+          destination,
+          unit,
+          standard,
+          language: "pt",
+          guidelines,
+          notes,
+          document: { author, institution, city, year, nature },
+        },
       });
       apply(view);
       toast.success("Configuração editorial salva");
@@ -214,6 +233,75 @@ export function EditorialPanel({ articleId }: { articleId: string }) {
           <Button size="sm" onClick={save} disabled={busy}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Salvar configuração
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 font-serif text-base">
+            <Landmark className="size-4 text-primary" />
+            Identificação do trabalho
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Dados da capa e da folha de rosto (ABNT). O autor vem do seu perfil e pode ser ajustado
+            — use o nome como deseja publicar.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Autor(a)</Label>
+            <Input
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Nome completo"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Instituição / vínculo (opcional)</Label>
+            <Input
+              value={institution}
+              onChange={(e) => setInstitution(e.target.value)}
+              placeholder="Ex.: Universidade Federal de Santa Catarina"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Cidade</Label>
+              <Input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Ex.: Florianópolis"
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ano</Label>
+              <Input
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                placeholder="Ex.: 2026"
+                className="h-9 text-sm"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Nota de natureza do trabalho (folha de rosto)</Label>
+            <Textarea
+              value={nature}
+              onChange={(e) => setNature(e.target.value)}
+              rows={3}
+              placeholder="Ex.: Artigo científico apresentado ao Programa de Pós-Graduação…"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Texto que explica a que se destina o trabalho, alinhado à direita na folha de rosto.
+            </p>
+          </div>
+          <Button size="sm" onClick={save} disabled={busy}>
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            Salvar identificação
           </Button>
         </CardContent>
       </Card>

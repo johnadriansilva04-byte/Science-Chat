@@ -83,12 +83,24 @@ async function dedupingFetch(input: RequestInfo | URL, init?: RequestInit): Prom
   });
 }
 
+/**
+ * O proxy local do Workers AI (miniflare) serializa os argumentos de `run` com
+ * devalue, que recusa objetos não-POJO. O provider envia um `AbortSignal` em
+ * `options`, o que quebra o chat em desenvolvimento. O binding de IA não
+ * documenta `signal`, então descartá-lo é seguro (a chamada segue normalmente).
+ */
+export function serializableRunOptions(options: unknown): unknown {
+  if (!options || typeof options !== "object") return options;
+  const { signal: _signal, ...rest } = options as Record<string, unknown>;
+  return rest;
+}
+
 /** Binding `AI` com a correção de stream aplicada. */
 function aiBinding(): AiBinding {
   const ai = requireAi();
   return {
     run(model: string, inputs: Record<string, unknown>, options?: unknown) {
-      const result = ai.run(model, inputs, options);
+      const result = ai.run(model, inputs, serializableRunOptions(options));
       if (!inputs["stream"]) return result;
       return Promise.resolve(result).then((r) =>
         r instanceof ReadableStream ? dedupeSseStream(r) : r,

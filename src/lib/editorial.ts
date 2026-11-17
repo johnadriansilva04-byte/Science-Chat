@@ -1,3 +1,5 @@
+import type { DocumentMeta } from "@/lib/front-matter";
+
 /**
  * Configuração editorial. A Udelar é a referência INICIAL do ScienceChat, mas o
  * sistema nunca inventa normas: aqui ficam apenas as opções de destino, as
@@ -17,6 +19,8 @@ export type EditorialConfig = {
   guidelines: string | null;
   notes: string | null;
   verified_at: string | null;
+  /** Identificação do trabalho (capa/folha de rosto ABNT). */
+  document: DocumentMeta;
 };
 
 export const DEFAULT_EDITORIAL: EditorialConfig = {
@@ -27,6 +31,7 @@ export const DEFAULT_EDITORIAL: EditorialConfig = {
   guidelines: null,
   notes: null,
   verified_at: null,
+  document: { author: "", institution: null, city: null, year: null, nature: "" },
 };
 
 export const DESTINATIONS: { id: EditorialDestination; label: string; hint: string }[] = [

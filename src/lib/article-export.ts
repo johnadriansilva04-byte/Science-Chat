@@ -1,4 +1,6 @@
 import { stripMarkers } from "@/lib/article-marker";
+import { parseBlocks, serializeBlocks } from "@/lib/article-blocks";
+import { numberSections } from "@/lib/front-matter";
 
 export type ExportPage = { page_number: number; content: string; status: string };
 
@@ -10,17 +12,52 @@ export function startsWithTitleHeading(content: string): boolean {
   return /^#\s+\S/.test(content.trimStart());
 }
 
-/** Assemble approved pages, in order, into the master document (Markdown). */
-export function assembleMarkdown(title: string, pages: ExportPage[]): string {
+export type AssembleOptions = {
+  /** Numera as seções progressivamente (1, 1.1, 1.1.1) — ABNT. */
+  numberedSections?: boolean;
+  /** Omite o H1 do título no corpo (usado quando a capa já o apresenta). */
+  omitTitle?: boolean;
+};
+
+/** Remove um H1 inicial (o título) do corpo Markdown, se houver. */
+export function stripLeadingTitle(markdown: string): string {
+  return markdown.replace(/^\s*#\s+[^\n]*\n+/, "");
+}
+
+/** Corpo do documento (sem elementos pré-textuais) em Markdown. */
+export function assembleBody(
+  title: string,
+  pages: ExportPage[],
+  options: AssembleOptions = {},
+): string {
   const approved = pages
     .filter((p) => p.status === "approved")
     .sort((a, b) => a.page_number - b.page_number);
-  const body = approved.map((p) => stripMarkers(p.content)).join("\n\n");
+  let body = approved.map((p) => stripMarkers(p.content)).join("\n\n");
+  if (options.numberedSections && body) {
+    body = serializeBlocks(numberSections(parseBlocks(body)));
+  }
   // A primeira página aprovada normalmente já traz o H1 com o título; nesse caso
   // não repetir o cabeçalho para não duplicar o título no documento mestre.
-  const header = startsWithTitleHeading(body) ? "" : `# ${title.trim() || "Artigo científico"}\n\n`;
+  const hasTitle = startsWithTitleHeading(body);
+  if (options.omitTitle && hasTitle) body = stripLeadingTitle(body);
+  const header =
+    hasTitle || options.omitTitle ? "" : `# ${title.trim() || "Artigo científico"}\n\n`;
   const footer = approved.length > 0 ? `\n\n---\n\n${ARTICLE_SIGNATURE}` : "";
   return `${header}${body}${footer}`.trim() + "\n";
+}
+
+/**
+ * Assemble approved pages, in order, into the master document (Markdown).
+ * Os elementos pré-textuais (capa/folha de rosto) são adicionados por cada
+ * formato de saída, que conhece o layout adequado.
+ */
+export function assembleMarkdown(
+  title: string,
+  pages: ExportPage[],
+  options: AssembleOptions = {},
+): string {
+  return assembleBody(title, pages, options);
 }
 
 /** Remove the most common Markdown syntax for plain-text export. */

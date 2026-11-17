@@ -4,7 +4,7 @@
  * token. Este teste garante que o filtro remove a duplicata antes do provider.
  */
 import { describe, expect, it } from "vitest";
-import { dedupeSseStream } from "@/lib/ai/gateway.server";
+import { dedupeSseStream, serializableRunOptions } from "@/lib/ai/gateway.server";
 
 const enc = new TextEncoder();
 
@@ -66,5 +66,24 @@ describe("dedupeSseStream", () => {
     const text = await collect(dedupeSseStream(raw));
     expect(text).not.toContain('"response"');
     expect(text).toContain('"content":"x"');
+  });
+});
+
+describe("serializableRunOptions", () => {
+  it("remove o AbortSignal, que o proxy local não consegue serializar", () => {
+    const signal = new AbortController().signal;
+    const out = serializableRunOptions({ gateway: "g", signal }) as Record<string, unknown>;
+    expect(out).not.toHaveProperty("signal");
+    expect(out["gateway"]).toBe("g");
+  });
+
+  it("devolve as opções intactas quando não há signal", () => {
+    const opts = { gateway: "g" };
+    expect(serializableRunOptions(opts)).toEqual({ gateway: "g" });
+  });
+
+  it("preserva valores não-objeto", () => {
+    expect(serializableRunOptions(undefined)).toBeUndefined();
+    expect(serializableRunOptions(null)).toBeNull();
   });
 });

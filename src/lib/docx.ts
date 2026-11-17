@@ -4,7 +4,8 @@
  * compressão), para rodar tanto no Worker quanto no navegador. O objetivo é
  * levar as páginas JÁ APROVADAS para o Word sem reescrever o texto com IA.
  */
-import { parseBlocks, type Block } from "@/lib/article-blocks";
+import { parseBlocks, type Align, type Block } from "@/lib/article-blocks";
+import { frontMatterSequence, type FrontMatter } from "@/lib/front-matter";
 import {
   formatProfile,
   lineToTwips,
@@ -139,16 +140,54 @@ function paragraph(
   text: string,
   style: string | undefined,
   p: FormatProfile,
-  opts: { bullet?: boolean; indent?: boolean } = {},
+  opts: {
+    bullet?: boolean;
+    indent?: boolean;
+    align?: Align | undefined;
+    pageBreakBefore?: boolean;
+  } = {},
 ): string {
+  const jc = opts.align ?? undefined;
   const ppr = [
     style ? `<w:pStyle w:val="${style}"/>` : "",
+    opts.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
+    jc ? `<w:jc w:val="${jc === "center" ? "center" : jc === "right" ? "right" : "left"}"/>` : "",
     opts.indent && p.firstLineIndentMm
       ? `<w:ind w:firstLine="${mmToTwips(p.firstLineIndentMm)}"/>`
       : "",
     opts.bullet ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : "",
   ].join("");
   return `<w:p>${ppr ? `<w:pPr>${ppr}</w:pPr>` : ""}${runs(text)}</w:p>`;
+}
+
+/** Elemento pré-textual (capa/folha de rosto): folha inteira, texto centralizado. */
+function frontMatterXml(block: Extract<Block, { type: "frontmatter" }>, p: FormatProfile): string {
+  const line = (text: string, o: { bold?: boolean; center?: boolean } = {}) =>
+    `<w:p><w:pPr>${o.center ? '<w:jc w:val="center"/>' : '<w:jc w:val="right"/>'}</w:pPr>${
+      o.bold
+        ? `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`
+        : runs(text)
+    }</w:p>`;
+  const spacer = '<w:p><w:pPr><w:jc w:val="center"/></w:pPr></w:p>';
+  const out: string[] = [];
+  if (block.kind === "cover") {
+    out.push(line(block.author, { bold: true, center: true }));
+    out.push(spacer, spacer, spacer);
+    out.push(line(block.title, { bold: true, center: true }));
+    out.push(spacer, spacer, spacer, spacer, spacer);
+    out.push(line(block.place, { center: true }));
+  } else {
+    out.push(line(block.author, { bold: true, center: true }));
+    out.push(spacer, spacer);
+    out.push(line(block.title, { bold: true, center: true }));
+    out.push(spacer, spacer);
+    if (block.institution) out.push(line(block.institution, { center: true }));
+    out.push(spacer);
+    if (block.nature) out.push(line(block.nature, {}));
+    out.push(spacer, spacer);
+    out.push(line(block.place, { center: true }));
+  }
+  return out.join("");
 }
 
 function tableXml(rows: string[][]): string {
@@ -179,10 +218,12 @@ function blockXml(block: Block, p: FormatProfile, inReferences: boolean): string
         p.headingUppercase ? block.text.toUpperCase() : block.text,
         `Heading${block.level}`,
         p,
+        { align: block.align },
       );
     case "paragraph":
       return paragraph(block.text, inReferences ? "References" : undefined, p, {
         indent: !inReferences,
+        align: block.align,
       });
     case "list":
       return block.items.map((it) => paragraph(it, undefined, p, { bullet: true })).join("");
@@ -192,6 +233,10 @@ function blockXml(block: Block, p: FormatProfile, inReferences: boolean): string
       return tableXml(block.rows);
     case "rule":
       return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:color="888888"/></w:pBdr></w:pPr></w:p>';
+    case "pagebreak":
+      return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+    case "frontmatter":
+      return frontMatterXml(block, p);
   }
 }
 
@@ -202,11 +247,19 @@ function isReferencesHeading(block: Block): boolean {
 
 /**
  * Converte o Markdown aprovado em WordprocessingML, aplicando o perfil de
- * formatação escolhido (ABNT, APA, IEEE, …).
+ * formatação escolhido (ABNT, APA, IEEE, …). Quando há elementos pré-textuais,
+ * eles são inseridos como blocos no início do documento.
  */
-export function markdownToDocumentXml(markdown: string, profile?: FormatProfile): string {
+export function markdownToDocumentXml(
+  markdown: string,
+  profile?: FormatProfile,
+  frontMatter?: FrontMatter | null,
+): string {
   const p = profile ?? formatProfile("abnt");
-  const blocks = parseBlocks(markdown);
+  const blocks = [
+    ...(frontMatter ? frontMatterSequence(frontMatter) : []),
+    ...parseBlocks(markdown),
+  ];
   let inReferences = false;
   return blocks
     .map((block) => {
@@ -223,6 +276,8 @@ export type DocxOptions = {
   markdown: string;
   /** Norma de formatação (ABNT por padrão). */
   standard?: CitationStandard;
+  /** Capa e folha de rosto (elementos pré-textuais ABNT), quando aplicável. */
+  frontMatter?: FrontMatter | null;
 };
 
 const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -309,7 +364,7 @@ export function buildDocx(options: DocxOptions): Uint8Array {
   const m = p.margins;
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:body>${markdownToDocumentXml(options.markdown, p)}
+<w:body>${markdownToDocumentXml(options.markdown, p, options.frontMatter)}
 <w:sectPr><w:headerReference w:type="default" r:id="rId2" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><w:footerReference w:type="default" r:id="rId3" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${mmToTwips(m.topMm)}" w:right="${mmToTwips(m.rightMm)}" w:bottom="${mmToTwips(m.bottomMm)}" w:left="${mmToTwips(m.leftMm)}" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>
 </w:body></w:document>`;
 

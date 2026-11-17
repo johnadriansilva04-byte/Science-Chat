@@ -6,13 +6,27 @@
  * Não é um Markdown completo: cobre títulos, parágrafos, listas, citações,
  * tabelas simples e regras horizontais — o suficiente para artigos científicos.
  */
+export type Align = "left" | "center" | "right";
+
 export type Block =
-  | { type: "heading"; level: 1 | 2 | 3 | 4; text: string }
-  | { type: "paragraph"; text: string }
+  | { type: "heading"; level: 1 | 2 | 3 | 4; text: string; align?: Align }
+  | { type: "paragraph"; text: string; align?: Align; indent?: boolean }
   | { type: "list"; ordered: boolean; items: string[] }
   | { type: "quote"; text: string }
   | { type: "table"; rows: string[][] }
-  | { type: "rule" };
+  | { type: "rule" }
+  /** Quebra de página explícita (elementos pré-textuais). */
+  | { type: "pagebreak" }
+  /** Capa ou folha de rosto (ABNT). Ocupa uma folha inteira. */
+  | {
+      type: "frontmatter";
+      kind: "cover" | "titlepage";
+      author: string;
+      title: string;
+      institution?: string | null;
+      nature?: string;
+      place: string;
+    };
 
 const HEADING = /^(#{1,4})\s+(.*)$/;
 const RULE = /^\s*(-{3,}|\*{3,}|_{3,})\s*$/;
@@ -135,6 +149,15 @@ export function serializeBlock(block: Block): string {
     }
     case "rule":
       return "---";
+    case "pagebreak":
+      return "\f";
+    case "frontmatter": {
+      const parts = [block.author, "", `# ${block.title}`, ""];
+      if (block.kind === "titlepage" && block.institution) parts.push(block.institution, "");
+      if (block.kind === "titlepage" && block.nature) parts.push(block.nature, "");
+      parts.push(block.place);
+      return parts.join("\n");
+    }
   }
 }
 
