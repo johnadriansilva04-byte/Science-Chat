@@ -28,8 +28,9 @@ const ABBREVIATION_RE =
  * mais reclama. Descartadas quando a resposta tem conteúdo de verdade.
  */
 const CLOSER_PATTERNS: RegExp[] = [
-  /qual (?:é|e) o pr[óo]ximo passo/i,
+  /qual (?:é|e|seria|ser[aá]) (?:o )?pr[óo]xim[ao] (?:passo|etapa|parte|movimento)/i,
   /(?:o )?que (?:mais )?(?:voc[êe] )?(?:gostaria|quer|deseja) (?:de )?(?:acrescentar|adicionar|fazer|ver|mudar|alterar|explorar)/i,
+  /(?:qual|quais) (?:seria|seriam|é|e) (?:a|as|o|os) (?:pr[óo]xim[ao]s? )?(?:passo|etapa|parte|movimento|aç[ãa]o)/i,
   /(?:voc[êe] )?(?:gostaria|quer|deseja) que eu (?:continue|prossiga|siga|avance)/i,
   /como (?:posso|podemos) (?:ajudar|prosseguir|continuar|seguir)/i,
   /posso (?:ajudar|fazer) (?:em|com)? ?(?:mais )?(?:alguma coisa|algo)/i,

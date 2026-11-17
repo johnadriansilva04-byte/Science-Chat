@@ -55,6 +55,8 @@ describe("anti-repeat", () => {
 
   it("reconhece os clichês de fecho, mas não texto legítimo", () => {
     expect(isCloserSentence("Qual é o próximo passo para o artigo?")).toBe(true);
+    expect(isCloserSentence("Qual é a próxima etapa para o artigo?")).toBe(true);
+    expect(isCloserSentence("Qual seria o próximo passo?")).toBe(true);
     expect(isCloserSentence("O que mais você gostaria de acrescentar?")).toBe(true);
     expect(isCloserSentence("Como posso ajudar?")).toBe(true);
     expect(isCloserSentence("A neuroplasticidade é o mecanismo que sustenta a tese.")).toBe(false);

@@ -99,3 +99,24 @@ export function parsePageCommand(text: string): PageCommand | null {
 
   return { action, pagina, conteudo: literal.conteudo };
 }
+
+export type RewriteRequest = { pagina: number; instruction: string };
+
+const REWRITE_VERBS =
+  /(?:reescrev|refa[çz]|reescrita|regener|melhor\w*\s+(?:a\s+)?p[áa]gina|aprimor\w*\s+(?:a\s+)?p[áa]gina|revis\w*\s+(?:a\s+)?p[áa]gina)/i;
+
+/**
+ * Detecta um pedido de REESCRITA de página em linguagem natural, SEM conteúdo
+ * literal ("reescreva a página 1 acrescentando um resumo", "melhore a página 3").
+ * Nesses casos o conteúdo tem de ser GERADO pela IA (não é literal), então o
+ * chamador usa o motor de produção em vez do comando determinístico.
+ */
+export function parseRewriteRequest(text: string): RewriteRequest | null {
+  const t = text.trim();
+  if (!t || t.length > 800) return null;
+  const page = PAGE_RE.exec(t);
+  if (!page || !REWRITE_VERBS.test(t)) return null;
+  const pagina = Number.parseInt(page[1]!, 10);
+  if (!Number.isInteger(pagina) || pagina < 1) return null;
+  return { pagina, instruction: t };
+}

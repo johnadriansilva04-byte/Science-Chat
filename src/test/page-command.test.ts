@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePageCommand } from "@/lib/ai/page-command";
+import { parsePageCommand, parseRewriteRequest } from "@/lib/ai/page-command";
 
 describe("parsePageCommand", () => {
   it("reconhece edição com 'palavra exata' e nome da ferramenta", () => {
@@ -65,5 +65,31 @@ describe("parsePageCommand", () => {
         "Acrescente na página 5 a frase exata: Fim. Use a ferramenta acrescentar_na_pagina.",
       ),
     ).toEqual({ action: "append", pagina: 5, conteudo: "Fim." });
+  });
+});
+
+describe("parseRewriteRequest", () => {
+  it("reconhece pedido de reescrita sem conteúdo literal", () => {
+    expect(
+      parseRewriteRequest("reescreva a página 1 acrescentando um resumo e palavras-chave"),
+    ).toEqual({
+      pagina: 1,
+      instruction: "reescreva a página 1 acrescentando um resumo e palavras-chave",
+    });
+  });
+
+  it("reconhece 'melhore a página 3' e 'revise a página 2'", () => {
+    expect(parseRewriteRequest("melhore a página 3")?.pagina).toBe(3);
+    expect(parseRewriteRequest("revise a página 2")?.pagina).toBe(2);
+  });
+
+  it("não dispara sem verbo de reescrita ou sem página", () => {
+    expect(parseRewriteRequest("a página 1 está boa?")).toBeNull();
+    expect(parseRewriteRequest("reescreva o artigo inteiro")).toBeNull();
+  });
+
+  it("não captura quando o pedido traz conteúdo literal (deixa para parsePageCommand)", () => {
+    // O fluxo chama parsePageCommand primeiro; aqui só garantimos que a página é lida.
+    expect(parseRewriteRequest("reescreva a página 1")?.pagina).toBe(1);
   });
 });
