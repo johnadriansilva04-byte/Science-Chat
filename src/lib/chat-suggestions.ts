@@ -54,8 +54,12 @@ const RULES: Rule[] = [
     test: /destino|revista|editorial|norma|abnt|udelar/,
     options: ["Revista nacional", "Periódico internacional", "Ainda não sei"],
   },
+  // Perguntas sim/não. Sem o "e" solto: como `normalize` remove acentos, "e"
+  // casaria a conjunção ("E agora, qual a tese?") e ofereceria Sim/Não para
+  // qualquer pergunta iniciada por "E". A pergunta "É teórica?" já é atendida
+  // pela regra de natureza acima.
   {
-    test: /^(voce|ja|tem|ha|existe|posso|quer|gostaria|pretende|consegue|deseja|foi|e)\b/,
+    test: /^(voce|ja|tem|ha|existe|posso|quer|gostaria|pretende|consegue|deseja|foi)\b/,
     options: ["Sim", "Não"],
   },
 ];

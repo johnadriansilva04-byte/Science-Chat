@@ -37,6 +37,16 @@ describe("suggestReplies", () => {
   it("ignora acentos e maiúsculas", () => {
     expect(suggestReplies("QUAL O DESTINO EDITORIAL?")).toContain("Revista nacional");
   });
+
+  it("não oferece Sim/Não para perguntas que apenas começam com 'E'", () => {
+    // A conjunção "E" não é um verbo: "E agora, qual a tese?" não é sim/não.
+    expect(suggestReplies("E agora, qual a tese?")).not.toContain("Sim");
+  });
+
+  it("oferece Sim/Não em perguntas de fato sim/não", () => {
+    expect(suggestReplies("Você já tem os dados?")).toContain("Sim");
+    expect(suggestReplies("Existe pesquisa sobre isso?")).toContain("Não");
+  });
 });
 
 describe("sugestões de ensino (mentoria)", () => {

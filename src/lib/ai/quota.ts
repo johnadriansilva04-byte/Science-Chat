@@ -8,13 +8,16 @@
 /** Marcador enviado no stream quando a cota esgota (o cliente troca por um aviso amigável). */
 export const QUOTA_MARKER = "PRACINHA_QUOTA_EXHAUSTED";
 
+// Só a EXAUSTÃO da cota diária (erro 4006) trava o chat até a meia-noite UTC.
+// Um 429/"rate limit" transitório NÃO é cota diária: tratá-lo como tal prendia o
+// pesquisador até a virada do dia por um limite que se resolve em segundos. Por
+// isso os padrões exigem um sinal específico de cota (neurônios/4006).
 const QUOTA_PATTERNS = [
   /neurons?/i,
   /daily free allocation/i,
   /free allocation/i,
   /\b4006\b/,
-  /quota/i,
-  /rate limit/i,
+  /quota exceeded/i,
   /no output generated/i,
 ];
 

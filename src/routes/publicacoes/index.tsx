@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowRight,
@@ -23,6 +23,8 @@ import { MUSEUM_WINGS } from "@/lib/museum";
 import { AcervoCard } from "@/components/app/AcervoCard";
 import { BookReader } from "@/components/app/BookReader";
 import { BrandFooter } from "@/components/app/BrandFooter";
+import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
+import { createArticle } from "@/components/app/ArticlesMenu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/sciencechat-logo.png";
@@ -57,6 +59,7 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
 ];
 
 function AcervoPage() {
+  const navigate = useNavigate();
   const [pubs, setPubs] = useState<PublicationSummary[] | null>(null);
   const [tab, setTab] = useState<TabId>("todos");
   const [query, setQuery] = useState("");
@@ -138,6 +141,11 @@ function AcervoPage() {
           <strong className="text-foreground">ainda não revisados</strong> estão publicados, mas sem
           essa comprovação — a plataforma não revisa.
         </p>
+
+        <ScienceAccessCard
+          className="mt-6 max-w-3xl"
+          onUseGuide={(seed) => void createArticle(navigate, seed)}
+        />
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">

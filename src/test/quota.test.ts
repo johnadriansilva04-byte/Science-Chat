@@ -18,6 +18,21 @@ describe("isQuotaError", () => {
     expect(isQuotaError("Não autorizado")).toBe(false);
     expect(isQuotaError(undefined)).toBe(false);
   });
+
+  it("não trata um 429 transitório como cota diária esgotada", () => {
+    // Um "rate limit"/429 se resolve em segundos. Antes, ele era classificado
+    // como cota e o chat ficava travado até a meia-noite UTC.
+    expect(isQuotaError("429 Too Many Requests")).toBe(false);
+    expect(isQuotaError("rate limit exceeded")).toBe(false);
+    expect(isQuotaError("Muitas requisições. Tente novamente em instantes.")).toBe(false);
+  });
+
+  it("ainda reconhece a exaustão real da cota", () => {
+    expect(isQuotaError("quota exceeded")).toBe(true);
+    expect(isQuotaError("you have used up your daily free allocation of 10,000 neurons")).toBe(
+      true,
+    );
+  });
 });
 
 describe("nextQuotaReset", () => {

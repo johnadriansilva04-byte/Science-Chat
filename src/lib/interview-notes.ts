@@ -25,11 +25,18 @@ export function cleanQuestion(text: string): string {
     .trim();
   const sentences = withoutProgress.split(/(?<=[.?!])\s+/);
   const lastQuestion = [...sentences].reverse().find((s) => s.trim().endsWith("?"));
-  const chosen = lastQuestion ?? sentences[sentences.length - 1] ?? withoutProgress;
-  return chosen
+  const chosen = (lastQuestion ?? sentences[sentences.length - 1] ?? withoutProgress)
     .replace(/^[-*•]\s*/, "")
-    .trim()
-    .slice(0, 200);
+    .trim();
+  // Perguntas longas são comuns ("...você considerou...?"). Um corte cru em 200
+  // caracteres arrancava o "?" final, e o par pergunta/resposta da entrevista
+  // deixava de ser reconhecido (a nota caía em "Informação fornecida"). Ao
+  // truncar, preservamos o "?" para o pareamento continuar valendo.
+  const MAX = 300;
+  if (chosen.length <= MAX) return chosen;
+  const isQuestion = chosen.endsWith("?");
+  const clipped = chosen.slice(0, isQuestion ? MAX - 1 : MAX).trimEnd();
+  return isQuestion ? `${clipped}?` : `${clipped}…`;
 }
 
 /** Ordem canônica das seções do documento preliminar. */

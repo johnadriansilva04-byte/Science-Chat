@@ -33,4 +33,28 @@ describe("cleanQuestion", () => {
     const q = cleanQuestion("Ótimo! Vamos começar. Qual é a sua área?\n\n_Etapa: Tema_");
     expect(q).toBe("Qual é a sua área?");
   });
+
+  it("preserva o '?' ao truncar uma pergunta longa", () => {
+    const long =
+      "Sua tese é que a burocracia institucional bloqueia o acesso de pesquisadores " +
+      "independentes a periódicos, mas você considerou o papel das redes informais que, " +
+      "em muitos casos, funcionam como ponte para quem está fora da academia e publica " +
+      "de forma autônoma, sem qualquer vínculo formal?";
+    const q = cleanQuestion(long);
+    expect(q.endsWith("?")).toBe(true);
+    expect(q.length).toBeLessThanOrEqual(300);
+  });
+
+  it("pareia pergunta longa com a resposta (não cai em 'Informação fornecida')", () => {
+    const long =
+      "Você considerou as redes de colaboração informais que, em muitos casos, funcionam " +
+      "como ponte para quem está fora da academia e publica de forma autônoma, sem vínculo " +
+      "institucional algum, em revistas de acesso aberto e com revisão por pares?";
+    const notes = interviewNotes([
+      { role: "assistant", parts: [{ type: "text", text: long }] },
+      { role: "user", parts: [{ type: "text", text: "Sim, considerei." }] },
+    ]);
+    expect(notes[0]?.question).not.toBe("Informação fornecida");
+    expect(notes[0]?.question.endsWith("?")).toBe(true);
+  });
 });

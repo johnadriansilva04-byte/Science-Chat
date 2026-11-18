@@ -8,6 +8,7 @@ import { JOURNEY_ACTS } from "@/lib/journey";
 import { Button } from "@/components/ui/button";
 import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
 import { PublishedShelf } from "@/components/app/PublishedShelf";
+import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -161,7 +162,9 @@ function Index() {
               </span>
             </div>
 
-            <ol className="mt-8 hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
+            <ScienceAccessCard className="mt-5 max-w-xl" onUseGuide={(seed) => setIdea(seed)} />
+
+            <ol className="mt-6 hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
               {JOURNEY_ACTS.map((act, i) => (
                 <li key={act.id} className="flex items-center gap-2">
                   {i > 0 && <ArrowRight className="size-3 opacity-40" />}
