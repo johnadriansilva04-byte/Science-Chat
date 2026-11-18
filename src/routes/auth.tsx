@@ -278,7 +278,7 @@ function AuthPage() {
             </form>
             <button
               type="button"
-              className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground"
+              className="mt-4 flex min-h-11 w-full items-center justify-center text-center text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setMode(mode === "in" ? "up" : "in")}
             >
               {mode === "in" ? "Não tem conta? Criar conta" : "Já tem conta? Entrar"}
