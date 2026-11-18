@@ -7,10 +7,35 @@ import {
   frontMatterBlocks,
   frontMatterMarkdown,
   frontMatterSequence,
+  isValidOrcid,
+  mergeDocumentMeta,
+  normalizeOrcid,
   numberSections,
+  orcidUrl,
   placeLine,
   resolveDocumentMeta,
 } from "@/lib/front-matter";
+
+describe("ORCID", () => {
+  it("normaliza para o formato canônico", () => {
+    expect(normalizeOrcid("0000000218250097")).toBe("0000-0002-1825-0097");
+    expect(normalizeOrcid("0000 0002 1825 0097")).toBe("0000-0002-1825-0097");
+    expect(normalizeOrcid("")).toBeNull();
+    expect(normalizeOrcid(null)).toBeNull();
+  });
+
+  it("valida o dígito verificador (ISO 7064 MOD 11-2)", () => {
+    expect(isValidOrcid("0000-0002-1825-0097")).toBe(true);
+    expect(isValidOrcid("0000000218250097")).toBe(true);
+    expect(isValidOrcid("0000-0002-1825-0098")).toBe(false);
+    expect(isValidOrcid("123")).toBe(false);
+    expect(isValidOrcid("")).toBe(false);
+  });
+
+  it("monta a URL pública", () => {
+    expect(orcidUrl("0000-0002-1825-0097")).toBe("https://orcid.org/0000-0002-1825-0097");
+  });
+});
 
 describe("resolveDocumentMeta", () => {
   it("cai para o autor informado e para o ano corrente", () => {
@@ -36,6 +61,29 @@ describe("resolveDocumentMeta", () => {
     const meta = resolveDocumentMeta({ author: "   ", city: "  " }, "Ana");
     expect(meta.author).toBe("Ana");
     expect(meta.city).toBeNull();
+  });
+});
+
+describe("mergeDocumentMeta", () => {
+  it("preserva o ORCID existente quando o formulário não o traz", () => {
+    const merged = mergeDocumentMeta(
+      { author: "João", city: "Niterói" },
+      { orcid: "0000-0002-1825-0097" },
+    );
+    expect(merged.orcid).toBe("0000-0002-1825-0097");
+    expect(merged.author).toBe("João");
+  });
+
+  it("o ORCID do formulário vence o já gravado", () => {
+    const merged = mergeDocumentMeta(
+      { orcid: "0000-0002-1825-0097" },
+      { orcid: "0000-0001-5109-3700" },
+    );
+    expect(merged.orcid).toBe("0000-0002-1825-0097");
+  });
+
+  it("vira null quando não há ORCID em nenhum lado", () => {
+    expect(mergeDocumentMeta({ author: "Ana" }, null).orcid).toBeNull();
   });
 });
 
@@ -87,6 +135,16 @@ describe("frontMatterBlocks / frontMatterSequence", () => {
     expect(md).toContain("Autor");
     expect(md).toContain("# Título do trabalho");
     expect(md).toContain("SÃO PAULO — 2026");
+  });
+
+  it("leva o ORCID para a folha de rosto e para o Markdown quando informado", () => {
+    const withOrcid = buildFrontMatter(
+      resolveDocumentMeta({ author: "Autor", orcid: "0000000218250097" }, "Autor"),
+      "Título do trabalho",
+    );
+    const titlepage = frontMatterBlocks(withOrcid)[1];
+    expect(titlepage?.type === "frontmatter" && titlepage.orcid).toBe("0000-0002-1825-0097");
+    expect(frontMatterMarkdown(withOrcid)).toContain("ORCID: 0000-0002-1825-0097");
   });
 });
 

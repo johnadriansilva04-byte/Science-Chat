@@ -94,15 +94,21 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
     region: "brasil",
   },
   {
+    label: "Portal de Periódicos da CAPES",
+    url: "https://www.periodicos.capes.gov.br/",
+    note: "Reúne bases científicas assinadas pelo governo brasileiro. A consulta é feita pelo seu login (inclusive de pesquisador sem vínculo, quando a instituição parceira libera o acesso).",
+    region: "brasil",
+  },
+  {
     label: "Universidad de la República (Udelar)",
     url: "https://udelar.edu.uy/",
     note: "Universidade pública do Uruguai. Referência editorial inicial do ScienceChat: cada unidade tem revistas próprias com instruções aos autores.",
     region: "uruguai",
   },
   {
-    label: "Revistas da Udelar",
-    url: "https://revistas.udelar.edu.uy/",
-    note: "Portal dos periódicos da Udelar. É aqui que se conferem as instruções aos autores de cada publicação (versão oficial).",
+    label: "Udelar — Apoio a publicações (CSIC)",
+    url: "https://investigacion.udelar.edu.uy/apoyo-a-publicaciones/",
+    note: "Programa da Udelar que apoia a publicação científica e dá acesso às instruções e aos periódicos da universidade. Serve para localizar a versão oficial das normas de cada revista.",
     region: "uruguai",
   },
   {
@@ -182,8 +188,8 @@ export const SCIENCE_STEPS: ScienceStep[] = [
   {
     n: 10,
     title: "Uruguai: comece pela Udelar",
-    do: "Confira as revistas da Udelar e, se pesquisar lá, veja o apoio da ANII.",
-    why: "A Udelar é a referência inicial do ScienceChat e tem periódicos com instruções aos autores próprias; a ANII apoia pesquisa e formação no país.",
+    do: "Localize a revista na Udelar (veja o apoio a publicações do CSIC) e, se pesquisar lá, veja o apoio da ANII.",
+    why: "A Udelar é a referência inicial do ScienceChat; o apoio a publicações reúne os periódicos e as instruções aos autores, e a ANII apoia pesquisa e formação no país.",
   },
 ];
 
@@ -281,7 +287,7 @@ export const COUNTRY_PATHS: CountryPath[] = [
     label: "Uruguai",
     highlights: [
       "Udelar: referência inicial do ScienceChat; cada unidade tem revistas.",
-      "Revistas da Udelar: confira as instruções aos autores de cada uma.",
+      "Udelar — Apoio a publicações (CSIC): onde ficam os periódicos e as instruções aos autores.",
       "ANII: apoio à pesquisa e à formação (não é pré-requisito para submeter).",
       "SciELO e SciELO Preprints: publicação e preprints em acesso aberto.",
     ],
@@ -292,6 +298,44 @@ export const COUNTRY_PATHS: CountryPath[] = [
 export function scienceAccessSteps(): ScienceStep[] {
   return SCIENCE_STEPS;
 }
+
+/**
+ * Carta de apresentação (cover letter) pronta para preencher.
+ *
+ * Muitas revistas pedem, junto com o manuscrito, uma carta ao editor. Não é
+ * exigência de vínculo: é um documento de autoria. Os campos entre [ ] são do
+ * pesquisador; a afiliação já vem resolvida como "Pesquisador(a) independente",
+ * que é legítima. Cada declaração corresponde ao que o ICMJE pede do autor.
+ */
+export const COVER_LETTER_TEMPLATE = `Ao(À) editor(a)-chefe da revista [NOME DA REVISTA]
+
+Assunto: Submissão de artigo original — [TÍTULO DO ARTIGO]
+
+Prezado(a) Editor(a),
+
+Submeto, para avaliação, o manuscrito intitulado "[TÍTULO DO ARTIGO]", de minha
+autoria, para possível publicação em [NOME DA REVISTA].
+
+O trabalho investiga [TEMA/OBJETIVO EM UMA FRASE] e se alinha ao escopo da revista
+porque [POR QUE ESTA REVISTA: tema, seção, público].
+
+Declaro que:
+- o manuscrito é original e não foi publicado anteriormente;
+- não está sob avaliação em nenhum outro periódico;
+- todos os autores aprovaram a versão submetida e concordam com a submissão;
+- não há conflito de interesses a declarar;
+- o estudo seguiu as normas éticas aplicáveis [e foi aprovado pelo comitê de ética
+  quando cabível — nº do parecer: ____].
+
+Afiliação: Pesquisador(a) independente (sem vínculo institucional).
+
+Fico à disposição para esclarecimentos e agradeço a atenção.
+
+Atenciosamente,
+[NOME COMPLETO]
+ORCID: [0000-0000-0000-0000]
+E-mail: [SEU E-MAIL]
+[CIDADE, PAÍS] — [DATA]`;
 
 /** Referências filtradas por região (para abas/seções do card). */
 export function referencesByRegion(region: ReferenceRegion): ScienceReference[] {

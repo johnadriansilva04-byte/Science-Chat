@@ -39,6 +39,10 @@ const RULES: Rule[] = [
     options: ["Sim, é isso", "Quase — quero corrigir"],
   },
   {
+    test: /orcid|identificador|curriculo/,
+    options: ["Tenho ORCID — vou informar", "Não tenho — como crio?", "Pular por agora"],
+  },
+  {
     test: /referencia|literatura|autores|fontes|o que existe|bibliografia/,
     options: ["Pesquise referências", "Tenho fontes próprias"],
   },
@@ -85,4 +89,20 @@ export function suggestReplies(question: string | null | undefined): string[] {
   return [...contextual, ...ESCAPE_HATCHES]
     .filter((option) => (seen.has(option) ? false : (seen.add(option), true)))
     .slice(0, 4);
+}
+
+/**
+ * O Pracinha está pedindo o ORCID? Serve para o chat abrir o card de identidade
+ * (onde o pesquisador cola ou cria o número) em vez de só sugerir botões.
+ * Exige uma pergunta ("?") ou um pedido explícito — assim o card não reabre
+ * depois que o número já foi informado e a IA só o menciona na confirmação.
+ */
+export function asksForOrcid(question: string | null | undefined): boolean {
+  const q = normalize(question ?? "");
+  const mentions = /\borcid\b/.test(q) || /identificador (de |do )?pesquisador/.test(q);
+  if (!mentions) return false;
+  if (q.includes("?")) return true;
+  return /(me passe|me diga|me informe|informe|envie|cole|qual( é| e)? o? seu|você tem|voce tem|já tem|ja tem)/.test(
+    q,
+  );
 }

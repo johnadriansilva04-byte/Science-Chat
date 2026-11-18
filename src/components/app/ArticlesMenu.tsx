@@ -112,7 +112,7 @@ export function ArticlesMenu({ activeId }: { activeId?: string }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 group-hover:opacity-100"
+                className="touch-visible opacity-0 group-hover:opacity-100"
                 aria-label="Excluir"
                 onClick={() => remove(r.id)}
               >

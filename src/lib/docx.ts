@@ -182,6 +182,7 @@ function frontMatterXml(block: Extract<Block, { type: "frontmatter" }>, p: Forma
     out.push(line(block.title, { bold: true, center: true }));
     out.push(spacer, spacer);
     if (block.institution) out.push(line(block.institution, { center: true }));
+    if (block.orcid) out.push(line(`ORCID: ${block.orcid}`, { center: true }));
     out.push(spacer);
     if (block.nature) out.push(line(block.nature, {}));
     out.push(spacer, spacer);

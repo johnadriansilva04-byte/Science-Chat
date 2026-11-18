@@ -45,6 +45,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent-2: var(--accent-2);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -79,30 +81,36 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.975 0.012 85);
-  --foreground: oklch(0.22 0.03 260);
-  --card: oklch(0.99 0.006 85);
-  --card-foreground: oklch(0.22 0.03 260);
-  --popover: oklch(0.99 0.006 85);
-  --popover-foreground: oklch(0.22 0.03 260);
-  --primary: oklch(0.42 0.13 25);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.93 0.02 85);
-  --secondary-foreground: oklch(0.25 0.03 260);
-  --muted: oklch(0.94 0.015 85);
-  --muted-foreground: oklch(0.48 0.025 260);
-  --accent: oklch(0.91 0.03 70);
-  --accent-foreground: oklch(0.25 0.03 260);
+  --radius: 0.75rem;
+  /* Papel quente e tinta fria: a mesa de trabalho de um pesquisador. */
+  --background: oklch(0.968 0.014 82);
+  --foreground: oklch(0.2 0.028 265);
+  --card: oklch(0.995 0.006 88);
+  --card-foreground: oklch(0.2 0.028 265);
+  --popover: oklch(0.995 0.006 88);
+  --popover-foreground: oklch(0.2 0.028 265);
+  /* Terracota editorial: a cor da capa dura, do selo, do carimbo. */
+  --primary: oklch(0.45 0.145 28);
+  --primary-foreground: oklch(0.99 0.01 85);
+  --primary-soft: oklch(0.93 0.045 30);
+  --secondary: oklch(0.94 0.018 84);
+  --secondary-foreground: oklch(0.24 0.03 265);
+  --muted: oklch(0.945 0.014 84);
+  --muted-foreground: oklch(0.47 0.024 265);
+  --accent: oklch(0.92 0.03 72);
+  --accent-foreground: oklch(0.24 0.03 265);
+  /* Verde-petróleo: contraponto frio ao terracota (dados, ciência, links). */
+  --accent-2: oklch(0.42 0.09 210);
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.5 0.11 155);
   --success-foreground: oklch(0.98 0.01 155);
-  --border: oklch(0.88 0.02 80);
-  --input: oklch(0.88 0.02 80);
-  --ring: oklch(0.42 0.13 25);
+  --border: oklch(0.87 0.02 80);
+  --input: oklch(0.87 0.02 80);
+  --ring: oklch(0.45 0.145 28);
   --paper: oklch(1 0 0);
-  --paper-shadow: 0 1px 2px oklch(0.3 0.03 60 / 0.08), 0 12px 32px -12px oklch(0.3 0.03 60 / 0.25);
+  --paper-shadow: 0 1px 2px oklch(0.3 0.03 60 / 0.1), 0 14px 36px -14px oklch(0.3 0.03 60 / 0.28);
+  --glow: oklch(0.45 0.145 28 / 0.5);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -110,12 +118,42 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.955 0.015 85);
   --sidebar-foreground: oklch(0.22 0.03 260);
-  --sidebar-primary: oklch(0.42 0.13 25);
+  --sidebar-primary: oklch(0.45 0.145 28);
   --sidebar-primary-foreground: oklch(0.98 0.01 85);
   --sidebar-accent: oklch(0.92 0.02 80);
   --sidebar-accent-foreground: oklch(0.22 0.03 260);
   --sidebar-border: oklch(0.88 0.02 80);
-  --sidebar-ring: oklch(0.42 0.13 25);
+  --sidebar-ring: oklch(0.45 0.145 28);
+}
+
+/* Modo escuro: a mesma editora à noite — papel vira ardósia, tinta vira giz. */
+.dark {
+  --background: oklch(0.2 0.018 265);
+  --foreground: oklch(0.94 0.01 85);
+  --card: oklch(0.245 0.02 265);
+  --card-foreground: oklch(0.94 0.01 85);
+  --popover: oklch(0.245 0.02 265);
+  --popover-foreground: oklch(0.94 0.01 85);
+  --primary: oklch(0.7 0.15 35);
+  --primary-foreground: oklch(0.2 0.03 30);
+  --primary-soft: oklch(0.32 0.06 32);
+  --secondary: oklch(0.3 0.02 265);
+  --secondary-foreground: oklch(0.94 0.01 85);
+  --muted: oklch(0.3 0.02 265);
+  --muted-foreground: oklch(0.72 0.02 85);
+  --accent: oklch(0.34 0.03 70);
+  --accent-foreground: oklch(0.94 0.01 85);
+  --accent-2: oklch(0.72 0.1 205);
+  --destructive: oklch(0.62 0.19 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.68 0.12 155);
+  --success-foreground: oklch(0.18 0.03 155);
+  --border: oklch(0.34 0.02 265);
+  --input: oklch(0.34 0.02 265);
+  --ring: oklch(0.7 0.15 35);
+  --paper: oklch(0.97 0.006 85);
+  --paper-shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 18px 44px -16px oklch(0 0 0 / 0.6);
+  --glow: oklch(0.7 0.15 35 / 0.45);
 }
 
 @layer base {
@@ -123,9 +161,67 @@
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     background-color: var(--color-background);
+    /* No celular nenhum elemento deve empurrar a largura da página. */
+    overflow-x: hidden;
+    /* Atmosfera: dois halos suaves (terracota e petróleo) sobre o papel. */
+    background-image:
+      radial-gradient(
+        1100px circle at 88% -12%,
+        color-mix(in oklab, var(--color-primary) 9%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        950px circle at -12% 112%,
+        color-mix(in oklab, var(--color-accent-2) 8%, transparent),
+        transparent 55%
+      );
+    background-attachment: fixed;
     color: var(--color-foreground);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 28%, transparent);
+  }
+
+  /* Foco visível e consistente em todo o app. */
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-ring) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  /* Barra de rolagem discreta, na cor da tinta. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 40%, transparent)
+      transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+    background-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--color-muted-foreground) 55%, transparent);
   }
 }
 
@@ -387,6 +483,17 @@
   }
   .journey-node--now .journey-node__label {
     display: inline;
+  }
+  /* No celular o trilho ocupa a linha inteira do cabeçalho e centraliza os atos.
+     Sem isto o `flex: 1` encolhia o trilho a poucos pixels e o conteúdo (agora
+     `nowrap`) transbordava para fora da viewport, empurrando a largura do body. */
+  .journey-rail {
+    flex: none;
+    width: 100%;
+    overflow: hidden;
+  }
+  .journey-rail__track {
+    justify-content: center;
   }
 }
 
@@ -669,12 +776,15 @@
   font-family: var(--font-mono, monospace);
   font-size: 0.68rem;
   color: var(--color-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .museum-card__doi:hover {
   text-decoration: underline;
 }
 .museum-card__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
@@ -1053,12 +1163,12 @@
   background:
     radial-gradient(
       600px circle at var(--mx, 78%) var(--my, 18%),
-      color-mix(in oklab, var(--color-primary) 14%, transparent),
+      color-mix(in oklab, var(--color-primary) 16%, transparent),
       transparent 60%
     ),
     radial-gradient(
       480px circle at 8% 88%,
-      color-mix(in oklab, oklch(0.55 0.16 275) 12%, transparent),
+      color-mix(in oklab, var(--color-accent-2) 12%, transparent),
       transparent 60%
     ),
     radial-gradient(
@@ -1091,6 +1201,20 @@
   mask-image: radial-gradient(circle at 50% 30%, #000 40%, transparent 85%);
   opacity: 0.6;
   pointer-events: none;
+}
+/* Filete editorial sob o cabeçalho da home. */
+.landing-rule {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary),
+    color-mix(in oklab, var(--color-primary) 20%, transparent) 40%,
+    transparent
+  );
+  opacity: 0.5;
+}
+.landing-badge {
+  box-shadow: 0 10px 26px -18px color-mix(in oklab, var(--color-primary) 70%, transparent);
 }
 .landing-shimmer {
   background: linear-gradient(
@@ -1357,6 +1481,9 @@
 }
 .acervo-mural__more {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--color-primary);
@@ -1552,4 +1679,533 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.4rem;
+}
+
+/* ===== Card "Ciência sem crachá" — boletim do pesquisador independente ===== */
+/* Estética editorial: papel quente com grão, filetes finos, numeral de revista,
+   selo de cera para o ORCID e acordeões que mantêm o conteúdo no DOM. */
+.ciencia-dialog {
+  --ci-ink: oklch(0.24 0.03 260);
+  --ci-soft: oklch(0.46 0.03 260);
+  --ci-accent: oklch(0.5 0.15 32);
+  --ci-accent-2: oklch(0.5 0.1 205);
+  --ci-seal: oklch(0.47 0.17 27);
+  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ci-rule);
+  border-radius: var(--radius-2xl);
+  background:
+    radial-gradient(120% 90% at 100% 0%, oklch(0.97 0.03 60 / 0.7), transparent 55%),
+    radial-gradient(90% 80% at 0% 100%, oklch(0.96 0.03 205 / 0.55), transparent 60%),
+    linear-gradient(180deg, oklch(0.992 0.008 85), oklch(0.975 0.012 80));
+  color: var(--ci-ink);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.6) inset,
+    0 30px 70px -30px oklch(0.3 0.05 40 / 0.45);
+}
+.ciencia-dialog::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(0deg, oklch(0.3 0.02 60 / 0.03) 0 1px, transparent 1px 4px),
+    radial-gradient(oklch(0.3 0.02 60 / 0.05) 0.5px, transparent 0.6px);
+  background-size: auto, 4px 4px;
+  mix-blend-mode: multiply;
+}
+.ciencia-dialog__body {
+  position: relative;
+  z-index: 1;
+}
+.ciencia-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ci-accent);
+}
+.ciencia-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.04;
+}
+.ciencia-lede {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--ci-soft);
+}
+.ciencia-lede strong {
+  color: var(--ci-ink);
+  font-weight: 600;
+}
+.ciencia-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, var(--ci-rule), transparent);
+}
+/* Filete duplo de jornal para separar seções. */
+.ciencia-rule--double {
+  height: 3px;
+  background:
+    linear-gradient(90deg, var(--ci-accent), transparent 70%) top / 100% 1px no-repeat,
+    var(--ci-rule) bottom / 100% 1px no-repeat;
+}
+
+/* Acordeão que anima a altura sem desmontar o conteúdo (fonte e prova seguem no DOM). */
+.ciencia-acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ciencia-acc[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.ciencia-acc > .ciencia-acc__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.ciencia-proof {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ci-rule);
+  background: color-mix(in oklab, oklch(1 0 0) 55%, transparent);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+.ciencia-proof[data-open="true"] {
+  border-color: color-mix(in oklab, var(--ci-accent) 45%, transparent);
+  box-shadow: 0 14px 30px -22px color-mix(in oklab, var(--ci-accent) 80%, transparent);
+}
+.ciencia-proof__bar {
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  bottom: 0.6rem;
+  width: 3px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--ci-accent) 40%, transparent);
+  transition: background 0.25s ease;
+}
+.ciencia-proof[data-open="true"] .ciencia-proof__bar {
+  background: var(--ci-accent);
+}
+.ciencia-proof__chev {
+  transition: transform 0.3s ease;
+}
+.ciencia-proof[data-open="true"] .ciencia-proof__chev {
+  transform: rotate(180deg);
+}
+.ciencia-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--ci-accent) 45%, transparent);
+  background: color-mix(in oklab, var(--ci-accent) 10%, transparent);
+  color: var(--ci-accent);
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* Selo de cera do ORCID: identidade que não depende de instituição. */
+.ciencia-seal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4.6rem;
+  height: 4.6rem;
+  flex: none;
+  border-radius: 9999px;
+  color: oklch(0.98 0.02 60);
+  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), var(--ci-seal));
+  box-shadow:
+    inset 0 2px 3px oklch(1 0 0 / 0.35),
+    inset 0 -3px 6px oklch(0.2 0.05 20 / 0.4),
+    0 10px 22px -12px color-mix(in oklab, var(--ci-seal) 90%, transparent);
+  animation: ciencia-seal-breathe 4.5s ease-in-out infinite;
+}
+.ciencia-seal::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 9999px;
+  border: 1px dashed color-mix(in oklab, oklch(1 0 0) 55%, transparent);
+}
+@keyframes ciencia-seal-breathe {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+/* Trilho do passo a passo. */
+.ciencia-rail {
+  position: relative;
+  padding-left: 2.4rem;
+}
+.ciencia-rail::before {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--ci-accent) 55%, transparent),
+    color-mix(in oklab, var(--ci-accent-2) 45%, transparent)
+  );
+}
+.ciencia-step {
+  position: relative;
+  padding-bottom: 1.05rem;
+}
+.ciencia-step:last-child {
+  padding-bottom: 0;
+}
+.ciencia-step__dot {
+  position: absolute;
+  left: -2.4rem;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--ci-accent) 40%, transparent);
+  background: oklch(0.99 0.008 85);
+  color: var(--ci-accent);
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+.ciencia-step:hover .ciencia-step__dot {
+  transform: scale(1.08);
+  background: var(--ci-accent);
+  color: oklch(0.99 0.01 85);
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--ci-accent) 16%, transparent);
+}
+.ciencia-step__why {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.35s ease,
+    opacity 0.3s ease,
+    margin 0.3s ease;
+}
+.ciencia-step:hover .ciencia-step__why,
+.ciencia-step:focus-within .ciencia-step__why {
+  max-height: 7rem;
+  opacity: 1;
+  margin-top: 0.35rem;
+}
+/* Em telas de toque não existe hover: o "porquê" ficaria escondido para sempre.
+   Mostramos sempre para o passo a passo não perder o fundamento. */
+@media (hover: none) {
+  .ciencia-step__why {
+    max-height: none;
+    opacity: 1;
+    margin-top: 0.35rem;
+  }
+}
+
+/* Abas por país: cada uma tem cor própria (--ci-tab) e conteúdo vivo. */
+.ciencia-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.ciencia-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid var(--ci-rule);
+  background: color-mix(in oklab, oklch(1 0 0) 45%, transparent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ci-soft);
+  cursor: pointer;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease,
+    transform 0.2s ease;
+}
+.ciencia-tab:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--ci-tab) 50%, transparent);
+  color: var(--ci-tab);
+}
+.ciencia-tab[data-state="active"] {
+  color: oklch(0.99 0.01 85);
+  border-color: transparent;
+  background: var(--ci-tab);
+  box-shadow: 0 10px 22px -14px color-mix(in oklab, var(--ci-tab) 90%, transparent);
+}
+.ciencia-tab-panel {
+  animation: ciencia-panel-in 0.4s ease both;
+}
+@keyframes ciencia-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ciencia-path-item {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--ci-tab);
+  background: color-mix(in oklab, var(--ci-tab) 7%, transparent);
+  transition: background 0.2s ease;
+}
+.ciencia-path-item:hover {
+  background: color-mix(in oklab, var(--ci-tab) 13%, transparent);
+}
+
+/* Fontes: chips por região + itens expansíveis. */
+.ciencia-src {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ci-rule);
+  background: color-mix(in oklab, oklch(1 0 0) 50%, transparent);
+  transition: border-color 0.25s ease;
+}
+.ciencia-src:hover {
+  border-color: color-mix(in oklab, var(--ci-accent) 35%, transparent);
+}
+.ciencia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Cartão-gatilho da home. */
+.ciencia-trigger {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 24%, transparent);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 55%),
+    color-mix(in oklab, oklch(1 0 0) 72%, transparent);
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.ciencia-trigger:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--color-primary) 55%, transparent);
+  box-shadow: 0 18px 40px -26px color-mix(in oklab, var(--color-primary) 80%, transparent);
+}
+.ciencia-trigger__spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-primary),
+    color-mix(in oklab, var(--color-primary) 40%, transparent)
+  );
+  transform: scaleY(0.35);
+  transform-origin: top;
+  transition: transform 0.35s ease;
+}
+.ciencia-trigger:hover .ciencia-trigger__spine {
+  transform: scaleY(1);
+}
+.ciencia-trigger__arrow {
+  transition: transform 0.25s ease;
+}
+.ciencia-trigger:hover .ciencia-trigger__arrow {
+  transform: translateX(3px);
+}
+
+/* Carta de apresentação: fonte monoespaçada leve, para parecer um rascunho
+   pronto para editar — com realce nos campos a preencher ([ ... ]). */
+.ciencia-letter {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.01em;
+  scrollbar-width: thin;
+}
+
+/* ===== Card de identidade do ORCID (dentro do chat) ===== */
+.orcid-card {
+  --ci-ink: oklch(0.24 0.03 260);
+  --ci-soft: oklch(0.46 0.03 260);
+  --ci-accent: oklch(0.5 0.15 32);
+  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ci-rule);
+  border-radius: var(--radius-xl);
+  padding: 0.85rem 0.95rem;
+  color: var(--ci-ink);
+  background:
+    radial-gradient(130% 120% at 100% 0%, color-mix(in oklab, var(--ci-accent) 10%, transparent), transparent 60%),
+    linear-gradient(180deg, oklch(0.995 0.006 85), oklch(0.975 0.012 80));
+  box-shadow: 0 18px 40px -30px color-mix(in oklab, var(--ci-accent) 80%, transparent);
+  animation: orcid-card-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes orcid-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.orcid-card__seal {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 9999px;
+  color: oklch(0.98 0.02 60);
+  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), oklch(0.47 0.17 27));
+  box-shadow:
+    inset 0 1px 2px oklch(1 0 0 / 0.4),
+    inset 0 -2px 4px oklch(0.2 0.05 20 / 0.4);
+}
+.orcid-card__input {
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 2.25rem 0 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ci-rule);
+  background: oklch(1 0 0 / 0.75);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--ci-ink);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.orcid-card__input::placeholder {
+  letter-spacing: 0.08em;
+  color: color-mix(in oklab, var(--ci-soft) 60%, transparent);
+}
+.orcid-card__input:focus {
+  border-color: var(--ci-accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ci-accent) 20%, transparent);
+}
+
+/* ===== Onboarding do Pracinha (tela de entrada) ===== */
+.onboarding-panel {
+  --ci-ink: oklch(0.24 0.03 260);
+  --ci-soft: oklch(0.46 0.03 260);
+  --ci-accent: oklch(0.5 0.15 32);
+  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 15%, transparent);
+  position: relative;
+  border: 1px solid var(--ci-rule);
+  border-radius: var(--radius-2xl);
+  padding: 1.35rem 1.5rem 1.5rem;
+  color: var(--ci-ink);
+  background:
+    radial-gradient(120% 130% at 100% 0%, color-mix(in oklab, var(--ci-accent) 9%, transparent), transparent 55%),
+    radial-gradient(120% 120% at 0% 100%, color-mix(in oklab, oklch(0.5 0.09 210) 7%, transparent), transparent 55%),
+    linear-gradient(180deg, oklch(0.998 0.005 88), oklch(0.972 0.012 80));
+  box-shadow: var(--paper-shadow);
+}
+.onboarding-main {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ci-rule);
+  padding: 0.9rem 1rem;
+  background: oklch(1 0 0 / 0.6);
+}
+.onboarding-main::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  bottom: 0.85rem;
+  width: 3px;
+  border-radius: 9999px;
+  background: var(--ci-accent);
+}
+.onboarding-main__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ci-accent);
+}
+.onboarding-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: oklch(0.99 0.01 85);
+  background: var(--ci-accent);
+  box-shadow: 0 8px 20px -12px color-mix(in oklab, var(--ci-accent) 90%, transparent);
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.onboarding-ask:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -12px color-mix(in oklab, var(--ci-accent) 90%, transparent);
+}
+.onboarding-faq__trigger {
+  font-family: var(--font-serif);
+}
+
+/* Controles que hoje só aparecem no hover (excluir artigo, ações da mensagem).
+   Em telas de toque não há hover: ficam sempre visíveis para continuarem
+   acessíveis no celular. */
+@media (hover: none) {
+  .touch-visible {
+    opacity: 1 !important;
+  }
 }

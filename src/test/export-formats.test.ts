@@ -136,6 +136,7 @@ describe("elementos pré-textuais (ABNT)", () => {
     institution: "UFSC",
     nature: "Trabalho apresentado ao Programa de Pós-Graduação.",
     place: "FLORIANÓPOLIS — 2026",
+    orcid: "0000-0002-1825-0097",
   };
 
   it("HTML inclui capa e folha de rosto com nota e quebra de página", () => {
@@ -151,6 +152,7 @@ describe("elementos pré-textuais (ABNT)", () => {
     expect(html).toContain("Trabalho apresentado ao Programa");
     expect(html).toContain("FLORIANÓPOLIS — 2026");
     expect(html).toContain('class="page-break"');
+    expect(html).toContain("ORCID: 0000-0002-1825-0097");
     // Sem cabeçalho automático quando há elementos pré-textuais.
     expect(html).not.toContain("<header>");
   });

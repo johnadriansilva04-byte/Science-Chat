@@ -62,6 +62,7 @@ function latexBlock(block: Block): string {
         parts.push(center(block.author, "\\large"), "\\vspace*{2cm}");
         parts.push(center(block.title, "\\Large\\bfseries"), "\\vspace*{1.5cm}");
         if (block.institution) parts.push(center(block.institution, "\\normalsize"));
+        if (block.orcid) parts.push(center(`ORCID: ${block.orcid}`, "\\normalsize"));
         parts.push("\\vspace*{1cm}");
         if (block.nature) {
           parts.push(
@@ -175,10 +176,13 @@ function htmlBlock(block: Block): string {
         !cover && block.institution
           ? `<p class="institution">${htmlEscape(block.institution)}</p>`
           : "";
+      const orcid =
+        !cover && block.orcid ? `<p class="orcid">ORCID: ${htmlEscape(block.orcid)}</p>` : "";
       return `<section class="frontmatter ${cover ? "cover" : "titlepage"}">
 <p class="author">${htmlEscape(block.author)}</p>
 <h1 class="front-title">${htmlEscape(block.title)}</h1>
 ${institution}
+${orcid}
 ${nature}
 <p class="place">${htmlEscape(block.place)}</p>
 </section>`;

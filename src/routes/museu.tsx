@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Landmark, ExternalLink, Quote, Search, Sparkles, BookOpenText, X } from "lucide-react";
+import { Landmark, ExternalLink, Quote, Search, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   MUSEUM_SIZE,
@@ -12,12 +12,12 @@ import {
 } from "@/lib/museum";
 import { addToInbox } from "@/lib/pracinha-inbox";
 import { listArticles } from "@/lib/article.functions";
+import { AppHeader } from "@/components/app/AppHeader";
 import { createArticle } from "@/components/app/ArticlesMenu";
 import { BrandFooter } from "@/components/app/BrandFooter";
 import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/sciencechat-logo.png";
 
 export const Route = createFileRoute("/museu")({
   head: () => ({
@@ -92,27 +92,7 @@ function MuseumPage() {
 
   return (
     <div className="lab-bg min-h-screen bg-background">
-      <header className="flex items-center gap-2 p-3">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="" width={28} height={28} />
-          <span className="font-serif text-lg font-semibold">ScienceChat</span>
-        </Link>
-        <nav className="ml-auto flex items-center gap-3 text-sm">
-          <Link
-            to="/publicacoes"
-            className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <BookOpenText className="size-4" />
-            Publicações
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Início
-          </Link>
-        </nav>
-      </header>
+      <AppHeader />
       <div className="lab-rule" aria-hidden />
 
       <main className="mx-auto max-w-4xl px-6 pb-16 pt-10">

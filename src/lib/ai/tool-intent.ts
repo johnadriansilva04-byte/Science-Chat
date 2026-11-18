@@ -1,3 +1,4 @@
+import { isValidOrcid } from "@/lib/front-matter";
 /**
  * Detecta quando a mensagem do pesquisador pede uma AÇÃO concreta sobre o
  * documento e escolhe qual ferramenta forçar no primeiro passo da geração.
@@ -122,6 +123,13 @@ function has(text: string, list: string[]): boolean {
 export function pickForcedTool(text: string): string | null {
   const t = text.toLowerCase();
   if (t.length > 800) return null;
+
+  // ORCID informado pelo pesquisador (16 dígitos, com ou sem separadores). Grava
+  // na folha de rosto sem depender de o modelo emitir o tool call. Só dispara se
+  // o número passar no dígito verificador: sem isso, uma sequência de anos ou um
+  // telefone (ex.: "2021 2022 2023 2024") forçaria a ferramenta por engano.
+  const orcidCandidate = text.match(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?[\dx]{4}\b/i)?.[0];
+  if (orcidCandidate && isValidOrcid(orcidCandidate)) return "definir_orcid";
 
   const wantsAppend = has(t, APPEND_VERBS);
   const wantsEdit = has(t, EDIT_VERBS);

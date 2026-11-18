@@ -9,7 +9,12 @@ const SESSION_COOKIE = "sc_session";
 const SESSION_DAYS = 30;
 const PBKDF2_ITERATIONS = 100_000;
 
-export type User = { id: string; email: string; display_name: string | null };
+export type User = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  orcid?: string | null;
+};
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
@@ -52,6 +57,7 @@ export async function createUser(
   email: string,
   password: string,
   displayName?: string,
+  orcid?: string | null,
 ): Promise<User> {
   const db = requireDb();
   const normalized = email.trim().toLowerCase();
@@ -64,13 +70,19 @@ export async function createUser(
   const id = newId();
   const salt = randomHex(16);
   const hash = await hashPassword(password, salt);
+  const orcidValue = orcid?.trim() || null;
   await db
     .prepare(
-      "insert into users (id, email, password_hash, password_salt, display_name) values (?, ?, ?, ?, ?)",
+      "insert into users (id, email, password_hash, password_salt, display_name, orcid) values (?, ?, ?, ?, ?, ?)",
     )
-    .bind(id, normalized, hash, salt, displayName?.trim() || null)
+    .bind(id, normalized, hash, salt, displayName?.trim() || null, orcidValue)
     .run();
-  return { id, email: normalized, display_name: displayName?.trim() || null };
+  return {
+    id,
+    email: normalized,
+    display_name: displayName?.trim() || null,
+    orcid: orcidValue,
+  };
 }
 
 export async function verifyLogin(email: string, password: string): Promise<User | null> {
@@ -133,18 +145,24 @@ export async function getSessionUser(request: Request): Promise<User | null> {
   const db = requireDb();
   const row = await db
     .prepare(
-      `select u.id, u.email, u.display_name, s.expires_at
+      `select u.id, u.email, u.display_name, u.orcid, s.expires_at
        from sessions s join users u on u.id = s.user_id
        where s.id = ?`,
     )
     .bind(token)
-    .first<{ id: string; email: string; display_name: string | null; expires_at: string }>();
+    .first<{
+      id: string;
+      email: string;
+      display_name: string | null;
+      orcid: string | null;
+      expires_at: string;
+    }>();
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {
     await db.prepare("delete from sessions where id = ?").bind(token).run();
     return null;
   }
-  return { id: row.id, email: row.email, display_name: row.display_name };
+  return { id: row.id, email: row.email, display_name: row.display_name, orcid: row.orcid };
 }
 
 export async function destroySession(request: Request): Promise<void> {

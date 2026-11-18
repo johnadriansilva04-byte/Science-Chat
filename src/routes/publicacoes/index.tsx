@@ -21,13 +21,13 @@ import {
 import { buildAcervo, type AcervoItem } from "@/lib/acervo";
 import { MUSEUM_WINGS } from "@/lib/museum";
 import { AcervoCard } from "@/components/app/AcervoCard";
+import { AppHeader } from "@/components/app/AppHeader";
 import { BookReader } from "@/components/app/BookReader";
 import { BrandFooter } from "@/components/app/BrandFooter";
 import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 import { createArticle } from "@/components/app/ArticlesMenu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/sciencechat-logo.png";
 
 export const Route = createFileRoute("/publicacoes/")({
   head: () => ({
@@ -95,27 +95,7 @@ function AcervoPage() {
 
   return (
     <div className="publications-shell min-h-screen">
-      <header className="flex items-center gap-2 border-b border-border/60 bg-card/60 px-4 py-3 backdrop-blur">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="" width={28} height={28} />
-          <span className="font-serif text-lg font-semibold">ScienceChat</span>
-        </Link>
-        <nav className="ml-auto flex items-center gap-1 text-sm">
-          <Link
-            to="/museu"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
-          >
-            <Landmark className="size-4" />
-            Museu
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
-          >
-            Início
-          </Link>
-        </nav>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto max-w-5xl px-6 pb-16 pt-10">
         <div className="flex flex-wrap items-center gap-3">

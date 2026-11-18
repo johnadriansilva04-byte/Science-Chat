@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COUNTRY_PATHS,
+  COVER_LETTER_TEMPLATE,
   DIRECT_ANSWER_POINTS,
   NOT_REQUIRED,
   SCIENCE_REFERENCES,
@@ -107,5 +108,27 @@ describe("DIRECT_ANSWER_POINTS", () => {
     const icmje = DIRECT_ANSWER_POINTS.find((p) => /icmje/i.test(p.source));
     expect(icmje?.proof).toMatch(/4 critérios|quatro critérios/i);
     expect(icmje?.proof).toMatch(/responsabiliz|responsabilid/i);
+  });
+});
+
+describe("COVER_LETTER_TEMPLATE", () => {
+  it("é uma carta ao editor pronta para preencher", () => {
+    expect(COVER_LETTER_TEMPLATE).toMatch(/editor/i);
+    expect(COVER_LETTER_TEMPLATE).toMatch(/\[NOME DA REVISTA\]/);
+    expect(COVER_LETTER_TEMPLATE).toMatch(/\[TÍTULO DO ARTIGO\]/);
+  });
+
+  it("resolve a afiliação como pesquisador independente", () => {
+    expect(COVER_LETTER_TEMPLATE).toMatch(/Pesquisador\(a\) independente/);
+  });
+
+  it("declara originalidade e ausência de submissão simultânea", () => {
+    expect(COVER_LETTER_TEMPLATE).toMatch(/original/i);
+    expect(COVER_LETTER_TEMPLATE).toMatch(/outro periódico|não está sob avaliação/i);
+    expect(COVER_LETTER_TEMPLATE).toMatch(/conflito de interesses/i);
+  });
+
+  it("pede o ORCID do autor", () => {
+    expect(COVER_LETTER_TEMPLATE).toMatch(/ORCID/);
   });
 });

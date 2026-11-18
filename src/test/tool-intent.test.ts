@@ -53,3 +53,19 @@ describe("pickForcedTool — provocação/advogado do diabo", () => {
     expect(pickForcedTool("existe evidência que contradiz a tese?")).toBe("pesquisar_bases");
   });
 });
+
+describe("pickForcedTool — ORCID", () => {
+  it("força definir_orcid quando o número é informado", () => {
+    expect(pickForcedTool("Meu ORCID é 0000-0002-1825-0097")).toBe("definir_orcid");
+    expect(pickForcedTool("0000000218250097")).toBe("definir_orcid");
+    expect(pickForcedTool("orcid: 0000 0002 1825 0097")).toBe("definir_orcid");
+  });
+
+  it("não confunde números comuns com ORCID", () => {
+    expect(pickForcedTool("a amostra teve 123 participantes")).toBeNull();
+    expect(pickForcedTool("o ano de 2024 foi decisivo")).toBeNull();
+    // 16 dígitos, mas sem dígito verificador válido: não é ORCID.
+    expect(pickForcedTool("pesquisei os anos 2021 2022 2023 2024 no estudo")).toBeNull();
+    expect(pickForcedTool("meu telefone é 1199 8888 7777 6666")).toBeNull();
+  });
+});

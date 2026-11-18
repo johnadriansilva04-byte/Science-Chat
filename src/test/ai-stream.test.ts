@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { dedupeSseStream, serializableRunOptions } from "@/lib/ai/gateway.server";
+import { errorTextStream } from "@/lib/ai/error-stream";
 
 const enc = new TextEncoder();
 
@@ -85,5 +86,22 @@ describe("serializableRunOptions", () => {
   it("preserva valores não-objeto", () => {
     expect(serializableRunOptions(undefined)).toBeUndefined();
     expect(serializableRunOptions(null)).toBeNull();
+  });
+});
+
+describe("errorTextStream", () => {
+  it("emite a mensagem como texto, sem derrubar a requisição", async () => {
+    const message = "Não consegui falar com o motor de IA agora.";
+    const stream = errorTextStream(message) as ReadableStream<unknown>;
+    const reader = stream.getReader();
+    const chunks: unknown[] = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    const serialized = JSON.stringify(chunks);
+    expect(serialized).toContain("text-delta");
+    expect(serialized).toContain(message);
   });
 });

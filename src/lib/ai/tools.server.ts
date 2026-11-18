@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as repo from "@/lib/cf/repo.server";
 import { searchLiterature, formatHits } from "@/lib/research.server";
 import { insertAnexoMarker } from "@/lib/anexo";
+import { normalizeOrcid, isValidOrcid } from "@/lib/front-matter";
 
 export type ToolContext = { userId: string; articleId: string };
 
@@ -13,6 +14,7 @@ export const TOOL_NAMES = [
   "ler_anexo",
   "ler_todos_anexos",
   "atualizar_titulo",
+  "definir_orcid",
   "editar_pagina",
   "acrescentar_na_pagina",
   "anexar_documento_em_pagina",
@@ -85,7 +87,7 @@ export function buildTools(ctx: ToolContext) {
         "Pesquisa literatura científica em bases públicas (OpenAlex/Crossref). Use quando o pesquisador pedir referências, 'o que existe sobre X' ou fatos verificáveis. Retorna títulos, autores, ano e DOI reais.",
       inputSchema: z.object({
         consulta: z.string().describe("Termos de busca (tema, autores, título)."),
-        limite: z
+        limite: z.coerce
           .number()
           .int()
           .min(1)
@@ -121,7 +123,7 @@ export function buildTools(ctx: ToolContext) {
       description:
         "Lê o conteúdo de um anexo pelo seu número (Anexo N). Para imagens (fotos, gráficos, digitalizações), usa o modelo de visão para descrever e transcrever o que aparece. Use para analisar o conteúdo e decidir onde ele se encaixa no artigo.",
       inputSchema: z.object({
-        numero: z.number().int().min(1).describe("Número do anexo (Anexo 1 = número 1)."),
+        numero: z.coerce.number().int().min(1).describe("Número do anexo (Anexo 1 = número 1)."),
       }),
       execute: async ({ numero }) => {
         const docs = await repo.listDocuments(ctx.userId, ctx.articleId);
@@ -160,11 +162,45 @@ export function buildTools(ctx: ToolContext) {
       },
     }),
 
+    definir_orcid: tool({
+      description:
+        "Registra o ORCID do pesquisador na identificação do trabalho (folha de rosto). Use quando o pesquisador informar o ORCID dele. O identificador é pessoal e dispensa vínculo institucional.",
+      inputSchema: z.object({
+        orcid: z
+          .string()
+          .min(1)
+          .describe("ORCID informado pelo pesquisador, ex.: 0000-0002-1825-0097."),
+      }),
+      execute: async ({ orcid }) => {
+        const normalized = normalizeOrcid(orcid);
+        if (!normalized) return "Não entendi o ORCID — informe no formato 0000-0000-0000-0000.";
+        if (!isValidOrcid(normalized))
+          return `O ORCID ${normalized} não passou na checagem do dígito verificador. Confira o número (o último dígito pode ser X) ou crie o seu em orcid.org/register.`;
+        const existing = await repo.getEditorialConfig(ctx.userId, ctx.articleId);
+        let document: Record<string, unknown> = {};
+        if (existing?.layout_json) {
+          try {
+            const parsed = JSON.parse(existing.layout_json) as {
+              document?: Record<string, unknown>;
+            };
+            document = parsed?.document ?? (parsed as Record<string, unknown>) ?? {};
+          } catch {
+            document = {};
+          }
+        }
+        await repo.setArticleDocument(ctx.userId, ctx.articleId, {
+          ...document,
+          orcid: normalized,
+        });
+        return `ORCID ${normalized} registrado na identificação do trabalho (folha de rosto).`;
+      },
+    }),
+
     editar_pagina: tool({
       description:
         "Substitui TODO o conteúdo de uma página do artigo (em Markdown). Use para reescrever uma página inteira. Numere as páginas a partir de 1.",
       inputSchema: z.object({
-        pagina: z.number().int().min(1).describe("Número da página a editar."),
+        pagina: z.coerce.number().int().min(1).describe("Número da página a editar."),
         conteudo: z.string().min(1).describe("Novo conteúdo completo da página, em Markdown."),
       }),
       execute: async ({ pagina, conteudo }) => {
@@ -177,7 +213,7 @@ export function buildTools(ctx: ToolContext) {
       description:
         "Acrescenta um texto ao final de uma página existente, sem apagar o conteúdo atual. Use para inserir um parágrafo, uma nota ou uma seção.",
       inputSchema: z.object({
-        pagina: z.number().int().min(1).describe("Número da página."),
+        pagina: z.coerce.number().int().min(1).describe("Número da página."),
         texto: z.string().min(1).describe("Texto a acrescentar, em Markdown."),
       }),
       execute: async ({ pagina, texto }) => {
@@ -200,8 +236,8 @@ export function buildTools(ctx: ToolContext) {
       description:
         "Referencia um anexo (documento primário) dentro de uma página do artigo, na posição pedida (ex.: após o 3º parágrafo). Insere um marcador citável como [Anexo 3]. Use depois de ler o anexo e decidir onde ele se encaixa.",
       inputSchema: z.object({
-        pagina: z.number().int().min(1).describe("Página onde inserir a referência."),
-        numero_anexo: z.number().int().min(1).describe("Número do anexo (Anexo N)."),
+        pagina: z.coerce.number().int().min(1).describe("Página onde inserir a referência."),
+        numero_anexo: z.coerce.number().int().min(1).describe("Número do anexo (Anexo N)."),
         posicao: z
           .string()
           .optional()

@@ -42,9 +42,10 @@ import { Button } from "@/components/ui/button";
 import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAvatar";
 import { PracinhaRest } from "@/components/app/PracinhaRest";
 import { ChatAttachments } from "@/components/app/ChatAttachments";
+import { OrcidPrompt } from "@/components/app/OrcidPrompt";
 import { interviewProgress } from "@/lib/interview-progress";
 import { cleanQuestion } from "@/lib/interview-notes";
-import { suggestReplies } from "@/lib/chat-suggestions";
+import { asksForOrcid, suggestReplies } from "@/lib/chat-suggestions";
 import { toolFailed, toolLabel, toolOutputText, toolSucceeded } from "@/lib/tool-trace";
 import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
 import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
@@ -190,6 +191,8 @@ export function ChatDock({
   const [inbox, setInbox] = useState<InboxWork[]>([]);
   // Momento (ms) em que a IA volta, quando a cota diária de neurônios esgota.
   const [restedAt, setRestedAt] = useState<number | null>(null);
+  // Card de identidade do ORCID: aberto quando o Pracinha pede o número.
+  const [orcidOpen, setOrcidOpen] = useState(false);
   const lastSent = useRef("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wasBusy = useRef(false);
@@ -238,7 +241,11 @@ export function ChatDock({
   };
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", body: { articleId } }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { articleId },
+      }),
     [articleId],
   );
   const { messages, sendMessage, status, stop } = useChat({
@@ -267,18 +274,31 @@ export function ChatDock({
   const planApproved = phase === "writing" || phase === "done";
 
   const progress = useMemo(() => interviewProgress(messages), [messages]);
-  // Sugestões contextuais: leem a última pergunta do Pracinha e propõem atalhos
-  // que fazem sentido ali, mantendo as saídas de emergência sempre à mão.
-  const quickReplies = useMemo(() => {
+  // Última pergunta do Pracinha (base das sugestões e da detecção de ORCID).
+  const lastQuestionText = useMemo(() => {
     const lastQuestion = [...messages]
       .reverse()
       .find((m) => m.role === "assistant" && m.parts.some((p) => p.type === "text"));
-    const text = lastQuestion?.parts
+    return lastQuestion?.parts
       .filter((p) => p.type === "text")
       .map((p) => p.text)
       .join(" ");
-    return suggestReplies(text ? cleanQuestion(text) : null);
   }, [messages]);
+  // Sugestões contextuais: leem a última pergunta do Pracinha e propõem atalhos
+  // que fazem sentido ali, mantendo as saídas de emergência sempre à mão.
+  const quickReplies = useMemo(
+    () => suggestReplies(lastQuestionText ? cleanQuestion(lastQuestionText) : null),
+    [lastQuestionText],
+  );
+  // Quando o Pracinha pergunta o ORCID, abrimos o card de identidade sozinho —
+  // o pesquisador só clica, cola o número e envia. Uma vez dispensado, respeita.
+  // Usa o texto cru (não só a última frase) para não perder a pergunta quando ela
+  // não é a última do turno.
+  const orcidAsked = useMemo(() => asksForOrcid(lastQuestionText), [lastQuestionText]);
+  const [orcidDismissed, setOrcidDismissed] = useState(false);
+  useEffect(() => {
+    if (orcidAsked) setOrcidDismissed(false);
+  }, [orcidAsked]);
   const avatarState: PracinhaState = busy
     ? status === "streaming"
       ? "writing"
@@ -422,8 +442,16 @@ export function ChatDock({
   useEffect(() => {
     if (seeded.current) return;
     if (!seed || !seed.trim() || messages.length > 0) return;
-    seeded.current = true;
-    sendMessage({ text: seed.trim() });
+    // Adia o envio para o próximo tick. Em desenvolvimento o React roda o efeito,
+    // o cleanup e o efeito de novo (StrictMode); o cleanup do useChat chama
+    // `stop()`, que aborta um envio disparado no mesmo commit. O timer dispara
+    // depois desse ciclo, e `seeded` só é marcado quando o envio realmente sai —
+    // se o cleanup cancelar este timer, o próximo efeito reagenda.
+    const timer = setTimeout(() => {
+      seeded.current = true;
+      sendMessage({ text: seed.trim() });
+    }, 0);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed, messages.length]);
 
@@ -468,7 +496,7 @@ export function ChatDock({
     <aside
       className={
         isMobile
-          ? "dock-enter fixed inset-0 z-40 flex flex-col overflow-hidden bg-card"
+          ? "dock-enter fixed inset-0 z-40 flex flex-col overflow-hidden bg-card pb-[calc(3.5rem+env(safe-area-inset-bottom))]"
           : "dock-enter fixed bottom-4 left-4 z-40 flex flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl"
       }
       style={isMobile ? undefined : { width: size.width, height: size.height }}
@@ -577,7 +605,7 @@ export function ChatDock({
                     })}
                   </MessageContent>
                   {m.role === "assistant" && (
-                    <MessageActions className="opacity-0 transition-opacity group-hover:opacity-100">
+                    <MessageActions className="touch-visible opacity-0 transition-opacity group-hover:opacity-100">
                       <MessageAction
                         tooltip="Copiar"
                         onClick={() => void copyMessage(messageText(m))}
@@ -669,6 +697,16 @@ export function ChatDock({
                 </Button>
               ))}
             </div>
+          )}
+          {orcidAsked && !orcidDismissed && (
+            <OrcidPrompt
+              disabled={busy || resting}
+              onSend={(text) => {
+                setOrcidDismissed(true);
+                send(text);
+              }}
+              onDismiss={() => setOrcidDismissed(true)}
+            />
           )}
           {planApproved && (
             <div className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1.5 text-[11px] text-success">

@@ -16,6 +16,7 @@ import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@
 import { stripMarkers } from "@/lib/article-marker";
 import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
 import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
+import { errorTextStream } from "@/lib/ai/error-stream";
 import { cleanAssistantText, collectAssistantSentences } from "@/lib/ai/anti-repeat";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
@@ -275,6 +276,7 @@ async function handle(request: Request) {
     "ler_anexo",
     "ler_todos_anexos",
     "listar_anexos",
+    "definir_orcid",
   ]);
   const forcedTool =
     article.phase === "interview" ? (forced && interviewTools.has(forced) ? forced : null) : forced;
@@ -282,15 +284,27 @@ async function handle(request: Request) {
   // Semeia o filtro anti-repetição com o que o Pracinha JÁ disse no histórico,
   // para ele não repetir, turno após turno, a mesma pergunta ou o mesmo fecho.
   const antiRepeatSeed = collectAssistantSentences(modelMessages);
-  const { result } = startResponses(
-    request,
-    modelMessages,
-    instructions,
-    undefined,
-    buildTools({ userId: user.id, articleId: article.id }),
-    forcedTool,
-    antiRepeatSeed,
-  );
+  let started: ReturnType<typeof startResponses>;
+  try {
+    started = startResponses(
+      request,
+      modelMessages,
+      instructions,
+      undefined,
+      buildTools({ userId: user.id, articleId: article.id }),
+      forcedTool,
+      antiRepeatSeed,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[chat-error] falha ao iniciar a geração:", message);
+    return createUIMessageStreamResponse({
+      stream: errorTextStream(
+        "Não consegui falar com o motor de IA agora. Tente novamente em alguns instantes; se continuar, avise o suporte.",
+      ),
+    });
+  }
+  const { result } = started;
   return result.toUIMessageStreamResponse({
     originalMessages: sanitized,
     sendReasoning: true,
@@ -299,6 +313,7 @@ async function handle(request: Request) {
     // amigável ("o Pracinha vai descansar e volta às HH:MM").
     onError: (error) => {
       const message = error instanceof Error ? error.message : String(error);
+      console.error("[chat-error]", message, error instanceof Error ? error.stack : "");
       if (isQuotaError(message)) return QUOTA_MARKER;
       return "Não foi possível concluir a resposta. Tente novamente.";
     },

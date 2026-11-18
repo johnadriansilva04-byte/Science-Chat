@@ -13,7 +13,7 @@ import {
   type EditorialConfig,
   type EditorialDestination,
 } from "@/lib/editorial";
-import { resolveDocumentMeta, type DocumentMeta } from "@/lib/front-matter";
+import { resolveDocumentMeta, mergeDocumentMeta, type DocumentMeta } from "@/lib/front-matter";
 
 export type EditorialView = EditorialConfig & {
   requirements: { label: string; level: "obrigatorio" | "recomendado" | "verificar" }[];
@@ -85,7 +85,14 @@ export const saveEditorial = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<EditorialView> => {
     const fallbackAuthor = context.user.display_name ?? context.user.email;
-    const document = resolveDocumentMeta(data.document ?? null, fallbackAuthor);
+    // O painel editorial não edita o ORCID (ele é capturado no chat). Sem
+    // preservar o valor já gravado, salvar as configurações o apagaria.
+    const existing = await repo.getEditorialConfig(context.user.id, data.articleId);
+    const existingDoc = parseLayout(existing?.layout_json ?? null);
+    const document = resolveDocumentMeta(
+      mergeDocumentMeta(data.document ?? null, existingDoc),
+      fallbackAuthor,
+    );
     const row = await repo.upsertEditorialConfig(context.user.id, data.articleId, {
       destination: data.destination,
       unit: data.unit?.trim() || null,

@@ -201,7 +201,7 @@ function ArticleWorkspace() {
     liveMessages.length >= initialMessages.length ? liveMessages : initialMessages;
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-[100dvh] flex-col bg-background">
       <header className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-2 print:hidden">
         <ArticlesMenu activeId={articleId} />
         {editingTitle ? (
@@ -227,7 +227,7 @@ function ArticleWorkspace() {
             title="Editar título"
           >
             <span className="truncate font-serif text-lg font-semibold">{article.title}</span>
-            <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+            <Pencil className="touch-visible size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
           </button>
         )}
         <JourneyRail

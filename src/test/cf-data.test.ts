@@ -3,7 +3,7 @@
  * (node:sqlite). Não há mock da lógica: a migração é aplicada e as consultas
  * reais do repositório são exercitadas através de um adaptador D1 mínimo.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { D1Database, D1PreparedStatement } from "@/lib/cf/bindings.server";
@@ -46,7 +46,14 @@ function createD1(db: DatabaseSync): D1Database {
 
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(":memory:");
-  db.exec(readFileSync("migrations/0001_init.sql", "utf8"));
+  // Aplica TODAS as migrações em ordem, como o script real de deploy — assim o
+  // schema do teste acompanha as colunas novas (ex.: users.orcid).
+  const files = readdirSync("migrations")
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+  for (const file of files) {
+    db.exec(readFileSync(`migrations/${file}`, "utf8"));
+  }
   return db;
 }
 

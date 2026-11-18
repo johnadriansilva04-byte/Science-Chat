@@ -19,6 +19,8 @@ import { nitro } from "nitro/vite";
 const isVercel = process.env["BUILD_TARGET"] === "vercel" || process.env["VERCEL"] === "1";
 
 export default defineConfig({
+  // O dev server roda atrás do proxy do ambiente (hosts *.prod-runtime...).
+  server: { allowedHosts: true },
   plugins: [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),

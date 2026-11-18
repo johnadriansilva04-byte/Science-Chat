@@ -99,6 +99,9 @@ function FrontMatterBody({ block }: { block: Extract<Block, { type: "frontmatter
   return (
     <div style={fullHeight} className="flex flex-col items-center py-6 text-center">
       <p className="font-serif font-bold uppercase">{block.author}</p>
+      {block.orcid && (
+        <p className="mt-1 font-mono text-[0.8rem] text-muted-foreground">ORCID: {block.orcid}</p>
+      )}
       <h1 className="mt-10 font-serif text-[1.55rem] font-bold uppercase leading-snug">
         {block.title}
       </h1>

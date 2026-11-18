@@ -29,7 +29,8 @@ import { AuditPanel } from "@/components/app/AuditPanel";
 import { EditorialPanel } from "@/components/app/EditorialPanel";
 import { ExportDialog } from "@/components/app/ExportDialog";
 import { documentSections, parseBlocks, serializeBlocks, type Block } from "@/lib/article-blocks";
-import { useA4Pagination } from "@/lib/a4";
+import { useA4Pagination, mmToPx, A4 } from "@/lib/a4";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { stripMarkers } from "@/lib/article-marker";
 import { ARTICLE_SIGNATURE, startsWithTitleHeading } from "@/lib/article-export";
 import { buildFrontMatter, frontMatterBlocks, numberSections } from "@/lib/front-matter";
@@ -394,6 +395,22 @@ export function DocumentCanvas({
     return () => root.removeEventListener("scroll", onScroll);
   }, []);
 
+  // No celular a folha A4 (210 mm ≈ 794 px) não cabe na tela: ajustamos o zoom
+  // para "caber na largura" e recalculamos ao girar o aparelho.
+  const isMobile = useIsMobile();
+  useEffect(() => {
+    if (!isMobile) return;
+    const fit = () => {
+      const root = scroller.current;
+      if (!root) return;
+      const available = root.clientWidth - 24;
+      setZoom(Math.max(0.3, Math.min(1, available / mmToPx(A4.widthMm))));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [isMobile]);
+
   const saveLabel: Record<SaveState, string> = {
     idle: "",
     saving: "Salvando...",
@@ -427,7 +444,7 @@ export function DocumentCanvas({
           </span>
         )}
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex flex-wrap items-center gap-1">
           <Button
             size="sm"
             variant={editing ? "secondary" : "outline"}
@@ -436,7 +453,7 @@ export function DocumentCanvas({
             disabled={isPreliminary}
           >
             {editing ? <Check className="size-3.5" /> : <Pencil className="size-3.5" />}
-            {editing ? "Concluir edição" : "Editar no papel"}
+            {editing ? "Concluir" : "Editar"}
           </Button>
           <Button
             size="sm"

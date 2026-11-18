@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpenText, FilePlus2, Landmark, Play, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpenText, FilePlus2, Play, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
 import { JOURNEY_ACTS } from "@/lib/journey";
+import { faqSeed, takePendingQuestion } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
-import { ArticlesMenu, createArticle } from "@/components/app/ArticlesMenu";
+import { AppHeader } from "@/components/app/AppHeader";
+import { createArticle } from "@/components/app/ArticlesMenu";
 import { PublishedShelf } from "@/components/app/PublishedShelf";
 import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 
@@ -39,6 +41,17 @@ function Index() {
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
+  }, [loading, user, navigate]);
+
+  // Pergunta escolhida no cadastro ("Perguntar ao Pracinha"): ao entrar, ela vira
+  // um artigo novo com a pergunta como semente — o chat já responde de cara.
+  const consumedQuestion = useRef(false);
+  useEffect(() => {
+    if (loading || !user || consumedQuestion.current) return;
+    const question = takePendingQuestion();
+    if (!question) return;
+    consumedQuestion.current = true;
+    void createArticle(navigate, faqSeed(question));
   }, [loading, user, navigate]);
 
   // O brilho acompanha o ponteiro — dá vida ao fundo sem custo de render.
@@ -76,33 +89,17 @@ function Index() {
   }
 
   return (
-    <div className="landing-shell h-screen overflow-hidden bg-background">
-      <div ref={heroRef} className="landing-hero relative flex h-full flex-col">
-        <header className="relative z-10 flex items-center gap-2 px-4 py-3 sm:px-6">
-          <ArticlesMenu />
-          <span className="font-serif text-lg font-semibold">ScienceChat</span>
-          <nav className="ml-auto flex items-center gap-1 text-sm">
-            <Link
-              to="/museu"
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
-            >
-              <Landmark className="size-4" />
-              Museu
-            </Link>
-            <Link
-              to="/publicacoes"
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/60 hover:text-foreground"
-            >
-              <BookOpenText className="size-4" />
-              Coletânea
-            </Link>
-          </nav>
-        </header>
+    <div className="landing-shell flex min-h-screen flex-col bg-background lg:h-screen lg:overflow-hidden">
+      <div
+        ref={heroRef}
+        className="landing-hero relative flex min-h-screen flex-col lg:h-full lg:min-h-0"
+      >
+        <AppHeader variant="overlay" />
 
-        <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 overflow-hidden px-4 pb-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+        <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:overflow-hidden lg:pb-4">
           {/* Coluna esquerda: a promessa e o começo */}
           <section className="flex min-h-0 flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary shadow-sm backdrop-blur">
+            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary landing-badge backdrop-blur">
               <Sparkles className="size-3.5" />
               Rascunho científico · entrevista inteligente · normas reais
             </span>
@@ -191,7 +188,7 @@ function Index() {
                 <span className="text-[11px] text-muted-foreground">clássicos e contribuições</span>
                 <Link
                   to="/publicacoes"
-                  className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
+                  className="ml-auto inline-flex shrink-0 items-center py-2 text-xs font-medium text-primary hover:underline sm:py-0"
                 >
                   Ver tudo →
                 </Link>

@@ -898,6 +898,50 @@ export async function getEditorialConfig(
     .first<EditorialRow>();
 }
 
+/**
+ * Grava apenas a identificação do trabalho (capa/folha de rosto) no
+ * `layout_json`, preservando a configuração editorial existente. Usado pelo chat
+ * quando o Pracinha registra o ORCID do pesquisador sem mexer em destino/norma.
+ * Cria a linha com valores padrão se ainda não existir.
+ */
+export async function setArticleDocument(
+  userId: string,
+  articleId: string,
+  document: Record<string, unknown>,
+): Promise<void> {
+  const existing = await getEditorialConfig(userId, articleId);
+  // Mescla sobre o que já existe para não apagar campos que a UI do painel
+  // editorial tenha gravado (autor, cidade, instituição…).
+  let current: Record<string, unknown> = {};
+  if (existing?.layout_json) {
+    try {
+      const parsed = JSON.parse(existing.layout_json) as { document?: Record<string, unknown> };
+      current = parsed?.document ?? (parsed as Record<string, unknown>) ?? {};
+    } catch {
+      current = {};
+    }
+  }
+  const layoutJson = JSON.stringify({ document: { ...current, ...document } });
+  if (existing) {
+    await requireDb()
+      .prepare(
+        `update editorial_configs set layout_json = ?, updated_at = ? where article_id = ? and user_id = ?`,
+      )
+      .bind(layoutJson, nowIso(), articleId, userId)
+      .run();
+    return;
+  }
+  await upsertEditorialConfig(userId, articleId, {
+    destination: "independente",
+    unit: null,
+    standard: "abnt",
+    language: "pt",
+    guidelines: null,
+    notes: null,
+    layoutJson,
+  });
+}
+
 export async function upsertEditorialConfig(
   userId: string,
   articleId: string,

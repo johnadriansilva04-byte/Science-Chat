@@ -117,3 +117,9 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - Estado 18/11: **342 testes** (39 arquivos), `tsc` 0, `eslint` 0 erros (14 warnings), build OK.
 - **Card também no Museu e na Coletânea**; seção "posso publicar?" com provas oficiais (`DIRECT_ANSWER_POINTS`); abas Brasil/Uruguai/Internacional; botão "Levar isso para o Pracinha" via callback `onUseGuide` (a home preenche o input `idea`; Museu/Coletânea criam o artigo). Estado final: **347 testes**, tsc 0, eslint 0 erros, build OK.
 - **Fontes que não respondem a curl (não linkar):** journals.udelar.edu.uy e portal.udelar.edu.uy (DNS), periodicos.capes.gov.br (403), publicationethics.org (403). Tavily sem cota (432) → usar curl.
+
+## Mobile: overflow horizontal (2026-11-18)
+- **Sintoma/truque de diagnóstico:** elemento `fixed inset-0` (ex.: `ChatDock`) aparece mais largo que a viewport. Causa quase sempre é **overflow horizontal real** que expande o layout viewport. Comparar `window.innerWidth` vs `document.documentElement.clientWidth`: se diferem, há overflow e o `body`/`html` crescem, arrastando todos os `fixed`.
+- **Causa raiz corrigida:** `.journey-rail` (header do artigo) com `flex:1` encolhia a ~5px, mas o trilho era `nowrap` e transbordava → `body` com scrollWidth 429 > vw 375. Fix em `styles.css` `@media (max-width:640px)`: `.journey-rail { flex:none; width:100%; overflow:hidden }` + `.journey-rail__track { justify-content:center }`.
+- **Regra geral:** todo container com filhos `nowrap` precisa de `min-width:0`/`overflow:hidden`; `fixed` não protege contra overflow do documento.
+- **Rate limit local:** cadastro 20/h por IP no **KV** (não em D1); testes automatizados esgotam. Limpar: `rm -rf .wrangler/state/v3/kv/bf18af0db8dc44ca9e762875c69843c4` + reiniciar dev.

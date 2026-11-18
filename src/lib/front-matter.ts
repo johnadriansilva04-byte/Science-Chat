@@ -19,7 +19,44 @@ export type DocumentMeta = {
   year: string | null;
   /** Nota de natureza do trabalho, exibida na folha de rosto. */
   nature: string;
+  /**
+   * ORCID do pesquisador (identificador pessoal, não institucional). É opcional
+   * na folha de rosto, mas é a credencial que dispensa o vínculo institucional.
+   */
+  orcid: string | null;
 };
+
+// --- ORCID ------------------------------------------------------------------
+
+const ORCID_DIGITS = /^\d{15}[\dX]$/;
+
+/** Normaliza para o formato canônico 0000-0000-0000-0000 (ou null se vazio). */
+export function normalizeOrcid(value: string | null | undefined): string | null {
+  const digits = (value ?? "").toUpperCase().replace(/[^0-9X]/g, "");
+  if (!digits) return null;
+  if (digits.length !== 16) return digits; // deixa incompleto visível para o pesquisador corrigir
+  return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}-${digits.slice(12)}`;
+}
+
+/**
+ * Valida o ORCID pelo dígito verificador (ISO 7064 MOD 11-2). Não confirma que
+ * o registro existe — só que o número não foi digitado errado.
+ */
+export function isValidOrcid(value: string | null | undefined): boolean {
+  const digits = (value ?? "").toUpperCase().replace(/[^0-9X]/g, "");
+  if (!ORCID_DIGITS.test(digits)) return false;
+  let total = 0;
+  for (const ch of digits.slice(0, 15)) total = (total + Number(ch)) * 2;
+  const remainder = total % 11;
+  const check = (12 - remainder) % 11;
+  const expected = check === 10 ? "X" : String(check);
+  return expected === digits[15];
+}
+
+/** URL pública do ORCID (para citação/rodapé). */
+export function orcidUrl(orcid: string): string {
+  return `https://orcid.org/${normalizeOrcid(orcid) ?? orcid}`;
+}
 
 export const DEFAULT_NATURE =
   "Artigo científico elaborado a partir da pesquisa desenvolvida pelo(a) autor(a).";
@@ -44,7 +81,20 @@ export function resolveDocumentMeta(
     city: clean(input?.city),
     year: clean(input?.year) ?? currentYear(),
     nature: clean(input?.nature) ?? DEFAULT_NATURE,
+    orcid: normalizeOrcid(input?.orcid),
   };
+}
+
+/**
+ * Mescla metadados que chegam de um formulário sobre os já gravados. O ORCID é
+ * capturado pelo chat (não pelo painel editorial), então quando o formulário não
+ * o traz, preservamos o valor existente em vez de apagá-lo.
+ */
+export function mergeDocumentMeta(
+  incoming: Partial<DocumentMeta> | null | undefined,
+  existing: Partial<DocumentMeta> | null | undefined,
+): Partial<DocumentMeta> {
+  return { ...incoming, orcid: incoming?.orcid ?? existing?.orcid ?? null };
 }
 
 /** Linha de local/ano ao pé da capa e da folha de rosto: "CIDADE — 2026". */
@@ -61,6 +111,8 @@ export type FrontMatter = {
   institution: string | null;
   nature: string;
   place: string;
+  /** ORCID já normalizado (ou null). Exibido na folha de rosto quando presente. */
+  orcid: string | null;
 };
 
 /** Reúne os dados de capa e folha de rosto a partir dos metadados e do título. */
@@ -71,6 +123,7 @@ export function buildFrontMatter(meta: DocumentMeta, title: string): FrontMatter
     institution: meta.institution,
     nature: meta.nature,
     place: placeLine(meta.city, meta.year),
+    orcid: normalizeOrcid(meta.orcid),
   };
 }
 
@@ -87,6 +140,7 @@ export function frontMatterBlocks(fm: FrontMatter): Block[] {
       author: fm.author,
       title: fm.title,
       place: fm.place,
+      orcid: fm.orcid,
     },
     {
       type: "frontmatter",
@@ -96,6 +150,7 @@ export function frontMatterBlocks(fm: FrontMatter): Block[] {
       institution: fm.institution,
       nature: fm.nature,
       place: fm.place,
+      orcid: fm.orcid,
     },
   ];
 }
@@ -117,6 +172,7 @@ export function frontMatterSequence(fm: FrontMatter): Block[] {
 export function frontMatterMarkdown(fm: FrontMatter): string {
   const lines = [fm.author, "", `# ${fm.title}`, ""];
   if (fm.institution) lines.push(fm.institution, "");
+  if (fm.orcid) lines.push(`ORCID: ${fm.orcid}`, "");
   lines.push(fm.nature, "", fm.place, "");
   return lines.join("\n");
 }

@@ -31,7 +31,7 @@ export const DEFAULT_EDITORIAL: EditorialConfig = {
   guidelines: null,
   notes: null,
   verified_at: null,
-  document: { author: "", institution: null, city: null, year: null, nature: "" },
+  document: { author: "", institution: null, city: null, year: null, nature: "", orcid: null },
 };
 
 export const DESTINATIONS: { id: EditorialDestination; label: string; hint: string }[] = [

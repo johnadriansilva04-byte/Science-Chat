@@ -26,6 +26,8 @@ export type Block =
       institution?: string | null;
       nature?: string;
       place: string;
+      /** ORCID do pesquisador (identificador pessoal). Opcional. */
+      orcid?: string | null;
     };
 
 const HEADING = /^(#{1,4})\s+(.*)$/;
@@ -154,6 +156,7 @@ export function serializeBlock(block: Block): string {
     case "frontmatter": {
       const parts = [block.author, "", `# ${block.title}`, ""];
       if (block.kind === "titlepage" && block.institution) parts.push(block.institution, "");
+      if (block.kind === "titlepage" && block.orcid) parts.push(`ORCID: ${block.orcid}`, "");
       if (block.kind === "titlepage" && block.nature) parts.push(block.nature, "");
       parts.push(block.place);
       return parts.join("\n");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { suggestReplies } from "@/lib/chat-suggestions";
+import { asksForOrcid, suggestReplies } from "@/lib/chat-suggestions";
 
 describe("suggestReplies", () => {
   it("oferece opções de natureza da pesquisa", () => {
@@ -62,5 +62,18 @@ describe("sugestões de ensino (mentoria)", () => {
 
   it("confirma o recapitulado da pesquisa", () => {
     expect(suggestReplies("Entendi sua pesquisa: é sobre X. Está certo?")).toContain("Sim, é isso");
+  });
+});
+
+describe("asksForOrcid", () => {
+  it("detecta quando o Pracinha pergunta o ORCID", () => {
+    expect(asksForOrcid("Você já tem um ORCID? Ele assina a sua autoria.")).toBe(true);
+    expect(asksForOrcid("Me passe seu identificador de pesquisador, por favor.")).toBe(true);
+  });
+
+  it("não dispara em perguntas comuns", () => {
+    expect(asksForOrcid("Qual é a natureza da pesquisa?")).toBe(false);
+    expect(asksForOrcid(null)).toBe(false);
+    expect(asksForOrcid("")).toBe(false);
   });
 });

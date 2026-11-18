@@ -74,6 +74,14 @@ export const createArticle = createServerFn({ method: "POST" })
   .validator((d: { title?: string } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
     const article = await repo.createArticle(context.user.id, data?.title);
+    // Semeia a identificação do trabalho com o que já sabemos do perfil (nome e
+    // ORCID), para a folha de rosto nascer preenchida. Tudo editável depois.
+    const seedDocument: { author?: string; orcid?: string } = {};
+    if (context.user.display_name) seedDocument.author = context.user.display_name;
+    if (context.user.orcid) seedDocument.orcid = context.user.orcid;
+    if (Object.keys(seedDocument).length > 0) {
+      await repo.setArticleDocument(context.user.id, article.id, seedDocument);
+    }
     return { id: article.id };
   });
 
