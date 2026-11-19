@@ -33,15 +33,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { user, loading } = useAuth();
+  const { user, loading, error: authError } = useAuth();
   const navigate = useNavigate();
   const [idea, setIdea] = useState("");
   const [creating, setCreating] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth" });
-  }, [loading, user, navigate]);
+    // Só manda para o login quando a ausência de usuário é legítima. Se a
+    // sessão falhou (erro no servidor), mostramos o aviso — redirecionar aqui
+    // escondia a causa e o login parecia "não funcionar".
+    if (!loading && !user && !authError) navigate({ to: "/auth" });
+  }, [loading, user, authError, navigate]);
 
   // Pergunta escolhida no cadastro ("Perguntar ao Pracinha"): ao entrar, ela vira
   // um artigo novo com a pergunta como semente — o chat já responde de cara.
@@ -95,6 +98,16 @@ function Index() {
         className="landing-hero relative flex min-h-screen flex-col lg:h-full lg:min-h-0"
       >
         <AppHeader variant="overlay" />
+
+        {authError && (
+          <div
+            role="alert"
+            className="relative z-10 mx-auto mt-4 w-full max-w-6xl rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          >
+            Não foi possível verificar sua sessão agora. Recarregue a página; se persistir, entre
+            novamente.
+          </div>
+        )}
 
         <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:overflow-hidden lg:pb-4">
           {/* Coluna esquerda: a promessa e o começo */}

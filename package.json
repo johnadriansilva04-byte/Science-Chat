@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && node scripts/db-migrate.mjs --remote && wrangler deploy",
     "preview:cf": "npm run build && wrangler dev --remote",
     "cf:setup": "bash scripts/cf-setup.sh",
     "db:migrate:local": "node scripts/db-migrate.mjs --local",

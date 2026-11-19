@@ -186,6 +186,40 @@ function AuthPage() {
             </p>
           </div>
           <div className="rounded-xl border bg-card p-6 shadow-paper">
+            <div
+              className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+              role="tablist"
+              aria-label="Entrar ou criar conta"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === "in"}
+                onClick={() => setMode("in")}
+                className={
+                  "min-h-11 rounded-md text-sm font-medium transition-colors " +
+                  (mode === "in"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === "up"}
+                onClick={() => setMode("up")}
+                className={
+                  "min-h-11 rounded-md text-sm font-medium transition-colors " +
+                  (mode === "up"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                Criar conta
+              </button>
+            </div>
             <form onSubmit={submit} className="space-y-4">
               {mode === "up" && (
                 <div className="space-y-1.5">
@@ -226,7 +260,7 @@ function AuthPage() {
                     type="button"
                     onClick={() => setShowOrcid((v) => !v)}
                     aria-expanded={showOrcid}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <ChevronDown
                       className={`size-3.5 transition-transform ${showOrcid ? "rotate-180" : ""}`}
@@ -276,13 +310,6 @@ function AuthPage() {
                 {mode === "in" ? "Entrar" : "Criar conta"}
               </Button>
             </form>
-            <button
-              type="button"
-              className="mt-4 flex min-h-11 w-full items-center justify-center text-center text-sm text-muted-foreground hover:text-foreground"
-              onClick={() => setMode(mode === "in" ? "up" : "in")}
-            >
-              {mode === "in" ? "Não tem conta? Criar conta" : "Já tem conta? Entrar"}
-            </button>
           </div>
         </div>
 
