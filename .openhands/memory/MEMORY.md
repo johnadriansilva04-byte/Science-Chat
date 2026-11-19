@@ -114,7 +114,12 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **`isQuotaError` (CORRIGIDO):** não confundir mais 429/"rate limit" com a cota diária (4006). Antes, um 429 travava o chat até a meia-noite UTC via `setRestedAt(nextQuotaReset())`. Padrões agora exigem sinal de cota real (`neurons`/`4006`/`daily free allocation`/`quota exceeded`).
 - **`cleanQuestion` (CORRIGIDO):** trunca em 300 preservando o `?` final — o corte em 200 arrancava o `?` e quebrava o pareamento pergunta/resposta em `interviewNotes` (virava "Informação fornecida").
 - **`suggestReplies` (CORRIGIDO):** removido o `e` solto do alternante sim/não (casava a conjunção "E…" por causa do `normalize` sem acento).
-- Estado 18/11: **342 testes** (39 arquivos), `tsc` 0, `eslint` 0 erros (14 warnings), build OK.
+- Estado 18/11: **490 testes** (54 arquivos), `tsc` 0, `eslint` 0 erros (14 warnings), build OK.
+- **`/` exige sessão** (`index.tsx` navega para `/auth` sem usuário). Todo visitante novo cai em `/auth`,
+  então é lá que o card precisa existir — inclusive no celular (o `aside` do `PracinhaIntro` é
+  `hidden lg:block`, então o card da coluna some no mobile; há um `compact` `lg:hidden` abaixo do form).
+- **Composer do chat no mobile:** blocos auxiliares (protocolo, sugestões, ORCID) ficam num wrapper
+  com `max-h-[30dvh] overflow-y-auto`; sem isso empilhavam 546px e deixavam 192px de conversa.
 - **Card também no Museu e na Coletânea**; seção "posso publicar?" com provas oficiais (`DIRECT_ANSWER_POINTS`); abas Brasil/Uruguai/Internacional; botão "Levar isso para o Pracinha" via callback `onUseGuide` (a home preenche o input `idea`; Museu/Coletânea criam o artigo). Estado final: **347 testes**, tsc 0, eslint 0 erros, build OK.
 - **Fontes que não respondem a curl (não linkar):** journals.udelar.edu.uy e portal.udelar.edu.uy (DNS), periodicos.capes.gov.br (403), publicationethics.org (403). Tavily sem cota (432) → usar curl.
 
