@@ -123,10 +123,17 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [orcid, setOrcid] = useState("");
   const [busy, setBusy] = useState(false);
+  // O toast some em segundos — numa tela de login no celular, com o teclado
+  // aberto, isso é fácil de perder. O erro fica no formulário até nova tentativa.
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (user) navigate({ to: "/" });
   }, [user, navigate]);
+
+  useEffect(() => {
+    setFormError("");
+  }, [mode]);
 
   const orcidNormalized = useMemo(() => normalizeOrcid(orcid), [orcid]);
   const orcidValid = isValidOrcid(orcidNormalized);
@@ -135,12 +142,15 @@ function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setFormError("");
     try {
       if (mode === "in") {
         await signIn({ data: { email, password } });
       } else {
         if (orcid.trim() && !orcidValid) {
-          toast.error("ORCID inválido — confira os 16 dígitos (ex.: 0000-0002-1825-0097).");
+          const message = "ORCID inválido — confira os 16 dígitos (ex.: 0000-0002-1825-0097).";
+          setFormError(message);
+          toast.error(message);
           return;
         }
         await signUp({
@@ -154,7 +164,9 @@ function AuthPage() {
       }
       navigate({ to: "/" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível entrar");
+      const message = err instanceof Error ? err.message : "Não foi possível entrar";
+      setFormError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -292,7 +304,16 @@ function AuthPage() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={busy}>
+              {formError && (
+                <p
+                  role="alert"
+                  className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  {formError}
+                </p>
+              )}
+
+              <Button type="submit" className="min-h-11 w-full" disabled={busy}>
                 {mode === "in" ? "Entrar" : "Criar conta"}
               </Button>
             </form>
