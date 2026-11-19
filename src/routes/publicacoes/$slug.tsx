@@ -82,7 +82,7 @@ function PublicationPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center gap-2 border-b px-4 py-3 print:hidden">
+      <header className="flex flex-wrap items-center gap-2 border-b px-4 py-3 print:hidden">
         <Link
           to="/publicacoes"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -90,7 +90,9 @@ function PublicationPage() {
           <ArrowLeft className="size-4" />
           Publicações
         </Link>
-        <div className="ml-auto flex items-center gap-2">
+        {/* Três botões em linha estouravam a tela no celular (472px numa
+            viewport de 390px) e criavam rolagem horizontal na página inteira. */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <Button size="sm" variant="outline" onClick={() => setReading(true)}>
             <BookOpen />
             Ler como livro

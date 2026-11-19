@@ -144,7 +144,10 @@ export const preparePublication = createServerFn({ method: "POST" })
     const abstract = extractAbstract(content);
     const keywords = extractKeywords(content);
     const authorName = (data.authorName || "").trim() || "Pesquisador independente";
-    const slug = await repo.uniqueSlug(slugify(article.title));
+    // Republicar não pode trocar o endereço: quem já divulgou o link perderia
+    // o artigo. O slug só é gerado na primeira publicação do artigo.
+    const current = await repo.getPublicationByArticle(userId, data.articleId);
+    const slug = current?.slug ?? (await repo.uniqueSlug(slugify(article.title)));
     const pub = await repo.upsertPublication(userId, data.articleId, {
       slug,
       title: article.title,
