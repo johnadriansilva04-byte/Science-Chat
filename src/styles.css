@@ -2615,3 +2615,63 @@
   background: color-mix(in oklab, var(--color-primary) 10%, transparent);
   font-weight: 600;
 }
+
+/* Card do joguinho ("Stop científico").
+   Discreto de propósito: aparece só em telas de espera (cota esgotada, 404).
+   O jogo em si é um projeto separado, acoplado por `VITE_GAME_URL`. */
+.game-card {
+  border-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--color-primary) 7%, transparent), transparent 60%),
+    color-mix(in oklab, var(--card) 80%, transparent);
+}
+.game-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+.game-card__chip {
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+  padding: 0.1rem 0.5rem;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+.game-card__chip--more {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.game-card__cta {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 34%, transparent);
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  transition: background-color 0.2s ease;
+}
+.game-card__cta:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+}
+.game-card__cta:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  opacity: 0.6;
+}
+.game-card__frame {
+  width: 100%;
+  height: min(70dvh, 34rem);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--background);
+}

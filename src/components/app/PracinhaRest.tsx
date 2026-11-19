@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlarmClock, Coffee } from "lucide-react";
 import { PracinhaAvatar } from "@/components/app/PracinhaAvatar";
+import { GameCard } from "@/components/app/GameCard";
 import { countdownLabel, formatResetTime, nextQuotaReset } from "@/lib/ai/quota";
 
 /**
@@ -66,6 +67,10 @@ export function PracinhaRest({
           )}
         </div>
       </div>
+
+      {/* Espera é o único momento em que o joguinho faz sentido: a IA só volta
+          à meia-noite, e ficar olhando o relógio não ajuda ninguém. */}
+      <GameCard className="mt-3" />
     </div>
   );
 }
