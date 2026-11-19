@@ -3,6 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import {
   Check,
+  ChevronDown,
   ClipboardCheck,
   Copy,
   Loader2,
@@ -124,10 +125,16 @@ function ToolTrace({ part }: { part: ToolPart }) {
 
   if (done && output) {
     return (
-      <details className="tool-trace my-1 rounded-md border bg-muted/40 text-xs">
+      <details className="tool-trace group my-1 rounded-md border bg-muted/40 text-xs">
         <summary className="flex cursor-pointer items-center gap-1.5 px-2 py-1.5 font-medium text-muted-foreground">
           <Icon className="size-3.5 shrink-0 text-primary" />
           {name === "pesquisar_bases" ? "Resultados das bases públicas" : label}
+          {/* `display:flex` remove o triângulo nativo do <details>: sem esta seta as
+              fontes parecem um rótulo fixo e ninguém descobre que abrem. */}
+          <ChevronDown
+            aria-hidden
+            className="ml-auto size-3.5 shrink-0 transition-transform group-open:rotate-180"
+          />
         </summary>
         <pre className="max-h-52 overflow-auto whitespace-pre-wrap px-2 pb-2 text-[11px] leading-snug text-foreground/80">
           {output}
