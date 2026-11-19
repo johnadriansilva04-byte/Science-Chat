@@ -24,7 +24,6 @@ import { AcervoCard } from "@/components/app/AcervoCard";
 import { AppHeader } from "@/components/app/AppHeader";
 import { BookReader } from "@/components/app/BookReader";
 import { BrandFooter } from "@/components/app/BrandFooter";
-import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 import { createArticle } from "@/components/app/ArticlesMenu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -121,8 +120,6 @@ function AcervoPage() {
           <strong className="text-foreground">ainda não revisados</strong> estão publicados, mas sem
           essa comprovação — a plataforma não revisa.
         </p>
-
-        <ScienceAccessCard variant="compact" className="mt-6 max-w-3xl" />
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">

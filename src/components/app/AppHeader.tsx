@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpenText, Landmark, Sparkles } from "lucide-react";
+import { BookOpenText, GraduationCap, Landmark, Sparkles } from "lucide-react";
 import { ArticlesMenu } from "@/components/app/ArticlesMenu";
 import logo from "@/assets/sciencechat-logo.png";
 
@@ -7,6 +7,7 @@ const NAV = [
   { to: "/", label: "Início", icon: Sparkles },
   { to: "/museu", label: "Museu", icon: Landmark },
   { to: "/publicacoes", label: "Coletânea", icon: BookOpenText },
+  { to: "/ciencia", label: "Guia", icon: GraduationCap },
 ] as const;
 
 /**

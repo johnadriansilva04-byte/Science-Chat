@@ -11,7 +11,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { CosmicBackdrop } from "@/components/app/CosmicBackdrop";
-import { GameCard } from "@/components/app/GameCard";
 
 import appCss from "../styles.css?url";
 
@@ -33,8 +32,6 @@ function NotFoundComponent() {
             Voltar ao início
           </Link>
         </div>
-        {/* Quem cai num 404 já está parado de qualquer jeito. */}
-        <GameCard className="mt-6 text-left" />
       </div>
     </div>
   );

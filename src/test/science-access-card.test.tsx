@@ -32,29 +32,40 @@ describe("ScienceAccessCard", () => {
     expect(home).not.toContain('variant="compact"');
   });
 
-  // Páginas que já têm conteúdo próprio não repetem o passo a passo inteiro.
-  it("as páginas secundárias usam a variante compacta", async () => {
+  // O guia se ensina uma vez, na home. Repetir o card em cada página foi o que
+  // o transformou em ruído: ele ocupava mais de uma tela em todas elas.
+  it("o card educativo não se repete nas páginas secundárias", async () => {
     const { readFileSync } = await import("node:fs");
-    for (const file of [
-      "src/routes/auth.tsx",
-      "src/routes/museu.tsx",
-      "src/routes/publicacoes/index.tsx",
-    ]) {
+    for (const file of ["src/routes/museu.tsx", "src/routes/publicacoes/index.tsx"]) {
       const src = readFileSync(file, "utf8");
-      expect(src).toMatch(/<ScienceAccessCard variant="compact"/);
+      expect(src).not.toContain("ScienceAccessCard");
     }
   });
 
-  // O card da home precisa ENSINAR, não só linkar: passos com fundamento,
-  // o que não é exigido e as fontes por país.
-  it("o card mostra os passos com o fundamento de cada um", async () => {
+  // Sem cabeçalho com navegação, o /auth ainda precisa de uma porta para o guia.
+  it("o /auth mantém uma única porta para o guia", async () => {
+    const { readFileSync } = await import("node:fs");
+    const auth = readFileSync("src/routes/auth.tsx", "utf8");
+    const uses = auth.match(/<ScienceAccessCard/g) ?? [];
+    expect(uses).toHaveLength(1);
+    expect(auth).toContain('variant="compact"');
+  });
+
+  it("o guia fica na navegação principal", async () => {
+    const { readFileSync } = await import("node:fs");
+    const nav = readFileSync("src/components/app/AppHeader.tsx", "utf8");
+    expect(nav).toContain('to: "/ciencia"');
+  });
+
+  // O card da home ensina o essencial; o detalhe de cada etapa fica em /ciencia,
+  // para o card não voltar a medir mais de uma tela.
+  it("o card resume os passos e aponta para o guia completo", async () => {
     const { readFileSync } = await import("node:fs");
     const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
     expect(card).toContain("SCIENCE_BITES");
-    expect(card).toContain("bite.why");
-    expect(card).toContain("bite.whatFor");
     expect(card).toContain("NOT_REQUIRED");
     expect(card).toContain("WHAT_COUNTS");
+    expect(card).toContain('to="/ciencia"');
   });
 
   it("o card traz fontes oficiais por país, com Brasil e Uruguai", async () => {

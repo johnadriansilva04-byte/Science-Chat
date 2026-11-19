@@ -15,7 +15,6 @@ import { listArticles } from "@/lib/article.functions";
 import { AppHeader } from "@/components/app/AppHeader";
 import { createArticle } from "@/components/app/ArticlesMenu";
 import { BrandFooter } from "@/components/app/BrandFooter";
-import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -107,8 +106,6 @@ function MuseumPage() {
           As obras que mudaram o mundo — de Einstein a Turing — e a ciência que mostra como o poder
           exclui. Fontes reais, com DOI. Achou uma? Mande para o Pracinha: ela entra no seu artigo.
         </p>
-
-        <ScienceAccessCard variant="compact" className="mt-6 max-w-2xl" />
 
         <div className="relative mt-6">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

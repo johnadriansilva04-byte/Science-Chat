@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   BookOpenCheck,
   Check,
+  ChevronDown,
   ExternalLink,
   GraduationCap,
   IdCard,
@@ -103,16 +104,17 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
         </p>
       </header>
 
-      <div className="mt-4 grid gap-3 @2xl:grid-cols-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="cracha-list cracha-list--no">
           <p className="cracha-list__title">
             <X className="size-3.5" aria-hidden />
             Não é exigido
           </p>
           <ul>
-            {NOT_REQUIRED.map((item) => (
+            {NOT_REQUIRED.slice(0, 3).map((item) => (
               <li key={item}>{item}</li>
             ))}
+            <li className="cracha-list__more">e mais {NOT_REQUIRED.length - 3}…</li>
           </ul>
         </div>
         <div className="cracha-list cracha-list--yes">
@@ -120,143 +122,129 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
             <Check className="size-3.5" aria-hidden />O que conta de verdade
           </p>
           <ul>
-            {WHAT_COUNTS.map((item) => (
+            {WHAT_COUNTS.slice(0, 3).map((item) => (
               <li key={item}>{item}</li>
             ))}
+            <li className="cracha-list__more">e mais {WHAT_COUNTS.length - 3}…</li>
           </ul>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-x-5 gap-y-4 @3xl:grid-cols-[1.15fr_0.85fr] @3xl:items-start">
-        <div className="cracha-steps">
-          <p className="cracha-steps__title">
-            <BookOpenCheck className="size-4" aria-hidden />O caminho, passo a passo
-          </p>
-          <ol>
-            {SCIENCE_BITES.map((bite) => (
-              <li key={bite.n}>
-                <details className="cracha-step">
-                  <summary>
-                    <span className="cracha-step__n" aria-hidden>
-                      {bite.n}
-                    </span>
-                    <span className="cracha-step__title">{bite.title}</span>
-                    <span className="cracha-step__chevron" aria-hidden />
-                  </summary>
-                  <div className="cracha-step__body">
-                    <p className="cracha-step__do">{bite.what}</p>
-                    <p className="cracha-step__why">
-                      <span className="cracha-step__tag">Por quê</span>
-                      {bite.why}
-                    </p>
-                    <p className="cracha-step__for">
-                      <Lightbulb className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                      {bite.whatFor}
-                    </p>
-                  </div>
-                </details>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div className="cracha-sources">
-          <p className="cracha-steps__title">
-            <ShieldCheck className="size-4" aria-hidden />
-            Onde fazer, com fonte oficial
-          </p>
-          <div
-            className="cracha-tabs mt-2"
-            role="tablist"
-            aria-label="País ou região"
-            onKeyDown={(event) => {
-              // Roving tabindex: só a aba ativa está na ordem de tabulação; as
-              // setas movem entre elas, como manda o padrão WAI-ARIA de abas.
-              const dir = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-              if (!dir) return;
-              event.preventDefault();
-              const index = REGION_TABS.findIndex((t) => t.id === region);
-              const next = REGION_TABS[(index + dir + REGION_TABS.length) % REGION_TABS.length]!;
-              setRegion(next.id);
-              event.currentTarget
-                .querySelector<HTMLButtonElement>(`[data-region="${next.id}"]`)
-                ?.focus();
-            }}
-          >
-            {REGION_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                id={`cracha-tab-${tab.id}`}
-                aria-selected={region === tab.id}
-                aria-controls="cracha-panel"
-                tabIndex={region === tab.id ? 0 : -1}
-                data-region={tab.id}
-                className="cracha-tab"
-                data-state={region === tab.id ? "active" : "inactive"}
-                onClick={() => setRegion(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div
-            className="mt-2.5"
-            role="tabpanel"
-            id="cracha-panel"
-            aria-labelledby={`cracha-tab-${region}`}
-            tabIndex={0}
-          >
-            {country && (
-              <p className="cracha-region-note">
-                {region === "brasil"
-                  ? "No Brasil, a trajetória é pública e a leitura é aberta: você registra e publica sem vínculo."
-                  : "No Uruguai, o caminho passa pela Udelar e pelo SciELO Uruguay — e o CVUy já integra o ORCID."}
-              </p>
-            )}
-            <ul className="cracha-refs">
-              {references.map((ref) => (
-                <li key={ref.url}>
-                  <a href={ref.url} target="_blank" rel="noreferrer">
-                    <span className="cracha-refs__label">
-                      {ref.label}
-                      <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
-                    </span>
-                    <span className="cracha-refs__note">{ref.note}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      {/* O passo a passo completo (11 etapas, com o "por quê" e o "para que
+          serve" de cada uma) vive em /ciencia. Aqui fica o resumo: o card da
+          home é a porta de entrada, não o manual — empilhado, ele ocupava 1,7
+          telas e empurrava a coletânea para fora da primeira rolagem. */}
+      <div className="cracha-steps mt-3">
+        <p className="cracha-steps__title">
+          <BookOpenCheck className="size-4" aria-hidden />O caminho, em resumo
+        </p>
+        <ol>
+          {SCIENCE_BITES.slice(0, 4).map((bite) => (
+            <li key={bite.n} className="cracha-step cracha-step--brief">
+              <span className="cracha-step__n" aria-hidden>
+                {bite.n}
+              </span>
+              <span className="cracha-step__title">{bite.title}</span>
+            </li>
+          ))}
+          <li className="cracha-step cracha-step--brief cracha-step--more">
+            <span className="cracha-step__n" aria-hidden>
+              +{SCIENCE_BITES.length - 4}
+            </span>
+            <span className="cracha-step__title">Etapas essenciais restantes</span>
+          </li>
+        </ol>
       </div>
 
-      <div className="mt-4 flex flex-col gap-2 @2xl:flex-row">
+      {/* Fechado por padrão: o card precisa caber numa tela. Quem quer o
+          caminho por país abre — e as fontes completas ficam no guia. */}
+      <details className="cracha-sources cracha-sources--fold mt-3">
+        <summary className="cracha-steps__title">
+          <ShieldCheck className="size-4 shrink-0" aria-hidden />
+          Onde submeter, com fonte oficial
+          <span className="cracha-sources__hint">Brasil · Uruguai · Internacional</span>
+          <ChevronDown className="cracha-sources__chev size-4 shrink-0" aria-hidden />
+        </summary>
+        <div
+          className="cracha-tabs mt-2"
+          role="tablist"
+          aria-label="País ou região"
+          onKeyDown={(event) => {
+            // Roving tabindex: só a aba ativa está na ordem de tabulação; as
+            // setas movem entre elas, como manda o padrão WAI-ARIA de abas.
+            const dir = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+            if (!dir) return;
+            event.preventDefault();
+            const index = REGION_TABS.findIndex((t) => t.id === region);
+            const next = REGION_TABS[(index + dir + REGION_TABS.length) % REGION_TABS.length]!;
+            setRegion(next.id);
+            event.currentTarget
+              .querySelector<HTMLButtonElement>(`[data-region="${next.id}"]`)
+              ?.focus();
+          }}
+        >
+          {REGION_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`cracha-tab-${tab.id}`}
+              aria-selected={region === tab.id}
+              aria-controls="cracha-panel"
+              tabIndex={region === tab.id ? 0 : -1}
+              data-region={tab.id}
+              className="cracha-tab"
+              data-state={region === tab.id ? "active" : "inactive"}
+              onClick={() => setRegion(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div
+          className="mt-2.5"
+          role="tabpanel"
+          id="cracha-panel"
+          aria-labelledby={`cracha-tab-${region}`}
+          tabIndex={0}
+        >
+          {country && (
+            <p className="cracha-region-note">
+              {region === "brasil"
+                ? "No Brasil, a trajetória é pública e a leitura é aberta: você registra e publica sem vínculo."
+                : region === "uruguai"
+                  ? "No Uruguai, o caminho passa pela Udelar e pelo SciELO Uruguay — e o CVUy já integra o ORCID."
+                  : "Fora da América Latina, o ORCID e os preprints abertos são o caminho mais curto para quem não tem vínculo."}
+            </p>
+          )}
+          <ul className="cracha-refs">
+            {references.map((ref) => (
+              <li key={ref.url}>
+                <a href={ref.url} target="_blank" rel="noreferrer">
+                  <span className="cracha-refs__label">
+                    {ref.label}
+                    <ExternalLink className="size-3 shrink-0 opacity-70" aria-hidden />
+                  </span>
+                  <span className="cracha-refs__note">{ref.note}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </details>
+
+      <div className="mt-3 flex flex-col gap-2 @2xl:flex-row">
         <a href={ORCID_REGISTER_URL} target="_blank" rel="noreferrer" className="cracha-cta">
           <IdCard className="size-4" aria-hidden />
           Criar meu ORCID (grátis)
         </a>
         <Link to="/ciencia" className="cracha-cta cracha-cta--ghost">
           <BadgeCheck className="size-4" aria-hidden />
-          Guia completo: {SCIENCE_STEPS.length} etapas
+          Guia completo, com fontes
           <ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>
-
-      <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
-        Quem publica sem vínculo é o alvo preferido das revistas predatórias. Antes de pagar
-        qualquer taxa, passe a revista pelo checklist do{" "}
-        <a
-          href="https://thinkchecksubmit.org/journals/"
-          target="_blank"
-          rel="noreferrer"
-          className="font-medium text-primary hover:underline"
-        >
-          Think. Check. Submit.
-        </a>
-      </p>
     </section>
   );
 }

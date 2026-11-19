@@ -107,10 +107,6 @@ function PracinhaIntro({ onAsk }: { onAsk: (question: string) => void }) {
         ))}
       </Accordion>
 
-      {/* Porta para o guia completo: aqui chega quem ainda duvida se pode
-          publicar. O card é uma linha; o conteúdo vive em /ciencia. */}
-      <ScienceAccessCard variant="compact" className="mt-3" />
-
       <p className="mt-2 flex items-center gap-1.5 text-[0.72rem] text-muted-foreground">
         <BadgeCheck className="size-3.5 text-[var(--color-success)]" />A ciência não depende de uma
         carteira universitária para existir.
@@ -325,11 +321,9 @@ function AuthPage() {
           </div>
         </div>
 
-        {/* A coluna de boas-vindas (e o card que ela carrega) some no celular para
-            não empurrar o formulário — mas é justamente no celular que chega quem
-            ainda duvida se pode publicar sem vínculo. Aqui o convite aparece logo
-            abaixo do formulário, na versão de uma linha. */}
-        <ScienceAccessCard variant="compact" className="lg:hidden" />
+        {/* Porta única para o guia nesta tela: aqui chega quem ainda duvida se
+            pode publicar, e /auth não tem cabeçalho com navegação. */}
+        <ScienceAccessCard variant="compact" />
 
         {/* Boas-vindas do Pracinha (some no celular para não empurrar o formulário) */}
         <PracinhaIntro onAsk={ask} />
