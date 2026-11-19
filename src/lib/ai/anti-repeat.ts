@@ -42,6 +42,10 @@ const CLOSER_PATTERNS: RegExp[] = [
   // (incluir/adicionar um item real) ficam de fora: aí a oferta tem conteúdo.
   /(?:voc[êe] )?(?:gostaria|quer|deseja) de (?:explorar|falar|conversar|discutir|saber|entender|ver|seguir|continuar|prosseguir|começar|saber mais)/i,
   /(?:podemos|vamos) (?:prosseguir|continuar|seguir|avançar)\??$/i,
+  // Devolve a condução ao pesquisador: na entrevista quem pergunta é o Pracinha.
+  /qual (?:é|e|seria|ser[aá]) (?:a )?(?:sua |tua )?pr[óo]xim[ao] (?:pergunta|d[úu]vida|quest[ãa]o)/i,
+  /(?:o que|quais) (?:voc[êe] )?(?:gostaria|quer|deseja) (?:de )?(?:saber|perguntar|descobrir) (?:agora|a seguir|em seguida)/i,
+  /(?:em que|como) (?:mais )?(?:posso|podemos) (?:te )?(?:ajudar|auxiliar)/i,
 ];
 
 /**
@@ -56,6 +60,10 @@ const GREETING_PATTERNS: RegExp[] = [
   /^(?:ola|oi|opa)\b[^.!?]{0,40}\bassistente d[ao] scien[çc]echat\b/,
   /^(?:estou aqui|estou pronto) para (?:te |lhe )?ajudar/,
   /^(?:vamos|podemos) come[çc]ar (?:a estruturar|o artigo|a construir)/,
+  // Saudação solta ("Olá!", "Oi!") sobrava depois de cortar a apresentação e
+  // aparecia no meio do diálogo como se a conversa tivesse recomeçado. Exige que
+  // a frase INTEIRA seja a saudação: "Tudo bem delimitado, o escopo…" é conteúdo.
+  /^(?:ola|oi|opa|e ai|bem-vind[oa]|tudo bem|como vai)(?:[,.!\s]|$)*$/,
 ];
 
 /**

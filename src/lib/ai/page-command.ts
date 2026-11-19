@@ -120,3 +120,42 @@ export function parseRewriteRequest(text: string): RewriteRequest | null {
   if (!Number.isInteger(pagina) || pagina < 1) return null;
   return { pagina, instruction: t };
 }
+
+const TITLE_NOUN = /(?:t[íi]tulo|title)/i;
+const TITLE_VERBS =
+  /(?:arrum\w*|consert\w*|corrij\w*|corrig\w*|mude|muda|troque|troca|alter\w*|atualiz\w*|renomeie|defina|deixe|coloque|ponha|p[õo]e|use|usar|set)\b/i;
+
+/**
+ * Reconhece um pedido de TROCA DE TÍTULO com o novo título escrito na própria
+ * mensagem: "arrume o titulo para O Autodidata e seus Métodos".
+ *
+ * Motivo: o modelo NARRA a ação ("Vou arrumar o título para você") em vez de
+ * emitir o tool call, e o título nunca muda — o pesquisador então repete o
+ * pedido várias vezes e recebe uma mentira ("Agora que o título foi
+ * atualizado"). Aqui o servidor aplica a mudança direto, sem depender do modelo.
+ */
+export function parseTitleCommand(text: string): string | null {
+  const t = text.trim();
+  if (!t || t.length > 400) return null;
+  if (!TITLE_NOUN.test(t) || !TITLE_VERBS.test(t)) return null;
+
+  // O novo título começa depois de "para", "por", ":", "=" ou aspas.
+  const marker =
+    /(?:t[íi]tulo|title)\s*(?:para|pra|por|como|:|=|->|→)\s*(.+)$/i.exec(t) ??
+    /(?:para|pra|por)\s+(?:o\s+)?(?:t[íi]tulo|title)\s*(?::|=|->|→)?\s*(.+)$/i.exec(t);
+  if (!marker) return null;
+
+  let titulo = marker[1]!.trim().replace(/^[,:;\s]+/, "");
+  // Forma invertida ("para o título, use X"): o verbo sobra antes do título.
+  titulo = titulo.replace(/^(?:use|usar|usando|escreva|coloque|ponha)\s+/i, "");
+  // Aspas em volta ("…", “…”, '…') não fazem parte do título.
+  titulo = titulo.replace(/^["“'‘]+|["”'’]+$/g, "").trim();
+  titulo = titulo.replace(/[.;,]+$/, "").trim();
+  if (!titulo || titulo.length < 3 || titulo.length > 200) return null;
+  // Placeholder (<…>, […]) é instrução, não título.
+  if (/^[<[].*[>\]]$/.test(titulo)) return null;
+  // Referência ao que já existe ("o próximo passo", "o mesmo título", "para mim")
+  // não é um título novo.
+  if (/\b(?:pr[óo]xim[oa]|anterior|mesmo|atual|mim|ele|ela|isso)\b/i.test(titulo)) return null;
+  return titulo;
+}

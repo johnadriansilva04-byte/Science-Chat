@@ -93,7 +93,9 @@ function Index() {
 
   return (
     <div className="landing-shell flex min-h-screen flex-col">
-      <div ref={heroRef} className="landing-hero relative flex min-h-screen flex-col">
+      {/* No celular o herói não força 100vh: sem isso, o card "Ciência sem crachá"
+          ficava uma tela inteira abaixo da dobra e ninguém o encontrava. */}
+      <div ref={heroRef} className="landing-hero relative flex min-h-0 flex-col lg:min-h-screen">
         <AppHeader variant="overlay" />
 
         {authError && (
@@ -106,7 +108,7 @@ function Index() {
           </div>
         )}
 
-        <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10 lg:pb-10">
+        <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:flex-1 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10 lg:pb-10">
           {/* Coluna esquerda: a promessa e o começo */}
           <section className="order-1 flex min-h-0 flex-col justify-center">
             <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/30 bg-card/70 px-3 py-1 text-[11px] font-medium text-primary landing-badge backdrop-blur">
@@ -190,7 +192,7 @@ function Index() {
           {/* Coluna direita: a coletânea. O guia "Ciência sem crachá" saiu daqui:
               é conteúdo educativo e precisa de largura para ensinar, então vive
               logo abaixo do herói, em faixa própria. */}
-          <section className="order-2 flex min-h-0 flex-col gap-3 lg:order-2">
+          <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
             <div className="landing-shelf-card rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="size-4 text-primary" />
@@ -205,14 +207,13 @@ function Index() {
               <PublishedShelf compact />
             </div>
           </section>
-        </main>
 
-        <section
-          aria-label="Ciência sem crachá"
-          className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6"
-        >
-          <ScienceAccessCard />
-        </section>
+          {/* O guia ensina, então precisa aparecer cedo: no celular ele vem
+              logo depois da chamada para ação, antes da coletânea. */}
+          <section aria-label="Ciência sem crachá" className="order-2 lg:order-3 lg:col-span-2">
+            <ScienceAccessCard />
+          </section>
+        </main>
 
         <div className="relative z-10 hidden items-center justify-between px-6 py-3 text-[11px] text-muted-foreground lg:flex">
           <span>Uma criação Variant · CEO John Adrian</span>

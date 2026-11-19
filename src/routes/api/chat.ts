@@ -7,6 +7,8 @@ import {
   type UIMessage,
 } from "ai";
 import { startResponses, generateFinalText, interviewModelId } from "@/lib/ai/gateway.server";
+import { interviewNotes } from "@/lib/interview-notes";
+import { interviewQuestionTransform } from "@/lib/ai/interview-guard";
 import {
   INTERVIEW_INSTRUCTIONS,
   PAGE_INSTRUCTIONS,
@@ -15,13 +17,18 @@ import {
 import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@/lib/article-page";
 import { stripMarkers } from "@/lib/article-marker";
 import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
-import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
+import { stripLeakedToolCalls, stripToolNameMentions } from "@/lib/ai/leaked-tool-call";
 import { errorTextStream } from "@/lib/ai/error-stream";
 import { cleanAssistantText, collectAssistantSentences } from "@/lib/ai/anti-repeat";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { windowHistory } from "@/lib/ai/history-window";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
-import { parsePageCommand, parseRewriteRequest, type PageCommand } from "@/lib/ai/page-command";
+import {
+  parsePageCommand,
+  parseRewriteRequest,
+  parseTitleCommand,
+  type PageCommand,
+} from "@/lib/ai/page-command";
 import { getSessionUser } from "@/lib/cf/auth.server";
 import { CHAT_POLICY, consumeRateLimit, tooManyRequests } from "@/lib/cf/rate-limit.server";
 import * as repo from "@/lib/cf/repo.server";
@@ -36,7 +43,12 @@ function sanitizeMessages(messages: UIMessage[]): UIMessage[] {
     if (message.role !== "assistant") return message;
     const parts = message.parts.map((part) =>
       part.type === "text"
-        ? { ...part, text: cleanAssistantText(stripLeakedToolCalls(part.text, TOOL_NAMES)) }
+        ? {
+            ...part,
+            text: cleanAssistantText(
+              stripToolNameMentions(stripLeakedToolCalls(part.text, TOOL_NAMES), TOOL_NAMES),
+            ),
+          }
         : part,
     );
     return { ...message, parts };
@@ -66,6 +78,50 @@ async function documentContext(userId: string, articleId: string): Promise<strin
  * (`tool-input-available` + `tool-output-available`) e uma confirmação curta —
  * assim a folha recarrega na tela e o pesquisador vê exatamente o que mudou.
  */
+/**
+ * Aplica a troca de título direto no banco e devolve o stream com a confirmação.
+ * O modelo narrava ("Vou arrumar o título") sem executar, e depois afirmava que
+ * tinha atualizado — o documento continuava igual.
+ */
+function runTitleCommand(userId: string, articleId: string, titulo: string) {
+  const toolCallId = `titlecmd-${generateId()}`;
+  return createUIMessageStream({
+    execute: async ({ writer }) => {
+      let ok = true;
+      let result: string;
+      try {
+        await repo.updateArticle(userId, articleId, { title: titulo });
+        result = `Título atualizado para "${titulo}".`;
+      } catch (error) {
+        ok = false;
+        result = error instanceof Error ? error.message : "Não foi possível mudar o título.";
+      }
+
+      writer.write({
+        type: "tool-input-available",
+        toolCallId,
+        toolName: "atualizar_titulo",
+        input: { titulo },
+      });
+      writer.write(
+        ok
+          ? { type: "tool-output-available", toolCallId, output: result }
+          : { type: "tool-output-error", toolCallId, errorText: result },
+      );
+
+      const textId = generateId();
+      const delta = ok ? `Título agora é "${titulo}".` : "Não consegui mudar o título.";
+      writer.write({ type: "text-start", id: textId });
+      writer.write({ type: "text-delta", id: textId, delta });
+      writer.write({ type: "text-end", id: textId });
+
+      await repo.addMessage(userId, articleId, "assistant", [{ type: "text", text: delta }]);
+      await repo.updateArticle(userId, articleId, {});
+    },
+    onError: () => "Não foi possível mudar o título. Tente novamente.",
+  });
+}
+
 function runPageCommand(userId: string, articleId: string, cmd: PageCommand) {
   const toolName = cmd.action === "edit" ? "editar_pagina" : "acrescentar_na_pagina";
   const toolCallId = `pgcmd-${generateId()}`;
@@ -247,6 +303,14 @@ async function handle(request: Request) {
     .map((p) => (p as { text: string }).text)
     .join(" ");
 
+  // Troca de título pedida em linguagem natural: aplicada aqui, sem depender de
+  // o modelo emitir o tool call (ele narrava a ação e o título não mudava).
+  const titleCommand = parseTitleCommand(lastUserText ?? "");
+  if (titleCommand)
+    return createUIMessageStreamResponse({
+      stream: runTitleCommand(user.id, article.id, titleCommand),
+    });
+
   // Caminho determinístico: quando o pedido traz um conteúdo LITERAL inequívoco
   // ("página 1, com a palavra exata: X"), aplicamos a edição direto no banco. Isso
   // contorna a falha do llama-3.3, que narra a chamada em vez de emitir o tool call
@@ -302,6 +366,12 @@ async function handle(request: Request) {
       // A entrevista é diálogo guiado e usa o modelo leve (6× mais barato em
       // neurônios); a escrita do documento fica no 70B, onde o texto é o produto.
       article.phase === "interview" ? interviewModelId() : undefined,
+      // Rede de segurança da entrevista: se o modelo só parafrasear o que o
+      // pesquisador escreveu e não perguntar nada, a pergunta da próxima lacuna
+      // entra no fim — a conversa nunca trava.
+      article.phase === "interview"
+        ? [() => interviewQuestionTransform(interviewNotes(windowed))]
+        : undefined,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -334,7 +404,9 @@ async function handle(request: Request) {
           .filter((p) => p.type === "text")
           .map((p) => ({
             ...p,
-            text: cleanAssistantText(stripLeakedToolCalls(p.text, TOOL_NAMES)),
+            text: cleanAssistantText(
+              stripToolNameMentions(stripLeakedToolCalls(p.text, TOOL_NAMES), TOOL_NAMES),
+            ),
           }))
           .filter((p) => p.text.trim().length > 0);
         if (!parts.length) return;

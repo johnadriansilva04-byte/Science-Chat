@@ -210,6 +210,7 @@ export function ChatDock({
   // Card de identidade do ORCID: aberto quando o Pracinha pede o número.
   const [orcidOpen, setOrcidOpen] = useState(false);
   const lastSent = useRef("");
+  const sendingRef = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const wasBusy = useRef(false);
   // Se o pesquisador mandou ÁUDIO, o Pracinha responde em áudio também.
@@ -456,7 +457,15 @@ export function ChatDock({
   }, [autoSpeak, busy, lastAssistant, lastAssistantText]);
 
   const send = (text: string, viaVoice = false) => {
+    // Trava SÍNCRONA contra envio duplicado: `busy` vem do `status` do useChat e
+    // só muda depois do próximo render, então Enter repetido (ou toque duplo no
+    // celular) passava várias vezes e a mesma mensagem ia 3, 4, 5 vezes ao chat.
+    if (sendingRef.current) return;
     if (!text.trim() || busy) return;
+    sendingRef.current = true;
+    window.setTimeout(() => {
+      sendingRef.current = false;
+    }, 400);
     // Se o Pracinha estava "descansando", o envio é a própria tentativa de
     // retorno: limpa o aviso e tenta. Se a cota continuar esgotada, o erro
     // recoloca o aviso — mas o campo nunca fica travado.
@@ -698,98 +707,103 @@ export function ChatDock({
         </Conversation>
 
         <div className="chat-composer space-y-1.5 border-t p-2">
-          <ChatProtocol current={protocolStep} className="mb-1" />
-          {inbox.length > 0 && (
-            <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
-              <Sparkles className="size-4 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 text-[11px] leading-tight">
-                {inbox.length === 1 ? "1 obra do Museu" : `${inbox.length} obras do Museu`} à
-                espera.
-              </span>
+          {/* Os blocos auxiliares (protocolo, sugestões, cartão de ORCID) empilhavam
+              até 546px num celular de 844px e espremiam a conversa em 192px.
+              No mobile eles rolam dentro de um teto; no desktop nada muda. */}
+          <div className="space-y-1.5 max-h-[30dvh] overflow-y-auto overscroll-contain lg:max-h-none lg:overflow-visible">
+            <ChatProtocol current={protocolStep} className="mb-1" />
+            {inbox.length > 0 && (
+              <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
+                <Sparkles className="size-4 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 text-[11px] leading-tight">
+                  {inbox.length === 1 ? "1 obra do Museu" : `${inbox.length} obras do Museu`} à
+                  espera.
+                </span>
+                <Button
+                  size="sm"
+                  className="h-6 px-2 text-[11px]"
+                  disabled={busy}
+                  onClick={sendInbox}
+                >
+                  Enviar
+                </Button>
+                <button
+                  type="button"
+                  className="text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    clearInbox();
+                    setInbox([]);
+                  }}
+                >
+                  dispensar
+                </button>
+              </div>
+            )}
+            {messages.length > 0 && !planApproved && (
               <Button
                 size="sm"
-                className="h-6 px-2 text-[11px]"
-                disabled={busy}
-                onClick={sendInbox}
+                variant="secondary"
+                className="w-full gap-1.5"
+                onClick={onRequestPlan}
               >
-                Enviar
+                <ClipboardCheck className="size-4" />
+                Concluir entrevista e montar o plano
               </Button>
-              <button
-                type="button"
-                className="text-[11px] text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  clearInbox();
-                  setInbox([]);
+            )}
+            {messages.length > 0 && !planApproved && (
+              <div className="flex flex-wrap gap-1">
+                {quickReplies.map((q) => (
+                  <Button
+                    key={q}
+                    size="sm"
+                    variant="outline"
+                    className="h-6 rounded-full px-2 text-[11px]"
+                    disabled={busy}
+                    onClick={() => send(q)}
+                  >
+                    {q}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {scienceFlow.stage !== "idle" && !scienceFlowDismissed && (
+              <ScienceFlowCard
+                state={scienceFlow}
+                onStart={() => setScienceFlow(startScienceFlow())}
+                onNext={() => setScienceFlow(advanceScienceFlow)}
+                onDismiss={() => {
+                  dismissScienceFlow(articleId);
+                  setScienceFlowDismissed(true);
+                  setScienceFlow(SCIENCE_FLOW_IDLE);
                 }}
-              >
-                dispensar
-              </button>
-            </div>
-          )}
-          {messages.length > 0 && !planApproved && (
-            <Button
-              size="sm"
-              variant="secondary"
-              className="w-full gap-1.5"
-              onClick={onRequestPlan}
-            >
-              <ClipboardCheck className="size-4" />
-              Concluir entrevista e montar o plano
-            </Button>
-          )}
-          {messages.length > 0 && !planApproved && (
-            <div className="flex flex-wrap gap-1">
-              {quickReplies.map((q) => (
-                <Button
-                  key={q}
-                  size="sm"
-                  variant="outline"
-                  className="h-6 rounded-full px-2 text-[11px]"
-                  disabled={busy}
-                  onClick={() => send(q)}
-                >
-                  {q}
-                </Button>
-              ))}
-            </div>
-          )}
-          {scienceFlow.stage !== "idle" && !scienceFlowDismissed && (
-            <ScienceFlowCard
-              state={scienceFlow}
-              onStart={() => setScienceFlow(startScienceFlow())}
-              onNext={() => setScienceFlow(advanceScienceFlow)}
-              onDismiss={() => {
-                dismissScienceFlow(articleId);
-                setScienceFlowDismissed(true);
-                setScienceFlow(SCIENCE_FLOW_IDLE);
-              }}
-              onCreate={() => {
-                setScienceFlowDismissed(true);
-                send(SCIENCE_FLOW_SEED);
-              }}
-              onCreateFromScratch={() => {
-                setScienceFlowDismissed(true);
-                setScienceFlow(SCIENCE_FLOW_IDLE);
-              }}
-              canCreate
-            />
-          )}
-          {orcidAsked && !orcidDismissed && (
-            <OrcidPrompt
-              disabled={busy}
-              onSend={(text) => {
-                setOrcidDismissed(true);
-                send(text);
-              }}
-              onDismiss={() => setOrcidDismissed(true)}
-            />
-          )}
-          {planApproved && (
-            <div className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1.5 text-[11px] text-success">
-              <Check className="size-3.5" />
-              Entrevista concluída. Peça alterações aqui e eu aplico no documento.
-            </div>
-          )}
+                onCreate={() => {
+                  setScienceFlowDismissed(true);
+                  send(SCIENCE_FLOW_SEED);
+                }}
+                onCreateFromScratch={() => {
+                  setScienceFlowDismissed(true);
+                  setScienceFlow(SCIENCE_FLOW_IDLE);
+                }}
+                canCreate
+              />
+            )}
+            {orcidAsked && !orcidDismissed && (
+              <OrcidPrompt
+                disabled={busy}
+                onSend={(text) => {
+                  setOrcidDismissed(true);
+                  send(text);
+                }}
+                onDismiss={() => setOrcidDismissed(true)}
+              />
+            )}
+            {planApproved && (
+              <div className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1.5 text-[11px] text-success">
+                <Check className="size-3.5" />
+                Entrevista concluída. Peça alterações aqui e eu aplico no documento.
+              </div>
+            )}
+          </div>
           <PromptInput
             onSubmit={(msg: PromptInputMessage) => {
               const viaVoice = dictated.current;

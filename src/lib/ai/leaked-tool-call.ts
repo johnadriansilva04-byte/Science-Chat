@@ -16,6 +16,8 @@
  * para ser testável e reutilizável tanto no histórico quanto no stream.
  */
 
+import type { TextStreamPart, ToolSet } from "ai";
+
 export type LeakedToolCall = { toolName: string; input: Record<string, unknown> };
 
 type JsonObject = Record<string, unknown>;
@@ -86,6 +88,48 @@ export function extractLeakedToolCall(
  * solto com "name"/"parameters"), preservando a prosa em volta. Usado para
  * higienizar o histórico antes de enviá-lo ao modelo.
  */
+/** Remove espaços/pontuação órfãos deixados ao cortar um trecho. */
+function tidyPunctuation(text: string): string {
+  return text
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/([,;:])\1+/g, "$1")
+    .replace(/,\s*\./g, ".")
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]+$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Remove NOMES INTERNOS de ferramentas citados na prosa. O modelo escreve coisas
+ * como "registro com a ferramenta definir_orcid" — jargão que não significa nada
+ * para o pesquisador. Nomes têm sublinhado, então nunca colidem com palavra
+ * normal; o risco de remover texto legítimo é nulo.
+ */
+export function stripToolNameMentions(text: string, toolNames: Iterable<string> = []): string {
+  const names = [...toolNames];
+  if (!names.length) return text;
+  const alternation = names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  let out = text;
+  // "com a ferramenta X", "usando a função X", "via tool X" — a cláusula inteira.
+  out = out.replace(
+    new RegExp(
+      `\\s*(?:,\\s*)?(?:com|usando|usar|usa|via|pela|pelo|atrav[ée]s d[ae]|na|no)?\\s*` +
+        `(?:a|o|as|os)?\\s*(?:ferramenta|fun[çc][ãa]o|tool)s?\\s+\`?(?:${alternation})\`?`,
+      "gi",
+    ),
+    "",
+  );
+  // Nome solto (com ou sem crase) que sobrou.
+  out = out.replace(new RegExp(`\`?(?:${alternation})\`?`, "gi"), "");
+  // Preserva os espaços das bordas: no stream os deltas se emendam e um
+  // `trim` aqui colaria a última palavra de um pedaço na primeira do seguinte.
+  const leading = out.match(/^\s*/)?.[0] ?? "";
+  const trailing = out.match(/\s*$/)?.[0] ?? "";
+  return leading + tidyPunctuation(out) + trailing;
+}
+
 export function stripLeakedToolCalls(text: string, toolNames: Iterable<string> = []): string {
   const known = new Set(toolNames);
   let out = text;
@@ -128,4 +172,61 @@ export function stripLeakedToolCalls(text: string, toolNames: Iterable<string> =
   out = result.replace(/§§NAME§§/g, '"name"');
 
   return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
+ * Transform de stream que remove nomes internos de ferramentas da prosa ao vivo.
+ * Segura a última palavra do buffer: um nome pode chegar partido entre deltas
+ * ("definir_" + "orcid"), e emitir o pedaço já mostraria o jargão na tela.
+ */
+/**
+ * Índice a partir do qual o buffer ainda pode virar um nome de ferramenta.
+ * Segurar só a última palavra não basta: a cláusula "com a ferramenta …" é
+ * emitida antes de o nome chegar no delta seguinte, e aí o nome apareceria
+ * sozinho na tela. Seguramos a cláusula aberta e a palavra parcial.
+ */
+function holdStart(buffer: string, names: string[]): number {
+  let hold = buffer.length;
+  const clause =
+    /(?:^|\s)(?:(?:com|usando|usar|usa|via|pela|pelo|atrav[ée]s d[ae]|na|no)\s+)?(?:a\s+|o\s+|as\s+|os\s+)?(?:ferramenta|fun[çc][ãa]o|tool)s?\s*$/i.exec(
+      buffer,
+    );
+  if (clause) hold = clause.index;
+  const tail = /[A-Za-zÀ-ÿ_]+$/.exec(buffer)?.[0] ?? "";
+  if (tail) {
+    const lower = tail.toLowerCase();
+    const partial = names.some(
+      (n) => n.toLowerCase() !== lower && n.toLowerCase().startsWith(lower),
+    );
+    if (partial) hold = Math.min(hold, buffer.length - tail.length);
+  }
+  return hold;
+}
+
+export function toolNameScrubTransform(
+  toolNames: Iterable<string>,
+): TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>> {
+  const names = [...toolNames];
+  const buffers = new Map<string, string>();
+  return new TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>>({
+    transform(part, controller) {
+      if (part.type !== "text-delta" || !names.length) {
+        controller.enqueue(part);
+        return;
+      }
+      const buffered = (buffers.get(part.id) ?? "") + part.text;
+      const hold = holdStart(buffered, names);
+      const ready = buffered.slice(0, hold);
+      buffers.set(part.id, buffered.slice(hold));
+      const safe = stripToolNameMentions(ready, names);
+      if (safe) controller.enqueue({ ...part, text: safe });
+    },
+    flush(controller) {
+      for (const [id, rest] of buffers) {
+        buffers.delete(id);
+        const safe = stripToolNameMentions(rest, names);
+        if (safe.trim()) controller.enqueue({ type: "text-delta", id, text: safe });
+      }
+    },
+  });
 }

@@ -80,7 +80,37 @@ async function readAnexoText(
  * editar/acrescentar texto nas páginas A4 (mesmo caminho do banco usado pela UI).
  * O efeito aparece na folha depois que a interface recarrega o artigo.
  */
+export const REPEATED_SEARCH_NOTICE =
+  "Esta consulta já foi feita nesta mesma mensagem. Os resultados estão acima — use-os e responda ao pesquisador agora, sem repetir a busca.";
+
+/**
+ * Envolve a busca de literatura com memória por requisição. O modelo repete a
+ * MESMA consulta em passos consecutivos; cada repetição gasta um passo do
+ * orçamento (MAX_STEPS=3) e uma chamada de rede, sobrando um passo só para a
+ * resposta — que saía curta e sem a pergunta da entrevista. Na repetição
+ * devolvemos um aviso curto em vez dos resultados: eles já estão no histórico, e
+ * reenviá-los só reforça o loop.
+ */
+export function memoizeSearch(
+  search: (consulta: string, limite: number) => Promise<string>,
+): (consulta: string, limite: number) => Promise<string> {
+  const seen = new Set<string>();
+  return async (consulta, limite) => {
+    const key = `${consulta.trim().toLowerCase()}|${limite}`;
+    if (seen.has(key)) return REPEATED_SEARCH_NOTICE;
+    const result = await search(consulta, limite);
+    // Só memoriza o que deu certo: uma falha de rede precisa poder ser tentada
+    // de novo no passo seguinte, em vez de virar aviso de "já busquei".
+    seen.add(key);
+    return result;
+  };
+}
+
 export function buildTools(ctx: ToolContext) {
+  const search = memoizeSearch(async (consulta, limite) => {
+    const { hits, degraded } = await searchLiterature(consulta, limite);
+    return formatHits(hits, degraded);
+  });
   return {
     pesquisar_bases: tool({
       description:
@@ -95,10 +125,7 @@ export function buildTools(ctx: ToolContext) {
           .optional()
           .describe("Máximo de resultados (padrão 8)."),
       }),
-      execute: async ({ consulta, limite }) => {
-        const { hits, degraded } = await searchLiterature(consulta, limite ?? 8);
-        return formatHits(hits, degraded);
-      },
+      execute: async ({ consulta, limite }) => search(consulta, limite ?? 8),
     }),
 
     listar_anexos: tool({

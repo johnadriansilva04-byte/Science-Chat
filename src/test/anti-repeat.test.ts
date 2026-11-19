@@ -60,7 +60,15 @@ describe("anti-repeat", () => {
     expect(isCloserSentence("Qual seria o próximo passo?")).toBe(true);
     expect(isCloserSentence("O que mais você gostaria de acrescentar?")).toBe(true);
     expect(isCloserSentence("Como posso ajudar?")).toBe(true);
+    // Visto no chat real: o Pracinha devolvia a condução ao pesquisador em vez
+    // de fazer a pergunta da entrevista.
+    expect(isCloserSentence("Qual é a sua próxima pergunta?")).toBe(true);
+    expect(isCloserSentence("Qual é a sua próxima dúvida?")).toBe(true);
+    expect(isCloserSentence("O que você gostaria de saber agora?")).toBe(true);
+    expect(isCloserSentence("Como mais posso te ajudar?")).toBe(true);
     expect(isCloserSentence("A neuroplasticidade é o mecanismo que sustenta a tese.")).toBe(false);
+    // Pergunta concreta da entrevista NÃO é clichê: é o trabalho do Pracinha.
+    expect(isCloserSentence("Quantos participantes você pretende incluir?")).toBe(false);
     // Frase longa que por acaso cita a fórmula não é clichê.
     const long =
       "Muitos tutores encerram com uma pergunta genérica do tipo qual é o próximo passo, e isso " +
@@ -201,5 +209,34 @@ describe("anti-repeat", () => {
     const said = "Olá, sou o Pracinha, assistente da ScienceChat. Vamos começar?";
     const { text } = await throughTransform([...said], []);
     expect(text).toContain("Pracinha");
+  });
+});
+
+// No chat real o Pracinha se reapresentava no meio do diálogo ("Olá! Sou o
+// Pracinha, assistente da ScienceChat") e sobrava um "Olá!" solto depois do corte.
+describe("saudação repetida", () => {
+  it("reconhece a reapresentação e a saudação solta", () => {
+    expect(isGreetingSentence("Olá! Sou o Pracinha, assistente da ScienceChat.")).toBe(true);
+    expect(isGreetingSentence("Sou o Pracinha, assistente da ScienceChat.")).toBe(true);
+    expect(isGreetingSentence("Olá!")).toBe(true);
+    expect(isGreetingSentence("Tudo bem!")).toBe(true);
+  });
+
+  it("não confunde conteúdo que começa com palavra de saudação", () => {
+    expect(isGreetingSentence("Tudo bem delimitado, o escopo é claro.")).toBe(false);
+    expect(isGreetingSentence("Oi, Pracinha, preciso de ajuda com o método.")).toBe(false);
+  });
+
+  it("remove a reapresentação inteira no meio da conversa", () => {
+    const text =
+      "Olá! Sou o Pracinha, assistente da ScienceChat. Estou aqui para ajudar você a " +
+      "construir seu artigo científico. Vamos começar a estruturar o artigo?";
+    expect(cleanAssistantText(text, ["frase anterior"])).toBe("");
+  });
+
+  it("preserva conteúdo quando só a saudação inicial sobra", () => {
+    expect(cleanAssistantText("Olá! A tese é defensável e tem limites claros.", ["x"])).toBe(
+      "A tese é defensável e tem limites claros.",
+    );
   });
 });

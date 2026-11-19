@@ -126,7 +126,7 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
   {
     label: "Colibri (Udelar)",
     url: "https://www.colibri.udelar.edu.uy/",
-    note: "Repositório institucional de acesso aberto da Udelar: teses, artigos e produção científica. Serve para publicar em acesso aberto e para ver como outros autores uruguaios apresentam seus trabalhos.",
+    note: "Repositório institucional da Udelar: teses e produção científica, aberto para leitura. O depósito é para quem tem vínculo com a universidade — para publicar sem vínculo, use um preprint (SciELO Preprints) ou a revista de acesso aberto.",
     region: "uruguai",
   },
   {
@@ -316,7 +316,7 @@ export const COUNTRY_PATHS: CountryPath[] = [
     highlights: [
       "SciELO Uruguay: as revistas científicas do país, com normas e prazos oficiais.",
       "CVUy (ANII): currículo público gratuito, já integrado ao ORCID — o “Lattes” uruguaio.",
-      "Colibri (Udelar): repositório de acesso aberto para depositar sua produção.",
+      "Colibri (Udelar): repositório institucional, aberto para leitura; o depósito exige vínculo com a Udelar.",
       "ANII: financia pesquisa e formação; não é pré-requisito para submeter um artigo.",
     ],
   },
