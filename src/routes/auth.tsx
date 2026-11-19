@@ -325,6 +325,12 @@ function AuthPage() {
           </div>
         </div>
 
+        {/* A coluna de boas-vindas (e o card que ela carrega) some no celular para
+            não empurrar o formulário — mas é justamente no celular que chega quem
+            ainda duvida se pode publicar sem vínculo. Aqui o convite aparece logo
+            abaixo do formulário, na versão de uma linha. */}
+        <ScienceAccessCard variant="compact" className="lg:hidden" />
+
         {/* Boas-vindas do Pracinha (some no celular para não empurrar o formulário) */}
         <PracinhaIntro onAsk={ask} />
       </div>
