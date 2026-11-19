@@ -44,6 +44,31 @@ const CLOSER_PATTERNS: RegExp[] = [
   /(?:podemos|vamos) (?:prosseguir|continuar|seguir|avançar)\??$/i,
 ];
 
+/**
+ * Re-apresentação: "Olá, sou o Pracinha, assistente da ScienceChat". Verdadeira
+ * na primeira mensagem, inútil (e irritante) no meio da conversa — o modelo
+ * cumprimenta de novo depois de uma mensagem longa do pesquisador, como se a
+ * conversa tivesse recomeçado.
+ */
+const GREETING_PATTERNS: RegExp[] = [
+  /^(?:ola|oi|opa|e ai|bem-vind[oa])\b[^.!?]{0,80}\bsou (?:o |a )?(?:pracinha|assistente)/,
+  /^sou (?:o |a )?(?:pracinha|assistente d[ao] scien[çc]echat)\b/,
+  /^(?:ola|oi|opa)\b[^.!?]{0,40}\bassistente d[ao] scien[çc]echat\b/,
+  /^(?:estou aqui|estou pronto) para (?:te |lhe )?ajudar/,
+  /^(?:vamos|podemos) come[çc]ar (?:a estruturar|o artigo|a construir)/,
+];
+
+/**
+ * A frase é uma saudação/apresentação inicial? Comparada sem acentos: o `\b`
+ * do JavaScript não trata "á" como letra, e "Olá, sou…" escapava do padrão.
+ */
+export function isGreetingSentence(sentence: string): boolean {
+  const text = sentence.trim();
+  if (!text || text.length > 180) return false;
+  const plain = normalizeSentence(text);
+  return GREETING_PATTERNS.some((re) => re.test(plain));
+}
+
 /** Normaliza uma frase para comparar igualdade (sem acento, pontuação ou caixa). */
 export function normalizeSentence(sentence: string): string {
   return sentence
@@ -112,6 +137,8 @@ export function filterText(
   text: string,
   seen: Set<string>,
   remember: boolean,
+  /** Falso a partir do 2º turno: saudação repetida é descartada. */
+  allowGreeting = true,
 ): { safe: string; rest: string } {
   const { parts, rest } = extractComplete(text);
   const kept: Piece[] = [];
@@ -119,6 +146,7 @@ export function filterText(
   for (const piece of parts) {
     const norm = normalizeSentence(piece.sentence);
     if (isSubstantive(norm) && seen.has(norm)) continue; // repetição entre turnos
+    if (!allowGreeting && isGreetingSentence(piece.sentence)) continue;
     if (isCloserSentence(piece.sentence)) {
       closers.push(piece);
       continue;
@@ -138,8 +166,9 @@ export function filterText(
  * clichês de fecho quando há conteúdo, e as frases repetidas — sem zerar o texto.
  */
 export function cleanAssistantText(text: string, seed?: Iterable<string>): string {
-  const seen = new Set(seed ?? []);
-  const { safe, rest } = filterText(text, seen, true);
+  const seedList = [...(seed ?? [])];
+  const seen = new Set(seedList);
+  const { safe, rest } = filterText(text, seen, true, seedList.length === 0);
   let out = safe;
   if (rest.trim()) {
     const norm = normalizeSentence(rest);

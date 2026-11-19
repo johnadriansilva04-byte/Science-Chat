@@ -5,6 +5,7 @@ import {
   buildAntiRepeatStream,
   extractComplete,
   isCloserSentence,
+  isGreetingSentence,
   normalizeSentence,
 } from "@/lib/ai/anti-repeat";
 import type { ModelMessage, TextStreamPart, ToolSet } from "ai";
@@ -169,5 +170,20 @@ describe("anti-repeat", () => {
     await writer.close();
     const parts = await readAll;
     expect(parts.map((p) => p.type)).toEqual(["text-start", "text-delta", "text-end"]);
+  });
+
+  // Regressão: no meio da conversa o Pracinha se reapresentava ("Olá, sou o
+  // Pracinha, assistente da ScienceChat") como se o diálogo tivesse recomeçado.
+  it("remove a reapresentação a partir do 2º turno", () => {
+    const said = "Olá, sou Pracinha, assistente da ScienceChat. Qual é a sua tese?";
+    expect(isGreetingSentence("Olá, sou Pracinha, assistente da ScienceChat.")).toBe(true);
+    expect(isGreetingSentence("Qual é a sua tese?")).toBe(false);
+
+    const first = cleanAssistantText(said, []);
+    expect(first).toContain("Olá");
+
+    const later = cleanAssistantText(said, ["frase anterior qualquer"]);
+    expect(later).not.toContain("Olá, sou Pracinha");
+    expect(later).toContain("Qual é a sua tese?");
   });
 });

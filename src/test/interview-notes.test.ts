@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cleanQuestion, interviewNotes } from "@/lib/interview-notes";
+import { cleanQuestion, interviewNotes, isDocumentCommand } from "@/lib/interview-notes";
 
 describe("interviewNotes", () => {
   it("pairs each assistant question with the following user answer", () => {
@@ -56,5 +56,27 @@ describe("cleanQuestion", () => {
     ]);
     expect(notes[0]?.question).not.toBe("Informação fornecida");
     expect(notes[0]?.question.endsWith("?")).toBe(true);
+  });
+
+  // Regressão: "arrume o titulo para X" foi gravado três vezes como parágrafo da
+  // introdução, porque toda mensagem do usuário virava nota da entrevista.
+  it("comando sobre o documento não vira conteúdo do artigo", () => {
+    expect(isDocumentCommand("arrume o titulo para O Autodidata e seus Métodos")).toBe(true);
+    const notes = interviewNotes([
+      { role: "assistant", parts: [{ type: "text", text: "Qual é a sua tese?" }] },
+      { role: "user", parts: [{ type: "text", text: "Minha tese é a adaptação cognitiva." }] },
+      { role: "user", parts: [{ type: "text", text: "arrume o titulo para O Autodidata" }] },
+    ]);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.answer).toBe("Minha tese é a adaptação cognitiva.");
+  });
+
+  it("não engole resposta longa de pesquisa", () => {
+    expect(
+      isDocumentCommand(
+        "Estudo de caso exploratório com revisão de literatura sobre funções executivas " +
+          "e parentificação, ancorado no certificado do ENCCEJA de 2019 e em relato autobiográfico.",
+      ),
+    ).toBe(false);
   });
 });

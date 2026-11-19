@@ -119,11 +119,23 @@ const CREDENTIAL =
 const ASKS_PERMISSION =
   /(posso|consigo|da para|da pra|e possivel|tem como|preciso|exige|obrigatorio|necessario)/;
 
+/**
+ * Dúvida é uma pergunta curta. Um parágrafo corrido é conteúdo: o pesquisador
+ * colando a introdução, a missão de pesquisa ou um trecho do artigo. O texto do
+ * próprio trabalho fala em "ausência de credencial" e "sem credencial" o tempo
+ * todo, e abria o card no meio da escrita.
+ */
+const DOUBT_SHORT = 200;
+const DOUBT_ABSOLUTE_MAX = 600;
+
 export function detectScienceDoubt(text: string): boolean {
   const q = normalize(text ?? "")
     .replace(/\s+/g, " ")
     .trim();
   if (!q) return false;
+  if (q.length > DOUBT_ABSOLUTE_MAX) return false;
+  // Acima do tamanho de uma pergunta, só passa se for de fato uma pergunta.
+  if (q.length > DOUBT_SHORT && !q.includes("?")) return false;
   // "pesquisador independente" sozinho já é a persona do fluxo.
   if (/pesquisador(a)? independente/.test(q)) return true;
   // A falta precisa recair sobre a CREDENCIAL (vínculo, diploma, orientador),

@@ -1292,6 +1292,14 @@
   padding-right: 0.35rem;
   scrollbar-width: thin;
 }
+
+/* Na home o mural é só a homenagem: sem rolagem própria nem `flex:1`, que
+   faziam o cartão esticar até o fim da coluna. */
+.acervo-mural--compact {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding-right: 0;
+}
 .acervo-mural::-webkit-scrollbar {
   width: 8px;
 }

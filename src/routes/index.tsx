@@ -187,19 +187,14 @@ function Index() {
             </ol>
           </section>
 
-          {/* O guia ocupa a largura toda: no celular sobe para logo depois do
-              formulário (order-2); no desktop vai para baixo das colunas. */}
-          <section className="order-2 lg:order-3 lg:col-span-2">
+          {/* Coluna direita: o guia em destaque e a homenagem. A lista completa
+              do acervo vive em /publicacoes — aqui ela esticava a coluna. */}
+          <section className="order-2 flex min-h-0 flex-col gap-3 lg:order-2">
             <ScienceAccessCard />
-          </section>
-
-          {/* Coluna direita: o mural do acervo */}
-          <section className="order-3 flex min-h-0 flex-col justify-center lg:order-2">
             <div className="landing-shelf-card rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="size-4 text-primary" />
                 <h2 className="font-serif text-base font-semibold">Coletânea de artigos</h2>
-                <span className="text-[11px] text-muted-foreground">clássicos e contribuições</span>
                 <Link
                   to="/publicacoes"
                   className="ml-auto inline-flex shrink-0 items-center py-2 text-xs font-medium text-primary hover:underline sm:py-0"
@@ -207,7 +202,7 @@ function Index() {
                   Ver tudo →
                 </Link>
               </div>
-              <PublishedShelf />
+              <PublishedShelf compact />
             </div>
           </section>
         </main>

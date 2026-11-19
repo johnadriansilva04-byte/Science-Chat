@@ -141,6 +141,27 @@ export function groupNotesBySection(
   }));
 }
 
+/**
+ * Comando sobre o documento, não conteúdo para ele: "arrume o título para X",
+ * "reescreva a página 2", "publique". Sem este filtro, todo pedido do pesquisador
+ * virava parágrafo da prévia — e a introdução aparecia com "arrume o titulo para
+ * O Autodidata e seus Métodos" três vezes dentro do texto.
+ */
+const COMMAND_PATTERNS = [
+  /\b(?:arrume|arruma|consert\w*|corrij\w*|corrig\w*|mude|muda|troque|troca|altere|alter\w*|atualiz\w*|renomeie|defina)\b[^.!?]{0,60}\bt[íi]tulo\b/,
+  /\b(?:reescrev\w*|refa[çz]\w*|melhore|melhorar|revise|revisar|encurt\w*|apague|remova|exclua)\b[^.!?]{0,60}\b(?:p[áa]gina|se[çc][ãa]o|trecho|par[áa]grafo)\b/,
+  /\b(?:publique|publicar|exporte|exportar|gere o pdf|baixe)\b\s*(?:o\s+artigo|agora|j[áa])?\s*$/,
+];
+
+/** O texto é um comando sobre o documento (e não material para ele)? */
+export function isDocumentCommand(text: string): boolean {
+  const t = text.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  // Comando é curto; um parágrafo de pesquisa nunca é.
+  if (t.length > 200) return false;
+  return COMMAND_PATTERNS.some((re) => re.test(t));
+}
+
 export function interviewNotes(messages: MessageLike[]): InterviewNote[] {
   const notes: InterviewNote[] = [];
   let lastQuestion = "";
@@ -151,6 +172,12 @@ export function interviewNotes(messages: MessageLike[]): InterviewNote[] {
       const q = cleanQuestion(text);
       if (q.endsWith("?")) lastQuestion = q;
     } else if (message.role === "user") {
+      // Pedido de ação não é resposta de entrevista: consumir a pergunta sem
+      // gravar o comando, para ele não aparecer como conteúdo do artigo.
+      if (isDocumentCommand(text)) {
+        lastQuestion = "";
+        continue;
+      }
       notes.push({ question: lastQuestion || "Informação fornecida", answer: text });
       lastQuestion = "";
     }

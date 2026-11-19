@@ -10,7 +10,14 @@ import { cn } from "@/lib/utils";
  * autoria visível — sem truncar, para honrar cada obra. O acervo completo vive
  * em `/publicacoes`.
  */
-export function PublishedShelf({ className }: { className?: string }) {
+export function PublishedShelf({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  /** Na home só cabe a homenagem; as coleções completas ficam em `/publicacoes`. */
+  compact?: boolean;
+}) {
   const [pubs, setPubs] = useState<PublicationSummary[] | null>(null);
 
   useEffect(() => {
@@ -31,20 +38,25 @@ export function PublishedShelf({ className }: { className?: string }) {
     );
   }
 
+  const homage = acervo.homages[0];
+
+  if (compact) {
+    return (
+      <div className={cn("acervo-mural acervo-mural--compact", className)}>
+        {homage && <HomageStrip item={homage} />}
+        <Link
+          to="/publicacoes"
+          className="acervo-mural__more inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          Ver a coletânea completa ({acervo.counts.total} artigos) →
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("acervo-mural", className)}>
-      {acervo.homages.length > 0 && (
-        <Link to="/publicacoes" className="acervo-mural__homage">
-          <Flame className="size-4 shrink-0" />
-          <span className="min-w-0">
-            <span className="acervo-mural__homage-kicker">Homenagem do ScienceChat</span>
-            <span className="acervo-mural__homage-title">{acervo.homages[0]!.title}</span>
-            <span className="acervo-mural__homage-honoree">
-              Em memória de {acervo.homages[0]!.homage!.honoree}
-            </span>
-          </span>
-        </Link>
-      )}
+      {homage && <HomageStrip item={homage} />}
       <Collection
         icon={<Landmark className="size-4" />}
         title="Clássicos do Museu"
@@ -77,6 +89,28 @@ export function PublishedShelf({ className }: { className?: string }) {
         Ver a coletânea completa ({acervo.counts.total} artigos) →
       </Link>
     </div>
+  );
+}
+
+function HomageStrip({ item }: { item: AcervoItem }) {
+  const inner = (
+    <>
+      <Flame className="size-4 shrink-0" />
+      <span className="min-w-0">
+        <span className="acervo-mural__homage-kicker">Homenagem do ScienceChat</span>
+        <span className="acervo-mural__homage-title">{item.title}</span>
+        <span className="acervo-mural__homage-honoree">Em memória de {item.homage!.honoree}</span>
+      </span>
+    </>
+  );
+  return item.slug ? (
+    <Link to="/publicacoes/$slug" params={{ slug: item.slug }} className="acervo-mural__homage">
+      {inner}
+    </Link>
+  ) : (
+    <Link to="/publicacoes" className="acervo-mural__homage">
+      {inner}
+    </Link>
   );
 }
 

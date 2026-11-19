@@ -68,4 +68,14 @@ describe("pickForcedTool — ORCID", () => {
     expect(pickForcedTool("pesquisei os anos 2021 2022 2023 2024 no estudo")).toBeNull();
     expect(pickForcedTool("meu telefone é 1199 8888 7777 6666")).toBeNull();
   });
+
+  // Regressão: "arrume" não estava na lista de verbos de edição, então a
+  // ferramenta nunca era forçada e o modelo só narrava — o título ficava igual.
+  it("reconhece pedidos de título com verbos do dia a dia", () => {
+    expect(pickForcedTool("arrume o titulo para O Autodidata e seus Métodos")).toBe(
+      "atualizar_titulo",
+    );
+    expect(pickForcedTool("conserta o titulo do artigo")).toBe("atualizar_titulo");
+    expect(pickForcedTool("defina o título como O Autodidata")).toBe("atualizar_titulo");
+  });
 });

@@ -175,4 +175,19 @@ describe("recusa sobrevive à recarga", () => {
   it("sem storage (SSR) não explode", () => {
     expect(wasScienceFlowDismissed("art-1", undefined as never)).toBe(false);
   });
+
+  // Regressão: o texto do próprio artigo ("CIÊNCIA SEM CREDENCIAL", "ausência de
+  // credencial") era colado no chat e abria o card no meio da escrita.
+  it("trecho do artigo não é confundido com dúvida do pesquisador", () => {
+    const artigo =
+      "MISSÃO DE PESQUISA — CIÊNCIA SEM CREDENCIAL, COM MÉTODO. Estudo de caso " +
+      "exploratório, autobiográfico e documental. O autor é, ao mesmo tempo, sujeito e " +
+      "pesquisador. A ausência de credencial acadêmica é tratada como CONDIÇÃO " +
+      "EXPERIMENTAL DECLARADA — não como defeito a compensar.";
+    expect(detectScienceDoubt(artigo)).toBe(false);
+  });
+
+  it("dúvida curta de verdade continua abrindo o caminho", () => {
+    expect(detectScienceDoubt("posso publicar sem vinculo institucional?")).toBe(true);
+  });
 });
