@@ -27,11 +27,27 @@ describe("isQuotaError", () => {
     expect(isQuotaError("Muitas requisições. Tente novamente em instantes.")).toBe(false);
   });
 
+  it("não trava o chat por falhas passageiras do stream", () => {
+    // Estes textos vinham de falhas genéricas e travavam o chat por um dia.
+    expect(isQuotaError("AI_APICallError: No output generated. Check the stream for errors.")).toBe(
+      false,
+    );
+    expect(isQuotaError("quota exceeded for requests per minute")).toBe(false);
+    expect(isQuotaError("Internal error while generating the response")).toBe(false);
+  });
+
   it("ainda reconhece a exaustão real da cota", () => {
-    expect(isQuotaError("quota exceeded")).toBe(true);
+    expect(isQuotaError("4006: quota exceeded")).toBe(true);
     expect(isQuotaError("you have used up your daily free allocation of 10,000 neurons")).toBe(
       true,
     );
+    expect(isQuotaError("daily neuron allocation exceeded")).toBe(true);
+  });
+
+  it("não basta dizer 'quota exceeded' sem a marca do dia", () => {
+    // "quota exceeded" sozinho já foi cota de minuto/requisição. Só a cota
+    // DIÁRIA justifica travar o chat até a meia-noite UTC.
+    expect(isQuotaError("quota exceeded")).toBe(false);
   });
 });
 

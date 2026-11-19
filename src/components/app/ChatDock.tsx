@@ -44,6 +44,7 @@ import { PracinhaRest } from "@/components/app/PracinhaRest";
 import { ChatAttachments } from "@/components/app/ChatAttachments";
 import { OrcidPrompt } from "@/components/app/OrcidPrompt";
 import { ScienceFlowCard } from "@/components/app/ScienceFlowCard";
+import { ChatProtocol } from "@/components/app/ChatProtocol";
 import {
   SCIENCE_FLOW_IDLE,
   advanceScienceFlow,
@@ -167,6 +168,7 @@ export function ChatDock({
   isMobile = false,
   mobileVisible = true,
   onMobileClose,
+  protocolStep = 0,
 }: {
   articleId: string;
   initialMessages: UIMessage[];
@@ -184,6 +186,8 @@ export function ChatDock({
   isMobile?: boolean;
   mobileVisible?: boolean;
   onMobileClose?: () => void;
+  /** Parte do protocolo em produção (1-based); 0 enquanto a entrevista corre. */
+  protocolStep?: number;
 }) {
   const [open, setOpen] = useState(true);
   const [unread, setUnread] = useState(0);
@@ -328,20 +332,22 @@ export function ChatDock({
       .join(" ");
   }, [messages]);
 
+  // UMA fonte de oferta. Antes eram dois efeitos (dúvida e descanso) que
+  // reabriam o card por caminhos diferentes: "Agora não" zerava o estágio e o
+  // outro efeito oferecia de novo, duplicando o cartão na tela.
+  const offeredFor = useRef<string | null>(null);
   useEffect(() => {
-    if (scienceFlow.stage !== "idle" || scienceFlowDismissed) return;
-    if (detectScienceDoubt(lastUserText ?? "")) {
-      setScienceFlow({ stage: "offered", index: 0 });
-    }
-  }, [lastUserText, scienceFlow.stage, scienceFlowDismissed]);
-
-  // O caminho é texto determinístico — não gasta cota. Quando o Pracinha está em
-  // descanso, o chat fica mudo; oferecer o guia é a única coisa útil que ainda
-  // funciona, e é justamente a dúvida que a pessoa veio tirar.
-  useEffect(() => {
-    if (!resting || scienceFlow.stage !== "idle" || scienceFlowDismissed) return;
+    if (scienceFlowDismissed) return;
+    if (scienceFlow.stage !== "idle") return;
+    // A mesma mensagem nunca reoferta; só uma dúvida NOVA abre o convite.
+    const trigger = lastUserText?.trim() ?? "";
+    const doubt = trigger.length > 0 && detectScienceDoubt(trigger);
+    if (!doubt && !resting) return;
+    const key = doubt ? trigger : "rest";
+    if (offeredFor.current === key) return;
+    offeredFor.current = key;
     setScienceFlow({ stage: "offered", index: 0 });
-  }, [resting, scienceFlow.stage, scienceFlowDismissed]);
+  }, [lastUserText, resting, scienceFlow.stage, scienceFlowDismissed]);
   useEffect(() => {
     if (orcidAsked) setOrcidDismissed(false);
   }, [orcidAsked]);
@@ -452,7 +458,11 @@ export function ChatDock({
   }, [autoSpeak, busy, lastAssistant, lastAssistantText]);
 
   const send = (text: string, viaVoice = false) => {
-    if (!text.trim() || busy || resting) return;
+    if (!text.trim() || busy) return;
+    // Se o Pracinha estava "descansando", o envio é a própria tentativa de
+    // retorno: limpa o aviso e tenta. Se a cota continuar esgotada, o erro
+    // recoloca o aviso — mas o campo nunca fica travado.
+    if (resting) setRestedAt(null);
     voice.stopSpeaking();
     replyInAudio.current = viaVoice;
     lastSent.current = text;
@@ -689,7 +699,8 @@ export function ChatDock({
           <ConversationScrollButton />
         </Conversation>
 
-        <div className="space-y-1.5 border-t p-2">
+        <div className="chat-composer space-y-1.5 border-t p-2">
+          <ChatProtocol current={protocolStep} className="mb-1" />
           {inbox.length > 0 && (
             <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
               <Sparkles className="size-4 shrink-0 text-primary" />
@@ -700,7 +711,7 @@ export function ChatDock({
               <Button
                 size="sm"
                 className="h-6 px-2 text-[11px]"
-                disabled={busy || resting}
+                disabled={busy}
                 onClick={sendInbox}
               >
                 Enviar
@@ -762,12 +773,12 @@ export function ChatDock({
                 setScienceFlowDismissed(true);
                 setScienceFlow(SCIENCE_FLOW_IDLE);
               }}
-              canCreate={!resting}
+              canCreate
             />
           )}
           {orcidAsked && !orcidDismissed && (
             <OrcidPrompt
-              disabled={busy || resting}
+              disabled={busy}
               onSend={(text) => {
                 setOrcidDismissed(true);
                 send(text);
@@ -804,10 +815,9 @@ export function ChatDock({
             )}
             <PromptInputTextarea
               ref={inputRef}
-              disabled={resting}
               placeholder={
                 resting
-                  ? "O Pracinha foi descansar e volta amanhã 😴"
+                  ? "Escreva mesmo assim — o Pracinha tenta de novo"
                   : voice.listening
                     ? "Ouvindo… fale sua resposta"
                     : "Escreva sua resposta..."
@@ -818,7 +828,6 @@ export function ChatDock({
                 <ChatAttachments
                   articleId={articleId}
                   documents={documents}
-                  disabled={resting}
                   onChanged={() => onDocumentsChanged?.()}
                   onUse={(doc) =>
                     send(

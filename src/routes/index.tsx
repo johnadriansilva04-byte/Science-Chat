@@ -190,7 +190,7 @@ function Index() {
           {/* O guia ocupa a largura toda: no celular sobe para logo depois do
               formulário (order-2); no desktop vai para baixo das colunas. */}
           <section className="order-2 lg:order-3 lg:col-span-2">
-            <ScienceAccessCard onUseGuide={(seed) => setIdea(seed)} inline />
+            <ScienceAccessCard />
           </section>
 
           {/* Coluna direita: o mural do acervo */}

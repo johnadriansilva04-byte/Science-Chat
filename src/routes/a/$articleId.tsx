@@ -14,6 +14,7 @@ import { PhaseTransition } from "@/components/app/PhaseTransition";
 import { PublishDialog } from "@/components/app/PublishDialog";
 import { interviewProgress } from "@/lib/interview-progress";
 import { journeyIndex } from "@/lib/journey";
+import { protocolPosition } from "@/lib/protocol-position";
 import {
   getWorkspace,
   updateTitle,
@@ -137,6 +138,13 @@ function ArticleWorkspace() {
   const nextNumber = useMemo(
     () => pages.reduce((max, p) => Math.max(max, p.page_number), 0) + 1,
     [pages],
+  );
+
+  // Em que parte do protocolo estamos: a seção da página em produção, se o
+  // documento já nomeia uma. Sem isso, a faixa fica em "como o artigo é montado".
+  const protocolStep = useMemo(
+    () => protocolPosition((draftPage ?? approvedPages.at(-1))?.content),
+    [draftPage, approvedPages],
   );
 
   const currentPage =
@@ -300,6 +308,7 @@ function ArticleWorkspace() {
           isMobile={isMobile}
           mobileVisible={mobileTab === "chat"}
           onMobileClose={() => setMobileTab("doc")}
+          protocolStep={protocolStep}
         />
       </div>
 

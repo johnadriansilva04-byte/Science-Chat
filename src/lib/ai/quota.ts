@@ -10,15 +10,17 @@ export const QUOTA_MARKER = "PRACINHA_QUOTA_EXHAUSTED";
 
 // Só a EXAUSTÃO da cota diária (erro 4006) trava o chat até a meia-noite UTC.
 // Um 429/"rate limit" transitório NÃO é cota diária: tratá-lo como tal prendia o
-// pesquisador até a virada do dia por um limite que se resolve em segundos. Por
-// isso os padrões exigem um sinal específico de cota (neurônios/4006).
+// pesquisador até a virada do dia por um limite que se resolve em segundos.
+//
+// Cada padrão exige a marca da COTA DIÁRIA. Frases genéricas ("no output
+// generated", "quota exceeded") aparecem em falhas passageiras do stream e, ao
+// casarem aqui, travavam o chat por um dia inteiro sem motivo.
 const QUOTA_PATTERNS = [
-  /neurons?/i,
   /daily free allocation/i,
-  /free allocation/i,
+  /\b10,?000 neurons\b/i,
+  /neurons? (?:per|a) day/i,
   /\b4006\b/,
-  /quota exceeded/i,
-  /no output generated/i,
+  /daily (?:[\w-]+ ){0,3}(?:exhausted|exceeded|reached|used up)/i,
 ];
 
 /** True quando a mensagem de erro indica cota/limite da IA esgotado. */

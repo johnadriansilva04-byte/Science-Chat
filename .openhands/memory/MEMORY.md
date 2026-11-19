@@ -162,3 +162,10 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **`prefers-reduced-motion`:** desenha **um quadro estático** e não anima (validado com `Emulation.setEmulatedMedia`).
 - **Rotas não podem ter `bg-background`** (opaco) — cobre o canvas. O `body` já pinta a cor.
 - **Validar movimento:** comparar `toDataURL()` de dois quadros com 4–5s de intervalo; ~10% dos pixels mudam. Um único frame não prova nada.
+
+## Guia "Ciência sem crachá" = aba `/ciencia` (2026-11-18)
+- **`ScienceAccessCard` é só um gatilho** (`Link` para `/ciencia`); `onUseGuide`/`inline` removidos. Conteúdo vive em `ScienceAtlas` (7 assuntos, um painel por vez). Usado em home, `/auth`, `/museu`, `/publicacoes`.
+- **Home redireciona para `/auth`** sem login: a primeira tela do visitante é `/auth`.
+- **Duplicação do card no chat:** era dois `useEffect` reofertando; agora um efeito com `offeredFor` (useRef) por mensagem.
+- **`ChatProtocol`** = faixa de 1 linha no compositor; `protocolPosition()` (`src/lib/protocol-position.ts`) infere a seção pelo 1º título Markdown — `WorkspacePage` não tem `section_key`.
+- **Testar `Link`:** render isolado falha (`isServer` null); use `router.matchRoutes`/`RouterProvider`.

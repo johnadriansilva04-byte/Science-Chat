@@ -6,8 +6,8 @@ import { countdownLabel, formatResetTime, nextQuotaReset } from "@/lib/ai/quota"
 /**
  * Quando a cota diária de neurônios da IA esgota, o Pracinha "se cansa": avisa que
  * vai estudar a tese e mostra um relógio com a hora em que volta (meia-noite UTC).
- * O chat fica travado até lá — com um botão para tentar mais cedo, caso a cota já
- * tenha sido renovada.
+ * É um AVISO, não uma tranca: o campo continua livre e qualquer envio é uma nova
+ * tentativa, porque a cota pode ter sido renovada antes do horário previsto.
  */
 export function PracinhaRest({
   resetAt,
@@ -51,7 +51,7 @@ export function PracinhaRest({
             </p>
           ) : (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Coffee className="size-3.5" /> O chat fica travado até o Pracinha voltar.
+              <Coffee className="size-3.5" /> Você pode continuar escrevendo — eu tento de novo.
             </p>
           )}
           {onRetry && (

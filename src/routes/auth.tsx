@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { signIn, signUp } from "@/lib/auth.functions";
 import { isValidOrcid, normalizeOrcid } from "@/lib/front-matter";
 import { ONBOARDING_FAQS, ONBOARDING_MAIN, faqSeed, setPendingQuestion } from "@/lib/onboarding";
+import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
 import { ORCID_REGISTER_URL } from "@/lib/science-access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,7 +107,11 @@ function PracinhaIntro({ onAsk }: { onAsk: (question: string) => void }) {
         ))}
       </Accordion>
 
-      <p className="mt-3 flex items-center gap-1.5 text-[0.72rem] text-muted-foreground">
+      {/* Porta para o guia completo: aqui chega quem ainda duvida se pode
+          publicar. O card é uma linha; o conteúdo vive em /ciencia. */}
+      <ScienceAccessCard className="mt-3" />
+
+      <p className="mt-2 flex items-center gap-1.5 text-[0.72rem] text-muted-foreground">
         <BadgeCheck className="size-3.5 text-[var(--color-success)]" />A ciência não depende de uma
         carteira universitária para existir.
       </p>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CienciaRouteImport } from './routes/ciencia'
 import { Route as MuseuRouteImport } from './routes/museu'
 import { Route as AArticleIdRouteImport } from './routes/a/$articleId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CienciaRoute = CienciaRouteImport.update({
+  id: '/ciencia',
+  path: '/ciencia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MuseuRoute = MuseuRouteImport.update({
@@ -56,6 +62,7 @@ const PublicacoesSlugRoute = PublicacoesSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/ciencia'
     | '/museu'
     | '/a/$articleId'
     | '/api/chat'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/ciencia'
     | '/museu'
     | '/a/$articleId'
     | '/api/chat'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/ciencia'
     | '/museu'
     | '/a/$articleId'
     | '/api/chat'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CienciaRoute: typeof CienciaRoute
   MuseuRoute: typeof MuseuRoute
   AArticleIdRoute: typeof AArticleIdRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ciencia': {
+      id: '/ciencia'
+      path: '/ciencia'
+      fullPath: '/ciencia'
+      preLoaderRoute: typeof CienciaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/museu': {
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CienciaRoute: CienciaRoute,
   MuseuRoute: MuseuRoute,
   AArticleIdRoute: AArticleIdRoute,
   ApiChatRoute: ApiChatRoute,
