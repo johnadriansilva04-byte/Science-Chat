@@ -48,8 +48,8 @@ const STATE_STYLE: Partial<Record<ClaimState, string>> = {
   parcialmente_sustentada: "border-amber-500/40 bg-amber-50 text-amber-800",
   indiretamente_sustentada: "border-amber-400/40 bg-amber-50/60 text-amber-700",
   contradita: "border-red-500/40 bg-red-50 text-red-800",
-  nao_localizada: "border-slate-400/40 bg-slate-50 text-slate-700",
-  nao_verificavel: "border-slate-400/40 bg-slate-50 text-slate-700",
+  nao_localizada: "border-border bg-muted/60 text-muted-foreground",
+  nao_verificavel: "border-border bg-muted/60 text-muted-foreground",
 };
 
 function StateIcon({ state }: { state: ClaimState }) {

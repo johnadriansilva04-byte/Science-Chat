@@ -47,6 +47,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-soft: var(--primary-soft);
   --color-accent-2: var(--accent-2);
+  --color-star-amber: var(--star-amber);
+  --color-star-rose: var(--star-rose);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -82,78 +84,83 @@
 
 :root {
   --radius: 0.75rem;
-  /* Papel quente e tinta fria: a mesa de trabalho de um pesquisador. */
-  --background: oklch(0.968 0.014 82);
-  --foreground: oklch(0.2 0.028 265);
-  --card: oklch(0.995 0.006 88);
-  --card-foreground: oklch(0.2 0.028 265);
-  --popover: oklch(0.995 0.006 88);
-  --popover-foreground: oklch(0.2 0.028 265);
-  /* Terracota editorial: a cor da capa dura, do selo, do carimbo. */
-  --primary: oklch(0.45 0.145 28);
-  --primary-foreground: oklch(0.99 0.01 85);
-  --primary-soft: oklch(0.93 0.045 30);
-  --secondary: oklch(0.94 0.018 84);
-  --secondary-foreground: oklch(0.24 0.03 265);
-  --muted: oklch(0.945 0.014 84);
-  --muted-foreground: oklch(0.47 0.024 265);
-  --accent: oklch(0.92 0.03 72);
-  --accent-foreground: oklch(0.24 0.03 265);
-  /* Verde-petróleo: contraponto frio ao terracota (dados, ciência, links). */
-  --accent-2: oklch(0.42 0.09 210);
-  --destructive: oklch(0.55 0.2 27);
+  /* Céu profundo: o observatório. Azul-violeta quase preto, com estrelas. */
+  --background: oklch(0.17 0.035 285);
+  --foreground: oklch(0.96 0.012 250);
+  --card: oklch(0.225 0.042 285);
+  --card-foreground: oklch(0.96 0.012 250);
+  --popover: oklch(0.235 0.045 285);
+  --popover-foreground: oklch(0.96 0.012 250);
+  /* Ciano de estrela jovem: a cor do dado, do link, do sinal. */
+  --primary: oklch(0.8 0.14 195);
+  --primary-foreground: oklch(0.17 0.035 285);
+  --primary-soft: oklch(0.32 0.06 220);
+  --secondary: oklch(0.28 0.045 285);
+  --secondary-foreground: oklch(0.95 0.012 250);
+  --muted: oklch(0.27 0.04 285);
+  --muted-foreground: oklch(0.74 0.03 270);
+  --accent: oklch(0.3 0.05 290);
+  --accent-foreground: oklch(0.96 0.012 250);
+  /* Violeta de nebulosa: o segundo polo da paleta. */
+  --accent-2: oklch(0.72 0.19 305);
+  /* Âmbar de gigante vermelha: calor pontual, nunca área grande. */
+  --star-amber: oklch(0.82 0.16 75);
+  --star-rose: oklch(0.72 0.2 15);
+  --destructive: oklch(0.66 0.2 20);
   --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.5 0.11 155);
-  --success-foreground: oklch(0.98 0.01 155);
-  --border: oklch(0.87 0.02 80);
-  --input: oklch(0.87 0.02 80);
-  --ring: oklch(0.45 0.145 28);
-  --paper: oklch(1 0 0);
-  --paper-shadow: 0 1px 2px oklch(0.3 0.03 60 / 0.1), 0 14px 36px -14px oklch(0.3 0.03 60 / 0.28);
-  --glow: oklch(0.45 0.145 28 / 0.5);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.955 0.015 85);
-  --sidebar-foreground: oklch(0.22 0.03 260);
-  --sidebar-primary: oklch(0.45 0.145 28);
-  --sidebar-primary-foreground: oklch(0.98 0.01 85);
-  --sidebar-accent: oklch(0.92 0.02 80);
-  --sidebar-accent-foreground: oklch(0.22 0.03 260);
-  --sidebar-border: oklch(0.88 0.02 80);
-  --sidebar-ring: oklch(0.45 0.145 28);
+  --success: oklch(0.76 0.16 160);
+  --success-foreground: oklch(0.17 0.03 160);
+  --border: oklch(0.34 0.045 285);
+  --input: oklch(0.34 0.045 285);
+  --ring: oklch(0.8 0.14 195);
+  --paper: oklch(0.98 0.005 250);
+  --paper-shadow: 0 1px 2px oklch(0 0 0 / 0.35), 0 18px 44px -18px oklch(0 0 0 / 0.7);
+  --glow: oklch(0.8 0.14 195 / 0.45);
+  --chart-1: oklch(0.8 0.14 195);
+  --chart-2: oklch(0.72 0.19 305);
+  --chart-3: oklch(0.82 0.16 75);
+  --chart-4: oklch(0.76 0.16 160);
+  --chart-5: oklch(0.72 0.2 15);
+  --sidebar: oklch(0.19 0.038 285);
+  --sidebar-foreground: oklch(0.95 0.012 250);
+  --sidebar-primary: oklch(0.8 0.14 195);
+  --sidebar-primary-foreground: oklch(0.17 0.035 285);
+  --sidebar-accent: oklch(0.27 0.045 285);
+  --sidebar-accent-foreground: oklch(0.96 0.012 250);
+  --sidebar-border: oklch(0.3 0.045 285);
+  --sidebar-ring: oklch(0.8 0.14 195);
 }
 
-/* Modo escuro: a mesma editora à noite — papel vira ardósia, tinta vira giz. */
+/* Modo escuro: o mesmo céu, mais fundo — menos luz ambiente, estrelas mais nítidas. */
 .dark {
-  --background: oklch(0.2 0.018 265);
-  --foreground: oklch(0.94 0.01 85);
-  --card: oklch(0.245 0.02 265);
-  --card-foreground: oklch(0.94 0.01 85);
-  --popover: oklch(0.245 0.02 265);
-  --popover-foreground: oklch(0.94 0.01 85);
-  --primary: oklch(0.7 0.15 35);
-  --primary-foreground: oklch(0.2 0.03 30);
-  --primary-soft: oklch(0.32 0.06 32);
-  --secondary: oklch(0.3 0.02 265);
-  --secondary-foreground: oklch(0.94 0.01 85);
-  --muted: oklch(0.3 0.02 265);
-  --muted-foreground: oklch(0.72 0.02 85);
-  --accent: oklch(0.34 0.03 70);
-  --accent-foreground: oklch(0.94 0.01 85);
-  --accent-2: oklch(0.72 0.1 205);
-  --destructive: oklch(0.62 0.19 25);
+  --background: oklch(0.13 0.03 285);
+  --foreground: oklch(0.96 0.012 250);
+  --card: oklch(0.185 0.038 285);
+  --card-foreground: oklch(0.96 0.012 250);
+  --popover: oklch(0.195 0.04 285);
+  --popover-foreground: oklch(0.96 0.012 250);
+  --primary: oklch(0.84 0.15 195);
+  --primary-foreground: oklch(0.15 0.03 285);
+  --primary-soft: oklch(0.28 0.055 220);
+  --secondary: oklch(0.24 0.04 285);
+  --secondary-foreground: oklch(0.95 0.012 250);
+  --muted: oklch(0.23 0.038 285);
+  --muted-foreground: oklch(0.72 0.03 270);
+  --accent: oklch(0.26 0.045 290);
+  --accent-foreground: oklch(0.96 0.012 250);
+  --accent-2: oklch(0.76 0.2 305);
+  --star-amber: oklch(0.85 0.16 75);
+  --star-rose: oklch(0.75 0.2 15);
+  --destructive: oklch(0.68 0.2 20);
   --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.68 0.12 155);
-  --success-foreground: oklch(0.18 0.03 155);
-  --border: oklch(0.34 0.02 265);
-  --input: oklch(0.34 0.02 265);
-  --ring: oklch(0.7 0.15 35);
-  --paper: oklch(0.97 0.006 85);
-  --paper-shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 18px 44px -16px oklch(0 0 0 / 0.6);
-  --glow: oklch(0.7 0.15 35 / 0.45);
+  --success: oklch(0.78 0.16 160);
+  --success-foreground: oklch(0.15 0.03 160);
+  --border: oklch(0.3 0.042 285);
+  --input: oklch(0.3 0.042 285);
+  --ring: oklch(0.84 0.15 195);
+  --paper: oklch(0.97 0.006 250);
+  --paper-shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 18px 44px -16px oklch(0 0 0 / 0.7);
+  --glow: oklch(0.84 0.15 195 / 0.5);
 }
 
 @layer base {
@@ -171,20 +178,74 @@
     background-color: var(--color-background);
     /* No celular nenhum elemento deve empurrar a largura da página. */
     overflow-x: hidden;
-    /* Atmosfera: dois halos suaves (terracota e petróleo) sobre o papel. */
+    /* Céu profundo: três nebulosas (ciano, violeta, âmbar) sobre o vazio.
+       Elas se sobrepõem de propósito — a mistura é o que dá o aspecto gasoso. */
     background-image:
       radial-gradient(
-        1100px circle at 88% -12%,
-        color-mix(in oklab, var(--color-primary) 9%, transparent),
-        transparent 55%
+        1200px circle at 82% -8%,
+        color-mix(in oklab, var(--color-primary) 22%, transparent),
+        transparent 58%
       ),
       radial-gradient(
-        950px circle at -12% 112%,
+        1000px circle at -10% 18%,
+        color-mix(in oklab, var(--color-accent-2) 20%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px circle at 55% 112%,
+        color-mix(in oklab, var(--color-star-amber) 12%, transparent),
+        transparent 62%
+      ),
+      radial-gradient(
+        1400px circle at 30% 55%,
         color-mix(in oklab, var(--color-accent-2) 8%, transparent),
-        transparent 55%
+        transparent 70%
       );
     background-attachment: fixed;
     color: var(--color-foreground);
+  }
+
+  /* Campo de estrelas: dois planos com tamanhos e ritmos diferentes, para dar
+     profundidade sem nenhuma imagem. Fica num pseudo-elemento fixo atrás do
+     conteúdo e não recebe eventos. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 18%, oklch(0.99 0.01 250 / 0.9), transparent 100%),
+      radial-gradient(1px 1px at 28% 62%, oklch(0.99 0.01 250 / 0.7), transparent 100%),
+      radial-gradient(1.8px 1.8px at 44% 28%, oklch(0.99 0.02 195 / 0.95), transparent 100%),
+      radial-gradient(1px 1px at 61% 74%, oklch(0.99 0.01 250 / 0.6), transparent 100%),
+      radial-gradient(1.4px 1.4px at 76% 14%, oklch(0.99 0.02 305 / 0.85), transparent 100%),
+      radial-gradient(1px 1px at 88% 52%, oklch(0.99 0.01 250 / 0.7), transparent 100%),
+      radial-gradient(1.6px 1.6px at 8% 84%, oklch(0.99 0.02 75 / 0.8), transparent 100%),
+      radial-gradient(1px 1px at 35% 92%, oklch(0.99 0.01 250 / 0.55), transparent 100%),
+      radial-gradient(1.2px 1.2px at 68% 38%, oklch(0.99 0.01 250 / 0.75), transparent 100%),
+      radial-gradient(1px 1px at 94% 88%, oklch(0.99 0.02 195 / 0.65), transparent 100%);
+    background-size: 620px 620px;
+    background-repeat: repeat;
+    opacity: 0.75;
+    animation: star-drift 240s linear infinite;
+  }
+
+  /* Segundo plano, mais lento e mais apagado: parallax de estrelas distantes. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: -20%;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, oklch(0.95 0.01 250 / 0.4), transparent 100%),
+      radial-gradient(1px 1px at 70% 20%, oklch(0.95 0.01 250 / 0.35), transparent 100%),
+      radial-gradient(1px 1px at 45% 80%, oklch(0.95 0.01 250 / 0.4), transparent 100%),
+      radial-gradient(1px 1px at 85% 65%, oklch(0.95 0.01 250 / 0.3), transparent 100%);
+    background-size: 340px 340px;
+    opacity: 0.6;
+    animation: star-drift-slow 480s linear infinite reverse;
   }
 
   h1,
@@ -695,150 +756,6 @@
   border-color: var(--color-primary);
   color: var(--color-primary-foreground);
 }
-.museum-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding: 1rem 1.05rem 1.1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(color-mix(in oklab, var(--color-border) 40%, transparent) 1px, transparent 1px)
-      0 0 / 100% 22px,
-    var(--color-card);
-  box-shadow: var(--paper-shadow);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-.museum-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--color-primary) 45%, var(--color-border));
-  box-shadow: 0 16px 34px -20px color-mix(in oklab, var(--color-primary) 55%, transparent);
-}
-.museum-card__year {
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-.museum-card__wing {
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-muted-foreground);
-  text-align: right;
-  max-width: 60%;
-}
-.museum-card__title {
-  font-family: var(--font-serif);
-  font-size: 1.06rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-.museum-card__orig {
-  font-size: 0.72rem;
-  font-style: italic;
-  color: var(--color-muted-foreground);
-}
-.museum-card__authors {
-  margin-top: 0.15rem;
-  font-size: 0.82rem;
-  font-weight: 500;
-}
-.museum-card__venue {
-  font-size: 0.72rem;
-  color: var(--color-muted-foreground);
-}
-.museum-card__note {
-  margin-top: 0.4rem;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--color-foreground);
-}
-.museum-card__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.5rem;
-}
-.museum-tag {
-  padding: 0.05rem 0.45rem;
-  border-radius: 9999px;
-  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
-  font-size: 0.66rem;
-  color: color-mix(in oklab, var(--color-primary) 80%, var(--color-foreground));
-}
-.museum-card__doi {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  min-height: 2.75rem;
-  margin-top: 0.7rem;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.68rem;
-  color: var(--color-primary);
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.museum-card__doi:hover {
-  text-decoration: underline;
-}
-.museum-card__foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.7rem;
-}
-.museum-card__send {
-  height: auto;
-  min-height: 2.75rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-  color: color-mix(in oklab, var(--color-primary) 85%, var(--color-foreground));
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.museum-card:hover .museum-card__send,
-.museum-card__send:focus-visible {
-  opacity: 1;
-}
-@media (hover: none) {
-  .museum-card__send {
-    opacity: 1;
-  }
-}
-
-/* Convite ao Museu, na home. */
-.museum-invite {
-  display: flex;
-  gap: 0.85rem;
-  align-items: flex-start;
-  padding: 1rem 1.1rem;
-  border: 1px solid color-mix(in oklab, var(--color-primary) 30%, var(--color-border));
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(
-      circle at 12% 20%,
-      color-mix(in oklab, var(--color-primary) 12%, transparent),
-      transparent 55%
-    ),
-    var(--color-card);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-}
-.museum-invite:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px -22px color-mix(in oklab, var(--color-primary) 60%, transparent);
-}
-
 /* ===== Vida no painel de produção ===== */
 /* A página "chega" como texto recém-escrito; o selo marca a aprovação. */
 .page-reveal {
@@ -1164,47 +1081,39 @@
   position: relative;
   isolation: isolate;
 }
+/* O herói não pinta fundo próprio: deixa a galáxia do body atravessar. Só
+   acrescenta um halo que segue o ponteiro, como uma lanterna sobre o céu. */
 .landing-hero {
   background:
     radial-gradient(
-      600px circle at var(--mx, 78%) var(--my, 18%),
-      color-mix(in oklab, var(--color-primary) 16%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      480px circle at 8% 88%,
-      color-mix(in oklab, var(--color-accent-2) 12%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      420px circle at 92% 92%,
-      color-mix(in oklab, oklch(0.58 0.14 195) 12%, transparent),
+      620px circle at var(--mx, 78%) var(--my, 18%),
+      color-mix(in oklab, var(--color-primary) 14%, transparent),
       transparent 62%
     ),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--color-card) 70%, var(--color-background)),
-      var(--color-background)
+    radial-gradient(
+      520px circle at var(--mx, 78%) var(--my, 18%),
+      color-mix(in oklab, var(--color-accent-2) 9%, transparent),
+      transparent 70%
     );
 }
-/* Papel milimetrado por cima do gradiente, bem sutil. */
+/* Carta estelar: a grade fina vira retículo de telescópio, só no topo. */
 .landing-hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-border) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in oklab, var(--color-primary) 18%, transparent) 1px, transparent 1px),
     linear-gradient(
       90deg,
-      color-mix(in oklab, var(--color-border) 45%, transparent) 1px,
+      color-mix(in oklab, var(--color-primary) 18%, transparent) 1px,
       transparent 1px
     );
   background-size:
-    28px 28px,
-    28px 28px;
-  mask-image: radial-gradient(circle at 50% 30%, #000 40%, transparent 85%);
-  opacity: 0.6;
+    44px 44px,
+    44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 10%, transparent 70%);
+  opacity: 0.5;
   pointer-events: none;
 }
 /* Filete editorial sob o cabeçalho da home. */
@@ -1225,7 +1134,8 @@
   background: linear-gradient(
     100deg,
     var(--color-primary) 0%,
-    oklch(0.62 0.17 55) 45%,
+    var(--color-accent-2) 42%,
+    var(--color-star-amber) 62%,
     var(--color-primary) 90%
   );
   background-size: 220% 100%;
@@ -1542,154 +1452,6 @@
 
 /* ===== Acervo: cartões e ficha (clássicos, revisados, não revisados) ===== */
 /* Papel milimetrado sutil, como no Museu, para dar ares de arquivo científico. */
-.acervo-card {
-  position: relative;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(color-mix(in oklab, var(--color-border) 38%, transparent) 1px, transparent 1px)
-      0 0 / 100% 22px,
-    var(--color-card);
-  box-shadow: var(--paper-shadow);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-.acervo-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--color-primary) 45%, var(--color-border));
-  box-shadow: 0 16px 34px -20px color-mix(in oklab, var(--color-primary) 55%, transparent);
-}
-/* Clássicos ganham uma lombada dourada à esquerda, como um livro raro. */
-.acervo-card--classico {
-  border-left: 3px solid color-mix(in oklab, var(--color-primary) 70%, transparent);
-}
-.acervo-card__hit {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  width: 100%;
-  padding: 1rem 1.05rem 1.1rem;
-  text-align: left;
-}
-.acervo-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-.acervo-card__year {
-  font-family: var(--font-serif);
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-.acervo-card__seal {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.acervo-card__seal--classico {
-  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
-  color: var(--color-primary);
-}
-.acervo-card__seal--ok {
-  background: color-mix(in oklab, var(--color-success) 16%, transparent);
-  color: var(--color-success);
-}
-.acervo-card__seal--pending {
-  background: var(--color-muted);
-  color: var(--color-muted-foreground);
-}
-.acervo-card__title {
-  font-family: var(--font-serif);
-  font-size: 1.06rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-.acervo-card__orig {
-  font-size: 0.72rem;
-  font-style: italic;
-  color: var(--color-muted-foreground);
-}
-.acervo-card__authors {
-  margin-top: 0.15rem;
-  font-size: 0.82rem;
-  font-weight: 500;
-}
-.acervo-card__venue {
-  font-size: 0.72rem;
-  color: var(--color-muted-foreground);
-}
-.acervo-card__note {
-  margin-top: 0.4rem;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--color-foreground);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.acervo-card__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.7rem;
-}
-.acervo-card__doi {
-  font-size: 0.68rem;
-  color: var(--color-primary);
-}
-.acervo-card__open {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: color-mix(in oklab, var(--color-primary) 85%, var(--color-foreground));
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.acervo-card:hover .acervo-card__open,
-.acervo-card__hit:focus-visible .acervo-card__open {
-  opacity: 1;
-}
-@media (hover: none) {
-  .acervo-card__open {
-    opacity: 1;
-  }
-}
-/* Ficha completa, aberta em camada por cima. */
-.acervo-sheet__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.85rem;
-}
-.acervo-sheet__note {
-  padding: 0.9rem 1rem;
-  border-left: 3px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-.acervo-sheet__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
-}
-
 /* ===== Card "Ciência sem crachá" — boletim do pesquisador independente ===== */
 /* Estética editorial: papel quente com grão, filetes finos, numeral de revista,
    selo de cera para o ORCID e acordeões que mantêm o conteúdo no DOM. */
@@ -2308,5 +2070,226 @@
 @media (hover: none) {
   .touch-visible {
     opacity: 1 !important;
+  }
+}
+
+/* ===== Céu profundo: movimento e respeito ao usuário ===== */
+
+@keyframes star-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 620px 620px;
+  }
+}
+
+@keyframes star-drift-slow {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 340px 340px;
+  }
+}
+
+/* Nebulosa respirando devagar: dá vida ao fundo sem competir com o texto. */
+@keyframes nebula-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none;
+  }
+}
+
+/* ===== Acervo em linhas: lista densa que abre no lugar ===== */
+/* Antes: 30 cartões abertos = ~10.000px no celular. Agora cada obra ocupa uma
+   linha de ~64px e só paga o custo do detalhe quando o leitor pede. */
+
+.acervo-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border);
+}
+
+.acervo-row {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.18s ease;
+}
+
+.acervo-row.is-open {
+  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+}
+
+.acervo-row__head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.25rem;
+  min-height: 3.5rem;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.acervo-row__head:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.acervo-row__year {
+  flex: none;
+  width: 3.1rem;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.acervo-row__main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.acervo-row__title {
+  font-family: var(--font-serif);
+  font-size: 0.97rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-foreground);
+  /* Duas linhas no máximo: mantém o ritmo da lista previsível. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.acervo-row__authors {
+  font-size: 0.74rem;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acervo-row__seal {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 9999px;
+}
+
+.acervo-row__seal--classico {
+  background: color-mix(in oklab, var(--color-star-amber) 18%, transparent);
+  color: var(--color-star-amber);
+}
+
+.acervo-row__seal--ok {
+  background: color-mix(in oklab, var(--color-success) 18%, transparent);
+  color: var(--color-success);
+}
+
+.acervo-row__seal--pending {
+  background: color-mix(in oklab, var(--color-muted-foreground) 16%, transparent);
+  color: var(--color-muted-foreground);
+}
+
+.acervo-row__chevron {
+  flex: none;
+  color: var(--color-muted-foreground);
+  transition: transform 0.22s ease;
+}
+
+.acervo-row.is-open .acervo-row__chevron {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+.acervo-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 0.25rem 1rem;
+  animation: row-open 0.22s ease-out;
+}
+
+@keyframes row-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.acervo-row__orig {
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+}
+
+.acervo-row__meta {
+  font-size: 0.78rem;
+  color: var(--color-muted-foreground);
+}
+
+.acervo-row__note {
+  border-left: 2px solid color-mix(in oklab, var(--color-primary) 55%, transparent);
+  padding-left: 0.7rem;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.acervo-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.acervo-row__doi {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--color-primary);
+  overflow-wrap: anywhere;
+}
+
+.acervo-row__doi:hover {
+  text-decoration: underline;
+}
+
+.acervo-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acervo-row__body,
+  .acervo-row__chevron {
+    animation: none;
+    transition: none;
   }
 }

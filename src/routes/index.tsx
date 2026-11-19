@@ -109,7 +109,7 @@ function Index() {
         <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10 lg:pb-10">
           {/* Coluna esquerda: a promessa e o começo */}
           <section className="order-1 flex min-h-0 flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary landing-badge backdrop-blur">
+            <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/30 bg-card/70 px-3 py-1 text-[11px] font-medium text-primary landing-badge backdrop-blur">
               <Sparkles className="size-3.5" />
               Rascunho científico · entrevista inteligente · normas reais
             </span>
@@ -140,7 +140,7 @@ function Index() {
                   value={idea}
                   onChange={(e) => setIdea(e.target.value)}
                   placeholder="Qual inquietação você quer investigar? (opcional)"
-                  className="h-12 w-full rounded-xl border border-input bg-white/80 pl-9 pr-3 text-sm shadow-sm outline-none backdrop-blur transition focus:border-primary focus:ring-2 focus:ring-primary/25"
+                  className="h-12 w-full rounded-xl border border-input bg-card/70 pl-9 pr-3 text-sm shadow-sm outline-none backdrop-blur transition focus:border-primary focus:ring-2 focus:ring-primary/25"
                 />
               </div>
               <Button
@@ -173,7 +173,7 @@ function Index() {
               {JOURNEY_ACTS.map((act, i) => (
                 <li key={act.id} className="flex items-center gap-2">
                   {i > 0 && <ArrowRight className="size-3 opacity-40" />}
-                  <span className="inline-flex items-center gap-1.5 rounded-full border bg-white/60 px-2.5 py-1 backdrop-blur">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-2.5 py-1 backdrop-blur">
                     <span
                       className="flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
                       style={{ background: act.color }}
@@ -195,7 +195,7 @@ function Index() {
 
           {/* Coluna direita: o mural do acervo */}
           <section className="order-3 flex min-h-0 flex-col justify-center lg:order-2">
-            <div className="landing-shelf-card rounded-2xl border bg-white/70 p-4 backdrop-blur">
+            <div className="landing-shelf-card rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="size-4 text-primary" />
                 <h2 className="font-serif text-base font-semibold">Coletânea de artigos</h2>

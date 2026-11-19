@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   BadgeCheck,
+  ChevronDown,
   Copy,
   ExternalLink,
   Landmark,
@@ -11,13 +12,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MUSEUM_WINGS } from "@/lib/museum";
 import { addToInbox } from "@/lib/pracinha-inbox";
@@ -27,9 +21,9 @@ import { cn } from "@/lib/utils";
 import type { AcervoItem } from "@/lib/acervo";
 
 /**
- * Cartão do acervo. Serve para as duas origens — clássicos do Museu e artigos
- * publicados na ScienceChat — mostrando o essencial e abrindo uma ficha
- * completa ao clique (metadados, nota curada, DOI, citação).
+ * Linha do acervo. Serve para as duas origens — clássicos do Museu e artigos
+ * publicados na ScienceChat. Mostra só ano, título e autoria; o resto abre no
+ * lugar, sem modal, para o leitor comparar obras sem perder a lista de vista.
  */
 export function AcervoCard({ item }: { item: AcervoItem }) {
   const [open, setOpen] = useState(false);
@@ -75,148 +69,102 @@ export function AcervoCard({ item }: { item: AcervoItem }) {
   }
 
   return (
-    <>
-      <article className={cn("acervo-card", item.kind === "classico" && "acervo-card--classico")}>
-        <button type="button" className="acervo-card__hit" onClick={() => setOpen(true)}>
-          <span className="acervo-card__top">
-            <span className="acervo-card__year tabular-nums">{item.year}</span>
-            {item.kind === "classico" ? (
-              <span className="acervo-card__seal acervo-card__seal--classico">
-                <Landmark className="size-3" />
-                Clássico
-              </span>
-            ) : item.reviewed ? (
-              <span className="acervo-card__seal acervo-card__seal--ok">
-                <BadgeCheck className="size-3" />
-                Revisado
-              </span>
-            ) : (
-              <span className="acervo-card__seal acervo-card__seal--pending">
-                <ScrollText className="size-3" />
-                Não revisado
-              </span>
-            )}
+    <article
+      className={cn(
+        "acervo-row",
+        item.kind === "classico" && "acervo-row--classico",
+        open && "is-open",
+      )}
+    >
+      <button
+        type="button"
+        className="acervo-row__head"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="acervo-row__year tabular-nums">{item.year}</span>
+
+        <span className="acervo-row__main">
+          <span className="acervo-row__title">{item.title}</span>
+          <span className="acervo-row__authors">{item.authors}</span>
+        </span>
+
+        {item.kind === "classico" ? (
+          <span className="acervo-row__seal acervo-row__seal--classico" title="Acervo do Museu">
+            <Landmark className="size-3.5" />
           </span>
-
-          <h3 className="acervo-card__title">{item.title}</h3>
-          {item.originalTitle && <p className="acervo-card__orig">{item.originalTitle}</p>}
-
-          <p className="acervo-card__authors">{item.authors}</p>
-          <p className="acervo-card__venue">{item.venue}</p>
-
-          {item.summary && <p className="acervo-card__note">{item.summary}</p>}
-
-          <span className="acervo-card__foot">
-            {item.doi ? (
-              <span className="acervo-card__doi font-mono">DOI {item.doi}</span>
-            ) : (
-              <span className="acervo-card__venue">{wing ?? "ScienceChat"}</span>
-            )}
-            <span className="acervo-card__open">
-              Abrir ficha
-              <ArrowRight className="size-3.5" />
-            </span>
+        ) : item.reviewed ? (
+          <span className="acervo-row__seal acervo-row__seal--ok" title="Revisado por pares">
+            <BadgeCheck className="size-3.5" />
           </span>
-        </button>
-      </article>
+        ) : (
+          <span className="acervo-row__seal acervo-row__seal--pending" title="Ainda não revisado">
+            <ScrollText className="size-3.5" />
+          </span>
+        )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="acervo-sheet max-h-[88vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="acervo-card__year tabular-nums">{item.year}</span>
-              {item.kind === "classico" ? (
-                <span className="acervo-card__seal acervo-card__seal--classico">
-                  <Landmark className="size-3" />
-                  Acervo do Museu
-                </span>
-              ) : item.reviewed ? (
-                <span className="acervo-card__seal acervo-card__seal--ok">
-                  <BadgeCheck className="size-3" />
-                  Revisado por pares
-                </span>
-              ) : (
-                <span className="acervo-card__seal acervo-card__seal--pending">
-                  <ScrollText className="size-3" />
-                  Ainda não revisado
-                </span>
-              )}
-              {wing && <span className="text-muted-foreground">{wing}</span>}
-            </div>
-            <DialogTitle className="font-serif text-2xl leading-snug">{item.title}</DialogTitle>
-            {item.originalTitle && (
-              <DialogDescription className="font-serif italic">
-                {item.originalTitle}
-              </DialogDescription>
-            )}
-          </DialogHeader>
+        <ChevronDown className="acervo-row__chevron size-4" aria-hidden />
+      </button>
 
-          <div className="acervo-sheet__meta">
-            <p>
-              <span className="text-muted-foreground">Autoria: </span>
-              {item.authors}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Veículo: </span>
-              {item.venue}
-            </p>
-            {item.area && (
-              <p>
-                <span className="text-muted-foreground">Área: </span>
-                {item.area}
-              </p>
-            )}
+      <div className="acervo-row__body" hidden={!open}>
+        {item.originalTitle && <p className="acervo-row__orig">{item.originalTitle}</p>}
+
+        <p className="acervo-row__meta">
+          {item.venue}
+          {item.area ? ` · ${item.area}` : ""}
+        </p>
+
+        {item.summary && (
+          <blockquote className="acervo-row__note">
+            <Quote className="mr-1.5 inline size-3.5 text-primary" />
+            {item.summary}
+          </blockquote>
+        )}
+
+        {item.tags.length > 0 && (
+          <div className="acervo-row__tags">
+            {item.tags.map((t) => (
+              <span key={t} className="museum-tag">
+                {t}
+              </span>
+            ))}
           </div>
+        )}
 
-          {item.summary && (
-            <blockquote className="acervo-sheet__note">
-              <Quote className="mr-1.5 inline size-4 text-primary" />
-              {item.summary}
-            </blockquote>
-          )}
+        {item.doi && (
+          <a
+            className="acervo-row__doi font-mono"
+            href={item.doiUrl ?? `https://doi.org/${item.doi}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            DOI {item.doi}
+            <ExternalLink className="size-3.5" />
+          </a>
+        )}
 
-          {item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {item.tags.map((t) => (
-                <span key={t} className="museum-tag">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="acervo-sheet__actions">
-            {item.kind === "classico" ? (
-              <>
-                {item.doiUrl && (
-                  <Button asChild variant="outline">
-                    <a href={item.doiUrl} target="_blank" rel="noreferrer">
-                      Ver no editor
-                      <ExternalLink className="size-4" />
-                    </a>
-                  </Button>
-                )}
-                <Button variant="secondary" onClick={sendToPracinha} disabled={busy}>
-                  <Sparkles className="size-4" />
-                  Levar ao Pracinha
-                </Button>
-              </>
-            ) : (
-              item.slug && (
-                <Button asChild>
-                  <Link to="/publicacoes/$slug" params={{ slug: item.slug }}>
-                    Ler o artigo completo
-                  </Link>
-                </Button>
-              )
-            )}
-            <Button variant="ghost" onClick={copyCitation}>
-              <Copy className="size-4" />
-              Copiar citação
+        <div className="acervo-row__actions">
+          {item.kind === "classico" ? (
+            <Button size="sm" variant="secondary" onClick={sendToPracinha} disabled={busy}>
+              <Sparkles className="size-4" />
+              Levar ao Pracinha
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          ) : (
+            item.slug && (
+              <Button asChild size="sm">
+                <Link to="/publicacoes/$slug" params={{ slug: item.slug }}>
+                  Ler o artigo
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            )
+          )}
+          <Button size="sm" variant="ghost" onClick={copyCitation}>
+            <Copy className="size-4" />
+            Citar
+          </Button>
+        </div>
+      </div>
+    </article>
   );
 }

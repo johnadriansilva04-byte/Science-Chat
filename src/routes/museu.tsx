@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Landmark, ExternalLink, Quote, Search, Sparkles, X } from "lucide-react";
+import { ChevronDown, Landmark, ExternalLink, Quote, Search, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   MUSEUM_SIZE,
@@ -38,6 +38,7 @@ function MuseumPage() {
   const [wing, setWing] = useState<MuseumWingId | "todas">("todas");
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const works = useMemo(() => {
@@ -183,51 +184,68 @@ function MuseumPage() {
             </div>
           </div>
         ) : (
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+          <ul className="acervo-list mt-8">
             {works.map((w) => (
-              <li key={w.id} className="museum-card">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="museum-card__year tabular-nums">{w.year}</span>
-                  <span className="museum-card__wing">
-                    {MUSEUM_WINGS.find((x) => x.id === w.wing)?.label}
-                  </span>
-                </div>
-                <h2 className="museum-card__title">{w.titlePt}</h2>
-                <p className="museum-card__orig">{w.title}</p>
-                <p className="museum-card__authors">{w.authors}</p>
-                <p className="museum-card__venue">{w.venue}</p>
-                <p className="museum-card__note">
-                  <Quote className="mr-1 inline size-3.5 text-primary" />
-                  {w.note}
-                </p>
-                <div className="museum-card__tags">
-                  {w.tags.map((t) => (
-                    <span key={t} className="museum-tag">
-                      {t}
+              <li key={w.id}>
+                <article className={cn("acervo-row", openId === w.id && "is-open")}>
+                  <button
+                    type="button"
+                    className="acervo-row__head"
+                    aria-expanded={openId === w.id}
+                    onClick={() => setOpenId(openId === w.id ? null : w.id)}
+                  >
+                    <span className="acervo-row__year tabular-nums">{w.year}</span>
+                    <span className="acervo-row__main">
+                      <span className="acervo-row__title">{w.titlePt}</span>
+                      <span className="acervo-row__authors">{w.authors}</span>
                     </span>
-                  ))}
-                </div>
-                <div className="museum-card__foot">
-                  <a
-                    href={museumDoiUrl(w.doi)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="museum-card__doi"
-                  >
-                    DOI {w.doi}
-                    <ExternalLink className="size-3.5" />
-                  </a>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="museum-card__send"
-                    disabled={busyId === w.id}
-                    onClick={() => void showToPracinha(w)}
-                  >
-                    <Sparkles className="size-3.5" />
-                    Mostrar ao Pracinha
-                  </Button>
-                </div>
+                    <span
+                      className="acervo-row__seal acervo-row__seal--classico"
+                      title={MUSEUM_WINGS.find((x) => x.id === w.wing)?.label}
+                    >
+                      <Landmark className="size-3.5" />
+                    </span>
+                    <ChevronDown className="acervo-row__chevron size-4" aria-hidden />
+                  </button>
+
+                  <div className="acervo-row__body" hidden={openId !== w.id}>
+                    <p className="acervo-row__orig">{w.title}</p>
+                    <p className="acervo-row__meta">
+                      {w.venue} · {MUSEUM_WINGS.find((x) => x.id === w.wing)?.label}
+                    </p>
+                    <blockquote className="acervo-row__note">
+                      <Quote className="mr-1.5 inline size-3.5 text-primary" />
+                      {w.note}
+                    </blockquote>
+                    <div className="acervo-row__tags">
+                      {w.tags.map((t) => (
+                        <span key={t} className="museum-tag">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <a
+                      href={museumDoiUrl(w.doi)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="acervo-row__doi font-mono"
+                    >
+                      DOI {w.doi}
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                    <div className="acervo-row__actions">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={busyId === w.id}
+                        onClick={() => void showToPracinha(w)}
+                      >
+                        <Sparkles className="size-4" />
+                        Mostrar ao Pracinha
+                      </Button>
+                    </div>
+                  </div>
+                </article>
               </li>
             ))}
           </ul>

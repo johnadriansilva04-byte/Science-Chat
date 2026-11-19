@@ -9,7 +9,7 @@ import { listAudits, runAudit, type AuditView } from "@/lib/audit.functions";
 const SEVERITY_BADGE: Record<string, string> = {
   alta: "bg-red-100 text-red-800 border-red-300",
   media: "bg-amber-100 text-amber-800 border-amber-300",
-  baixa: "bg-slate-100 text-slate-700 border-slate-300",
+  baixa: "bg-muted/60 text-muted-foreground border-border",
 };
 
 /**

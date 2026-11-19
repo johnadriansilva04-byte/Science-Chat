@@ -49,7 +49,7 @@ export function ScienceBiteStepper() {
       </div>
 
       {bite && (
-        <div className="mt-3 rounded-lg border border-[var(--ci-rule)] bg-white/60 p-3">
+        <div className="mt-3 rounded-lg border border-[var(--ci-rule)] bg-card/70 p-3">
           <div className="flex items-start gap-2">
             <span className="ciencia-step__dot shrink-0" aria-hidden>
               {bite.n}
