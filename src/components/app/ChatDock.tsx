@@ -795,6 +795,13 @@ export function ChatDock({
               const viaVoice = dictated.current;
               dictated.current = false;
               setInterim("");
+              // O PromptInput limpa o campo antes de chamar este callback e `send`
+              // ignora o texto quando o Pracinha está ocupado. Sem devolver o
+              // texto, o que foi digitado durante a resposta desaparecia.
+              if (busy && msg.text.trim() && inputRef.current) {
+                inputRef.current.value = msg.text;
+                return;
+              }
               send(msg.text, viaVoice);
             }}
           >
