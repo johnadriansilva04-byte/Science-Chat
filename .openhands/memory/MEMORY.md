@@ -199,3 +199,9 @@ resolve assíncrono e quebra o `render`).
   colunas de larguras muito diferentes.
 - Alvos de toque ≥ 2.75rem (44px).
 - 2 fontes dão 403 para bot (`periodicos.capes.gov.br`, `colibri.udelar.edu.uy`) — abrem no navegador.
+
+## Auditoria chat + publicação (2026-11-18)
+- **Chat "Não foi possível enviar" (CORRIGIDO):** transforms de saída soltam texto no `flush()` DEPOIS do `text-end` → AI SDK lança `text part <id> not found`. Fix: `holdTextEndTransform()` (`src/lib/ai/stream-order.ts`) aplicado por último em `startResponses`. Regressão em `stream-order.test.ts`. Assinaturas mistas: só `antiRepeatTransform` devolve função.
+- **Slug ao republicar (CORRIGIDO):** `publication.functions.ts` regerava o slug a cada "Atualizar dados" → link mudava para `...-2`. Agora preserva `current.slug`.
+- **Publicação é em 2 passos:** "Preparar publicação" (draft) → "Publicar no mural" → depois "Atualizar dados". Exportar fica desabilitado sem páginas aprovadas.
+- **Overflow mobile (CORRIGIDO):** header de `publicacoes/$slug.tsx` não quebrava linha (472px em 390px). Agora `flex-wrap`.
