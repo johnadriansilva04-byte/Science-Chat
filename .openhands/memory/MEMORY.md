@@ -123,3 +123,11 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Causa raiz corrigida:** `.journey-rail` (header do artigo) com `flex:1` encolhia a ~5px, mas o trilho era `nowrap` e transbordava → `body` com scrollWidth 429 > vw 375. Fix em `styles.css` `@media (max-width:640px)`: `.journey-rail { flex:none; width:100%; overflow:hidden }` + `.journey-rail__track { justify-content:center }`.
 - **Regra geral:** todo container com filhos `nowrap` precisa de `min-width:0`/`overflow:hidden`; `fixed` não protege contra overflow do documento.
 - **Rate limit local:** cadastro 20/h por IP no **KV** (não em D1); testes automatizados esgotam. Limpar: `rm -rf .wrangler/state/v3/kv/bf18af0db8dc44ca9e762875c69843c4` + reiniciar dev.
+
+## Guia "Ciência sem crachá" na home (2026-11-18)
+- `ScienceAccessCard` tem modo **`inline`** (usado na home): provas/ORCID/passos ficam **à vista**; fontes, países e carta-modelo num diálogo. Antes era só um botão compacto — a resposta existia mas ninguém descobria.
+- **Cuidado com fatos sobre a Udelar:** "Apoyo a publicaciones" é para **livros** e exige cargo docente orçamentado — **não** serve para pesquisador independente. Fontes uruguaias corretas: **SciELO Uruguay** (`scielo.edu.uy`), **CVUy** (`cvuy.uy`, já integra ORCID), **Colibri**. `revistas.udelar.edu.uy` está "próximamente".
+- **CAPES não é acesso livre** (IP institucional ou CAFe). SciELO é aberto.
+- **Home tinha `lg:h-screen` + `overflow-hidden`**: cortava o guia no desktop (1885px em 273px). Página agora rola; guia em `lg:col-span-2`, `order-2 lg:order-3`.
+- `onFinish` do `/api/chat` é blindado com try/catch (roda depois do texto ir à tela).
+- Dev local exige `CLOUDFLARE_API_TOKEN`; Chrome do container é `chromium`.
