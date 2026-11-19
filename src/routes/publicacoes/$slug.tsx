@@ -52,7 +52,7 @@ function PublicationPage() {
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         Carregando…
       </div>
     );
@@ -60,7 +60,7 @@ function PublicationPage() {
 
   if (state === "missing" || !pub) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="font-serif text-2xl font-semibold">Publicação não encontrada</h1>
         <p className="text-sm text-muted-foreground">
           Este artigo não está publicado ou o endereço está incorreto.
@@ -81,7 +81,7 @@ function PublicationPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <header className="flex items-center gap-2 border-b px-4 py-3 print:hidden">
         <Link
           to="/publicacoes"

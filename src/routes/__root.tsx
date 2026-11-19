@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { CosmicBackdrop } from "@/components/app/CosmicBackdrop";
 
 import appCss from "../styles.css?url";
 
@@ -133,6 +134,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <CosmicBackdrop />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster />

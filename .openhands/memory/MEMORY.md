@@ -149,11 +149,16 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - Migrations: `schema_migrations` é a tabela válida (10 arquivos aplicados); `d1_migrations` é legado com só 4. Números de arquivo duplicados (dois `0006_`, dois `0007_`) — ordem real é a de `applied_at`.
 - Limpeza feita em 19/11: 11 contas de teste + 73 linhas em cascata + 7 objetos R2 órfãos. Sobrou `variantfeb@gmail.com` (2 artigos, 1 publicação, 129 mensagens).
 
-## Redesign "céu profundo" (2026-11-18)
-- **Paleta:** o tema editorial claro (papel quente + terracota) virou **céu profundo** — `--background: oklch(0.17 0.035 285)`, primário **ciano** `oklch(0.8 0.14 195)`, `--accent-2` violeta, e dois tokens novos `--star-amber` / `--star-rose` (registrados em `@theme inline` como `--color-star-*`).
-- **Galáxia sem imagem:** `body` = 4 `radial-gradient` de nebulosa; `body::before` e `body::after` = campos de estrelas em `radial-gradient` repetido com `star-drift`/`star-drift-slow` (240s/480s). Desligados em `prefers-reduced-motion`.
-- **`.landing-hero` não pinta fundo próprio** — só halo que segue o ponteiro; a grade virou retículo de telescópio (44px, máscara no topo).
-- **Densidade é a regra do acervo:** museu e coletânea usam `.acervo-row` (linha ~82px, accordion de 1 por vez, `aria-expanded`, `hidden` no corpo). **Não voltar para grade de cartões**: eram 12.684px (museu) e 10.419px (coletânea) no celular → hoje 3.411px e 4.368px.
-- `AcervoCard` não usa mais `Dialog`; abriu no lugar. O CSS `.acervo-card`, `.acervo-sheet` e `.museum-card` foi **removido** (estava órfão).
-- ⚠️ **Nunca usar `bg-white`/`text-slate-*`**: no tema escuro viram manchas. Usar `bg-card`, `bg-muted`, `text-muted-foreground`.
-- **Como validar de verdade:** script CDP mede `scrollHeight`, `scrollWidth-clientWidth` e calcula contraste WCAG (limite 4.5 / 3 para texto grande) em elementos-folha. Isso pegou que uma auditoria anterior rodou em `/auth` em vez do chat — sempre imprimir `location.pathname`.
+## Fundo: galáxia em canvas (2026-11-18)
+- **`src/components/app/CosmicBackdrop.tsx`** (montado em `__root.tsx`): galáxia espiral de **4 braços**, 3 galáxias anãs, estrelas com cintilação e **buraco negro** (horizonte preto + anel de fótons + disco de acreção). Tudo procedural em canvas; nada é baixado. `.cosmic-backdrop` é `fixed; inset:0; z-index:-1; pointer-events:none`.
+- **Rotação:** galáxia 0,0116 rad/s ≈ **9 min por volta** (0,66°/s — "quase imperceptível", como o dono pediu). Anãs 0,003–0,004. Buraco negro 0,018.
+- **Bugs que custaram tempo (não repetir):**
+  1. `destination-out` **não apaga nada** se `fillStyle` for um gradiente com alpha 0 longe do centro. Tem de ser `rgba(0,0,0,1)` opaco.
+  2. Braços que nascem no centro saturam em `lighter` e viram bola branca. Usar `T_MIN≈0.14`.
+  3. **2 braços ficam com vão vazio demais** → parece mancha. **4 braços** é o que lê como galáxia (cv angular 0,29 vs 1,1).
+  4. Sem halo de disco por baixo, os braços somem no fundo escuro (brilho 0,017 → 0,203 com o halo).
+  5. Sprite maior que a tela = só uma fatia aparece. Cabe inteiro (`gs = width*0.92` no celular).
+- **Performance:** reconstruir sprite custa ~180ms (18k estrelas) → **cache por tamanho** (tolerância 15%) + **debounce 150ms** no resize. Resultado: 180ms → 0,2ms. Loop a ~30fps, pausa em `visibilitychange`.
+- **`prefers-reduced-motion`:** desenha **um quadro estático** e não anima (validado com `Emulation.setEmulatedMedia`).
+- **Rotas não podem ter `bg-background`** (opaco) — cobre o canvas. O `body` já pinta a cor.
+- **Validar movimento:** comparar `toDataURL()` de dois quadros com 4–5s de intervalo; ~10% dos pixels mudam. Um único frame não prova nada.

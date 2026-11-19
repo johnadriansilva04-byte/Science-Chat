@@ -178,74 +178,20 @@
     background-color: var(--color-background);
     /* No celular nenhum elemento deve empurrar a largura da página. */
     overflow-x: hidden;
-    /* Céu profundo: três nebulosas (ciano, violeta, âmbar) sobre o vazio.
-       Elas se sobrepõem de propósito — a mistura é o que dá o aspecto gasoso. */
-    background-image:
-      radial-gradient(
-        1200px circle at 82% -8%,
-        color-mix(in oklab, var(--color-primary) 22%, transparent),
-        transparent 58%
-      ),
-      radial-gradient(
-        1000px circle at -10% 18%,
-        color-mix(in oklab, var(--color-accent-2) 20%, transparent),
-        transparent 60%
-      ),
-      radial-gradient(
-        900px circle at 55% 112%,
-        color-mix(in oklab, var(--color-star-amber) 12%, transparent),
-        transparent 62%
-      ),
-      radial-gradient(
-        1400px circle at 30% 55%,
-        color-mix(in oklab, var(--color-accent-2) 8%, transparent),
-        transparent 70%
-      );
-    background-attachment: fixed;
     color: var(--color-foreground);
   }
 
-  /* Campo de estrelas: dois planos com tamanhos e ritmos diferentes, para dar
-     profundidade sem nenhuma imagem. Fica num pseudo-elemento fixo atrás do
-     conteúdo e não recebe eventos. */
-  body::before {
-    content: "";
+  /* O céu é desenhado em canvas (CosmicBackdrop): galáxias, estrelas e um
+     buraco negro em movimento lento. O canvas fica atrás de tudo e não
+     intercepta cliques. */
+  .cosmic-backdrop {
     position: fixed;
     inset: 0;
     z-index: -1;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    background-image:
-      radial-gradient(1.5px 1.5px at 12% 18%, oklch(0.99 0.01 250 / 0.9), transparent 100%),
-      radial-gradient(1px 1px at 28% 62%, oklch(0.99 0.01 250 / 0.7), transparent 100%),
-      radial-gradient(1.8px 1.8px at 44% 28%, oklch(0.99 0.02 195 / 0.95), transparent 100%),
-      radial-gradient(1px 1px at 61% 74%, oklch(0.99 0.01 250 / 0.6), transparent 100%),
-      radial-gradient(1.4px 1.4px at 76% 14%, oklch(0.99 0.02 305 / 0.85), transparent 100%),
-      radial-gradient(1px 1px at 88% 52%, oklch(0.99 0.01 250 / 0.7), transparent 100%),
-      radial-gradient(1.6px 1.6px at 8% 84%, oklch(0.99 0.02 75 / 0.8), transparent 100%),
-      radial-gradient(1px 1px at 35% 92%, oklch(0.99 0.01 250 / 0.55), transparent 100%),
-      radial-gradient(1.2px 1.2px at 68% 38%, oklch(0.99 0.01 250 / 0.75), transparent 100%),
-      radial-gradient(1px 1px at 94% 88%, oklch(0.99 0.02 195 / 0.65), transparent 100%);
-    background-size: 620px 620px;
-    background-repeat: repeat;
-    opacity: 0.75;
-    animation: star-drift 240s linear infinite;
-  }
-
-  /* Segundo plano, mais lento e mais apagado: parallax de estrelas distantes. */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: -20%;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      radial-gradient(1px 1px at 20% 30%, oklch(0.95 0.01 250 / 0.4), transparent 100%),
-      radial-gradient(1px 1px at 70% 20%, oklch(0.95 0.01 250 / 0.35), transparent 100%),
-      radial-gradient(1px 1px at 45% 80%, oklch(0.95 0.01 250 / 0.4), transparent 100%),
-      radial-gradient(1px 1px at 85% 65%, oklch(0.95 0.01 250 / 0.3), transparent 100%);
-    background-size: 340px 340px;
-    opacity: 0.6;
-    animation: star-drift-slow 480s linear infinite reverse;
+    display: block;
   }
 
   h1,
@@ -2075,24 +2021,6 @@
 
 /* ===== Céu profundo: movimento e respeito ao usuário ===== */
 
-@keyframes star-drift {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 620px 620px;
-  }
-}
-
-@keyframes star-drift-slow {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 340px 340px;
-  }
-}
-
 /* Nebulosa respirando devagar: dá vida ao fundo sem competir com o texto. */
 @keyframes nebula-breathe {
   0%,
@@ -2104,12 +2032,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  body::before,
-  body::after {
-    animation: none;
-  }
-}
+
 
 /* ===== Acervo em linhas: lista densa que abre no lugar ===== */
 /* Antes: 30 cartões abertos = ~10.000px no celular. Agora cada obra ocupa uma

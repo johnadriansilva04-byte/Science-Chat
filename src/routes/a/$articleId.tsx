@@ -160,7 +160,7 @@ function ArticleWorkspace() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col">
         <header className="flex items-center gap-2 border-b p-3">
           <ArticlesMenu activeId={articleId} />
           <span className="font-serif text-lg font-semibold">ScienceChat</span>
@@ -177,7 +177,7 @@ function ArticleWorkspace() {
 
   if (loading || loadingData || !article) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col">
         <header className="flex items-center gap-2 border-b p-3">
           <ArticlesMenu activeId={articleId} />
           <span className="font-serif text-lg font-semibold">ScienceChat</span>
@@ -201,7 +201,7 @@ function ArticleWorkspace() {
     liveMessages.length >= initialMessages.length ? liveMessages : initialMessages;
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-background">
+    <div className="flex h-[100dvh] flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-2 print:hidden">
         <ArticlesMenu activeId={articleId} />
         {editingTitle ? (

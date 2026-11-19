@@ -70,7 +70,7 @@ function Index() {
     return () => el.removeEventListener("pointermove", onMove);
   }, []);
 
-  if (!user) return <div className="min-h-screen bg-background" />;
+  if (!user) return <div className="min-h-screen" />;
 
   async function continueResearch() {
     const rows = await listArticles();
@@ -92,7 +92,7 @@ function Index() {
   }
 
   return (
-    <div className="landing-shell flex min-h-screen flex-col bg-background">
+    <div className="landing-shell flex min-h-screen flex-col">
       <div ref={heroRef} className="landing-hero relative flex min-h-screen flex-col">
         <AppHeader variant="overlay" />
 

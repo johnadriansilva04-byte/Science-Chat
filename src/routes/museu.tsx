@@ -92,7 +92,7 @@ function MuseumPage() {
   }
 
   return (
-    <div className="lab-bg min-h-screen bg-background">
+    <div className="lab-bg min-h-screen">
       <AppHeader />
       <div className="lab-rule" aria-hidden />
 

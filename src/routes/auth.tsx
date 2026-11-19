@@ -185,7 +185,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="grid w-full max-w-4xl items-start gap-8 lg:grid-cols-[1fr_1.05fr]">
         {/* Formulário */}
         <div className="w-full">
