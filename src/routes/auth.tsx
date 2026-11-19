@@ -109,7 +109,7 @@ function PracinhaIntro({ onAsk }: { onAsk: (question: string) => void }) {
 
       {/* Porta para o guia completo: aqui chega quem ainda duvida se pode
           publicar. O card é uma linha; o conteúdo vive em /ciencia. */}
-      <ScienceAccessCard className="mt-3" />
+      <ScienceAccessCard variant="compact" className="mt-3" />
 
       <p className="mt-2 flex items-center gap-1.5 text-[0.72rem] text-muted-foreground">
         <BadgeCheck className="size-3.5 text-[var(--color-success)]" />A ciência não depende de uma

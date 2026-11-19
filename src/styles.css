@@ -1814,25 +1814,24 @@
   text-transform: uppercase;
 }
 
-/* Cartão-gatilho da home. */
-.ciencia-trigger {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid color-mix(in oklab, var(--color-primary) 24%, transparent);
+/* ===== Card "Ciência sem crachá" da home ===== */
+/* O card ensina na própria home: resposta direta, o que não é exigido versus o
+   que conta, os passos com o fundamento e as fontes por país. Herda a paleta
+   editorial do atlas para o leitor reconhecer o mesmo assunto. */
+.cracha-card {
+  --ci-ink: var(--foreground);
+  --ci-soft: var(--muted-foreground);
+  --ci-accent: var(--star-amber);
+  --ci-rule: color-mix(in oklab, var(--foreground) 14%, transparent);
+  --ci-surface-2: color-mix(in oklab, var(--foreground) 6%, transparent);
+  border-color: color-mix(in oklab, var(--color-primary) 22%, transparent);
   background:
-    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 55%),
-    color-mix(in oklab, var(--card) 72%, transparent);
-  transition:
-    border-color 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+    radial-gradient(120% 130% at 0% 0%, color-mix(in oklab, var(--color-primary) 9%, transparent), transparent 58%),
+    color-mix(in oklab, var(--card) 76%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--ci-ink);
 }
-.ciencia-trigger:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--color-primary) 55%, transparent);
-  box-shadow: 0 18px 40px -26px color-mix(in oklab, var(--color-primary) 80%, transparent);
-}
-.ciencia-trigger__spine {
+.cracha-card__spine {
   position: absolute;
   left: 0;
   top: 0;
@@ -1841,20 +1840,310 @@
   background: linear-gradient(
     to bottom,
     var(--color-primary),
-    color-mix(in oklab, var(--color-primary) 40%, transparent)
+    color-mix(in oklab, var(--color-primary) 35%, transparent)
   );
-  transform: scaleY(0.35);
-  transform-origin: top;
-  transition: transform 0.35s ease;
 }
-.ciencia-trigger:hover .ciencia-trigger__spine {
-  transform: scaleY(1);
+.cracha-card__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ci-accent);
 }
-.ciencia-trigger__arrow {
+
+/* O que não é exigido × o que conta. */
+.cracha-list {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ci-rule);
+  background: var(--ci-surface-2);
+  padding: 0.6rem 0.7rem;
+}
+.cracha-list__title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cracha-list--no .cracha-list__title {
+  color: oklch(0.62 0.16 25);
+}
+.cracha-list--yes .cracha-list__title {
+  color: oklch(0.66 0.14 155);
+}
+.cracha-list ul {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.22rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--ci-soft);
+}
+.cracha-list--no li {
+  padding-left: 0.85rem;
+  position: relative;
+}
+.cracha-list--no li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  opacity: 0.55;
+}
+.cracha-list--yes li {
+  padding-left: 0.95rem;
+  position: relative;
+}
+.cracha-list--yes li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: oklch(0.66 0.14 155);
+  font-size: 0.7rem;
+}
+
+/* Passos expansíveis: fechados, mostram só o título; abertos, o fundamento. */
+.cracha-steps__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ci-accent);
+}
+.cracha-steps ol {
+  margin-top: 0.45rem;
+  display: grid;
+  gap: 0.3rem;
+}
+.cracha-step {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ci-rule);
+  background: var(--ci-surface-2);
+  transition: border-color 0.2s ease;
+}
+.cracha-step[open] {
+  border-color: color-mix(in oklab, var(--ci-accent) 45%, transparent);
+}
+.cracha-step summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.cracha-step summary::-webkit-details-marker {
+  display: none;
+}
+.cracha-step__n {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--ci-accent) 40%, transparent);
+  color: var(--ci-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.cracha-step__title {
+  flex: 1;
+  min-width: 0;
+}
+.cracha-step__chevron {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-right: 1.5px solid var(--ci-soft);
+  border-bottom: 1.5px solid var(--ci-soft);
+  transform: rotate(45deg) translateY(-1px);
+  transition: transform 0.22s ease;
+}
+.cracha-step[open] .cracha-step__chevron {
+  transform: rotate(225deg) translateY(-2px);
+}
+.cracha-step__body {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0 0.6rem 0.6rem 2.45rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+.cracha-step__do {
+  color: var(--ci-ink);
+}
+.cracha-step__why {
+  color: var(--ci-soft);
+  font-style: italic;
+}
+.cracha-step__tag {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.02rem 0.3rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--ci-accent) 18%, transparent);
+  color: var(--ci-accent);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 0.05em;
+}
+.cracha-step__for {
+  display: flex;
+  gap: 0.35rem;
+  color: var(--ci-soft);
+}
+.cracha-step__for svg {
+  color: var(--ci-accent);
+}
+
+/* Abas por país e as fontes oficiais de cada uma. */
+.cracha-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.cracha-tab {
+  min-height: 2.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  border: 1px solid var(--ci-rule);
+  background: var(--ci-surface-2);
+  color: var(--ci-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.cracha-tab:hover {
+  color: var(--ci-ink);
+  border-color: color-mix(in oklab, var(--ci-accent) 45%, transparent);
+}
+.cracha-tab[data-state="active"] {
+  color: oklch(0.2 0.03 285);
+  border-color: transparent;
+  background: var(--ci-accent);
+}
+.cracha-region-note {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ci-soft);
+}
+.cracha-refs {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.3rem;
+}
+.cracha-refs a {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-md);
+  border-left: 2px solid color-mix(in oklab, var(--ci-accent) 55%, transparent);
+  background: color-mix(in oklab, var(--ci-accent) 6%, transparent);
+  transition: background 0.2s ease;
+}
+.cracha-refs a:hover {
+  background: color-mix(in oklab, var(--ci-accent) 12%, transparent);
+}
+.cracha-refs__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ci-ink);
+}
+.cracha-refs__note {
+  font-size: 0.73rem;
+  line-height: 1.4;
+  color: var(--ci-soft);
+}
+
+/* Variante compacta: só a porta para o guia, nas páginas que já têm conteúdo. */
+.cracha-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in oklab, var(--color-primary) 24%, transparent);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--color-primary) 9%, transparent), transparent 55%),
+    color-mix(in oklab, var(--card) 72%, transparent);
+  text-align: left;
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.cracha-compact:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--color-primary) 50%, transparent);
+  box-shadow: 0 16px 34px -26px color-mix(in oklab, var(--color-primary) 80%, transparent);
+}
+.cracha-compact__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+.cracha-compact__arrow {
   transition: transform 0.25s ease;
 }
-.ciencia-trigger:hover .ciencia-trigger__arrow {
+.cracha-compact:hover .cracha-compact__arrow {
   transform: translateX(3px);
+}
+
+/* Ações do card. */
+.cracha-cta {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: var(--color-primary);
+  color: oklch(0.18 0.03 285);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+.cracha-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+.cracha-cta--ghost {
+  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  background: transparent;
+  color: var(--ci-ink);
 }
 
 /* Carta de apresentação: fonte monoespaçada leve, para parecer um rascunho

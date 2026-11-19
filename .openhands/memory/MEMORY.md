@@ -169,3 +169,28 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Duplicação do card no chat:** era dois `useEffect` reofertando; agora um efeito com `offeredFor` (useRef) por mensagem.
 - **`ChatProtocol`** = faixa de 1 linha no compositor; `protocolPosition()` (`src/lib/protocol-position.ts`) infere a seção pelo 1º título Markdown — `WorkspacePage` não tem `section_key`.
 - **Testar `Link`:** render isolado falha (`isServer` null); use `router.matchRoutes`/`RouterProvider`.
+
+## Custo de IA e cota (2026-11-18)
+- **Cota grátis = 10.000 neurônios/dia.** Preço em neurônios por M tokens (entrada/saída):
+  70B `llama-3.3-70b-instruct-fp8-fast` = 26.668/204.805 → **~25 msg/dia**;
+  8B `llama-3.1-8b-instruct-fp8-fast` = 4.119/34.868 → **~158 msg/dia** (~6,3× mais barato).
+  Fonte: developers.cloudflare.com/workers-ai/platform/pricing.
+- **`INTERVIEW_MODEL` (8B) só na entrevista**; plano e páginas continuam no 70B (o texto é o produto).
+  Override: `AI_INTERVIEW_MODEL`. `startResponses(..., modelId)` — 8º parâmetro.
+- **`MAX_STEPS = 3`** (era 5): cada passo reenvia o histórico inteiro.
+- Sintoma de cota esgotada: 4006 no log + `PRACINHA_QUOTA_EXHAUSTED` no chat. Reseta 00:00 UTC.
+- `research.server.ts` (OpenAlex/Crossref) é independente da cota de IA.
+
+## Acessibilidade de abas (padrão do projeto)
+`role="tab"` sem teclado/`aria-controls` é bug recorrente aqui. Padrão correto (aplicado em
+`ScienceAccessCard` e `ScienceAtlas`): roving `tabIndex`, setas no `onKeyDown` do tablist,
+`id` por aba + `aria-controls` → painel com `aria-labelledby` e `tabIndex={0}`.
+Teste de render em `src/test/science-access-card-render.test.tsx` (mocka `Link`; o router real
+resolve assíncrono e quebra o `render`).
+
+## Card "Ciência sem crachá"
+- Conteúdo em `src/lib/science-access.ts`; variantes `full` (home) e `compact` (/auth, /publicacoes, /museu).
+- **Use container queries (`@container`, `@2xl`, `@3xl`), não `sm:`** — o mesmo card aparece em
+  colunas de larguras muito diferentes.
+- Alvos de toque ≥ 2.75rem (44px).
+- 2 fontes dão 403 para bot (`periodicos.capes.gov.br`, `colibri.udelar.edu.uy`) — abrem no navegador.

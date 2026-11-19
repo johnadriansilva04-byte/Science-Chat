@@ -187,10 +187,10 @@ function Index() {
             </ol>
           </section>
 
-          {/* Coluna direita: o guia em destaque e a homenagem. A lista completa
-              do acervo vive em /publicacoes — aqui ela esticava a coluna. */}
+          {/* Coluna direita: a coletânea. O guia "Ciência sem crachá" saiu daqui:
+              é conteúdo educativo e precisa de largura para ensinar, então vive
+              logo abaixo do herói, em faixa própria. */}
           <section className="order-2 flex min-h-0 flex-col gap-3 lg:order-2">
-            <ScienceAccessCard />
             <div className="landing-shelf-card rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="size-4 text-primary" />
@@ -206,6 +206,13 @@ function Index() {
             </div>
           </section>
         </main>
+
+        <section
+          aria-label="Ciência sem crachá"
+          className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6"
+        >
+          <ScienceAccessCard />
+        </section>
 
         <div className="relative z-10 hidden items-center justify-between px-6 py-3 text-[11px] text-muted-foreground lg:flex">
           <span>Uma criação Variant · CEO John Adrian</span>

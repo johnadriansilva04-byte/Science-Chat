@@ -11,6 +11,30 @@ import { antiRepeatTransform } from "@/lib/ai/anti-repeat";
 export const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 /**
+ * Modelo leve da entrevista.
+ *
+ * A cota gratuita da Workers AI é de 10.000 neurônios/dia e o 70B custa
+ * 26.668/M de entrada e 204.805/M de saída — ~25 mensagens/dia. O 8B custa
+ * 4.119/M e 34.868/M (6× menos): ~158 mensagens/dia. A entrevista é diálogo
+ * curto e guiado, onde o 8B dá conta; a ESCRITA do documento (plano e páginas)
+ * continua no 70B, porque ali a qualidade do texto é o produto.
+ */
+export const INTERVIEW_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8-fast";
+
+/** Modelo da entrevista, permitindo override por env `AI_INTERVIEW_MODEL`. */
+export function interviewModelId(): string {
+  return process.env["AI_INTERVIEW_MODEL"] || INTERVIEW_MODEL;
+}
+
+/**
+ * Teto de passos por mensagem. Cada passo é uma chamada de IA — e o histórico
+ * inteiro é reenviado em cada uma. Três passos cobrem o ciclo real (chamada de
+ * ferramenta → resultado → resposta); cinco só multiplicavam o custo nos casos
+ * em que o modelo insistia em ferramentas, sem melhorar a resposta.
+ */
+export const MAX_STEPS = 3;
+
+/**
  * O SSE da Workers AI traz o mesmo texto em `response` (formato nativo) e em
  * `choices[].delta.content` (formato OpenAI). O `workers-ai-provider` lê os dois
  * e emite cada token em dobro ("OlOlá!"). Removemos `response` quando `choices`
@@ -109,8 +133,7 @@ function aiBinding(): AiBinding {
   } as AiBinding;
 }
 
-function model() {
-  const modelId = process.env["AI_MODEL"] || DEFAULT_MODEL;
+function model(modelId: string = process.env["AI_MODEL"] || DEFAULT_MODEL) {
   // Fora do Cloudflare (ex.: Vercel) não existe binding `AI`; usamos o modo
   // credenciais do provider, que fala com a API REST da Cloudflare.
   if (!getEnv().AI) {
@@ -228,9 +251,10 @@ export function startResponses(
   tools?: ToolSet,
   forcedTool?: string | null,
   antiRepeatSeed?: Iterable<string>,
+  modelId?: string,
 ) {
   const result = streamText({
-    model: model(),
+    model: model(modelId),
     system: instructions,
     messages,
     maxOutputTokens,
@@ -243,7 +267,7 @@ export function startResponses(
     ...(tools
       ? {
           tools,
-          stopWhen: stepCountIs(5),
+          stopWhen: stepCountIs(MAX_STEPS),
           // Força a ferramenta pedida APENAS no primeiro passo. Sem isso, com
           // histórico longo o modelo narra a chamada como texto e a ferramenta
           // nunca executa; o provider só recupera chamadas "vazadas" quando a

@@ -201,6 +201,31 @@ describe("recusa sobrevive à recarga", () => {
     );
   });
 
+  // Regressão (visto em produção): a persona era testada por regex solta, então
+  // QUALQUER frase contendo "pesquisador independente" abria o card — inclusive
+  // uma pergunta de método sobre como essa pessoa valida o trabalho.
+  it("'pesquisador independente' como assunto não abre o card", () => {
+    expect(
+      detectScienceDoubt(
+        "Como um pesquisador independente prova que seu metodo tem validade cientifica?",
+      ),
+    ).toBe(false);
+    expect(detectScienceDoubt("O que um pesquisador independente precisa saber sobre DOI?")).toBe(
+      false,
+    );
+    expect(detectScienceDoubt("Quero investigar como pesquisadores independentes publicam")).toBe(
+      false,
+    );
+  });
+
+  it("autodeclaração de persona continua abrindo o card", () => {
+    expect(detectScienceDoubt("sou pesquisador independente")).toBe(true);
+    expect(detectScienceDoubt("Sou pesquisadora independente e quero submeter um artigo")).toBe(
+      true,
+    );
+    expect(detectScienceDoubt("quero publicar como pesquisador independente")).toBe(true);
+  });
+
   it("dúvida curta de verdade continua abrindo o caminho", () => {
     expect(detectScienceDoubt("posso publicar sem vinculo institucional?")).toBe(true);
   });

@@ -122,7 +122,7 @@ function AcervoPage() {
           essa comprovação — a plataforma não revisa.
         </p>
 
-        <ScienceAccessCard className="mt-6 max-w-3xl" />
+        <ScienceAccessCard variant="compact" className="mt-6 max-w-3xl" />
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">

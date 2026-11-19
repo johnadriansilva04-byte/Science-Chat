@@ -6,7 +6,7 @@ import {
   generateId,
   type UIMessage,
 } from "ai";
-import { startResponses, generateFinalText } from "@/lib/ai/gateway.server";
+import { startResponses, generateFinalText, interviewModelId } from "@/lib/ai/gateway.server";
 import {
   INTERVIEW_INSTRUCTIONS,
   PAGE_INSTRUCTIONS,
@@ -299,6 +299,9 @@ async function handle(request: Request) {
       buildTools({ userId: user.id, articleId: article.id }),
       forcedTool,
       antiRepeatSeed,
+      // A entrevista é diálogo guiado e usa o modelo leve (6× mais barato em
+      // neurônios); a escrita do documento fica no 70B, onde o texto é o produto.
+      article.phase === "interview" ? interviewModelId() : undefined,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

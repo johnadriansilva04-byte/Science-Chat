@@ -138,6 +138,15 @@ const DOUBT_ABSOLUTE_MAX = 600;
 const RESEARCH_TOPIC =
   /\b(quero|pretendo|vou|gostaria de|busco|minha pesquisa|meu estudo|meu artigo|meu tema|a pesquisa|o estudo|pesquisar|investigar|estudar|analisar|compreender|entender como|comparar|mapear)\b[^.?]{0,80}\b(pesquisar|investigar|estudar|analisar|compreender|comparar|mapear|como|sobre|a respeito)\b/;
 
+/**
+ * "Pesquisador independente" só abre o card quando é AUTODECLARAÇÃO — o autor
+ * falando de si ("sou…", "quero publicar como…"). Como assunto ("como um
+ * pesquisador independente valida o método") é tema de pesquisa, e abrir o card
+ * ali interrompe justamente quem está trabalhando.
+ */
+const SELF_PERSONA =
+  /\b(sou|seria|quero (?:publicar|submeter|assinar)|publico|assino|me considero|trabalho como)\b[^?]{0,40}\bpesquisador(?:a)? independente\b/;
+
 export function detectScienceDoubt(text: string): boolean {
   const q = normalize(text ?? "")
     .replace(/\s+/g, " ")
@@ -146,10 +155,10 @@ export function detectScienceDoubt(text: string): boolean {
   if (q.length > DOUBT_ABSOLUTE_MAX) return false;
   // Acima do tamanho de uma pergunta, só passa se for de fato uma pergunta.
   if (q.length > DOUBT_SHORT && !q.includes("?")) return false;
-  // "pesquisador independente" sozinho já é a persona do fluxo — vem ANTES da
-  // guarda de tema, senão "quero publicar como pesquisador independente" seria
-  // lido como assunto de pesquisa.
-  if (/pesquisador(a)? independente/.test(q)) return true;
+  // Autodeclaração de persona ("sou pesquisador independente", "quero publicar
+  // como pesquisador independente") já é a dúvida que o fluxo resolve. Vem ANTES
+  // da guarda de tema porque "quero publicar como…" casa RESEARCH_TOPIC.
+  if (SELF_PERSONA.test(q)) return true;
   // Tema de pesquisa não é insegurança sobre credencial.
   if (RESEARCH_TOPIC.test(q) && !q.includes("?")) return false;
   // A falta precisa recair sobre a CREDENCIAL (vínculo, diploma, orientador),

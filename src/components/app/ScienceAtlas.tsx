@@ -428,14 +428,39 @@ export function ScienceAtlas({ initial = "posso" }: { initial?: TopicId }) {
         </div>
       </header>
 
-      <div className="atlas-grid mt-5" role="tablist" aria-label="Assuntos do guia">
-        <nav className="atlas-nav">
+      <div className="atlas-grid mt-5">
+        <nav
+          className="atlas-nav"
+          role="tablist"
+          aria-label="Assuntos do guia"
+          onKeyDown={(event) => {
+            // Roving tabindex + setas: a aba ativa é a única parada de tabulação.
+            const dir =
+              event.key === "ArrowDown" || event.key === "ArrowRight"
+                ? 1
+                : event.key === "ArrowUp" || event.key === "ArrowLeft"
+                  ? -1
+                  : 0;
+            if (!dir) return;
+            event.preventDefault();
+            const index = TOPICS.findIndex((t) => t.id === topic);
+            const next = TOPICS[(index + dir + TOPICS.length) % TOPICS.length]!;
+            setTopic(next.id);
+            event.currentTarget
+              .querySelector<HTMLButtonElement>(`[data-topic="${next.id}"]`)
+              ?.focus();
+          }}
+        >
           {TOPICS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               type="button"
               role="tab"
+              id={`atlas-tab-${id}`}
               aria-selected={topic === id}
+              aria-controls="atlas-panel"
+              tabIndex={topic === id ? 0 : -1}
+              data-topic={id}
               onClick={() => setTopic(id)}
               className="atlas-nav__item"
             >
@@ -448,7 +473,9 @@ export function ScienceAtlas({ initial = "posso" }: { initial?: TopicId }) {
         <section
           className="atlas-panel"
           role="tabpanel"
-          aria-label={current.label}
+          id="atlas-panel"
+          aria-labelledby={`atlas-tab-${current.id}`}
+          tabIndex={0}
           key={current.id}
         >
           <h2 className="atlas-panel__title">{current.label}</h2>

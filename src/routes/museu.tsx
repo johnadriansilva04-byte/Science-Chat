@@ -108,7 +108,7 @@ function MuseumPage() {
           exclui. Fontes reais, com DOI. Achou uma? Mande para o Pracinha: ela entra no seu artigo.
         </p>
 
-        <ScienceAccessCard className="mt-6 max-w-2xl" />
+        <ScienceAccessCard variant="compact" className="mt-6 max-w-2xl" />
 
         <div className="relative mt-6">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
