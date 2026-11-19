@@ -148,3 +148,12 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Erro de login agora fica no formulário** (`role=alert`), não só em toast: o toast some em segundos e no celular com teclado aberto o usuário perde o motivo. Botão de envio com `min-h-11` (44px).
 - Migrations: `schema_migrations` é a tabela válida (10 arquivos aplicados); `d1_migrations` é legado com só 4. Números de arquivo duplicados (dois `0006_`, dois `0007_`) — ordem real é a de `applied_at`.
 - Limpeza feita em 19/11: 11 contas de teste + 73 linhas em cascata + 7 objetos R2 órfãos. Sobrou `variantfeb@gmail.com` (2 artigos, 1 publicação, 129 mensagens).
+
+## Redesign "céu profundo" (2026-11-18)
+- **Paleta:** o tema editorial claro (papel quente + terracota) virou **céu profundo** — `--background: oklch(0.17 0.035 285)`, primário **ciano** `oklch(0.8 0.14 195)`, `--accent-2` violeta, e dois tokens novos `--star-amber` / `--star-rose` (registrados em `@theme inline` como `--color-star-*`).
+- **Galáxia sem imagem:** `body` = 4 `radial-gradient` de nebulosa; `body::before` e `body::after` = campos de estrelas em `radial-gradient` repetido com `star-drift`/`star-drift-slow` (240s/480s). Desligados em `prefers-reduced-motion`.
+- **`.landing-hero` não pinta fundo próprio** — só halo que segue o ponteiro; a grade virou retículo de telescópio (44px, máscara no topo).
+- **Densidade é a regra do acervo:** museu e coletânea usam `.acervo-row` (linha ~82px, accordion de 1 por vez, `aria-expanded`, `hidden` no corpo). **Não voltar para grade de cartões**: eram 12.684px (museu) e 10.419px (coletânea) no celular → hoje 3.411px e 4.368px.
+- `AcervoCard` não usa mais `Dialog`; abriu no lugar. O CSS `.acervo-card`, `.acervo-sheet` e `.museum-card` foi **removido** (estava órfão).
+- ⚠️ **Nunca usar `bg-white`/`text-slate-*`**: no tema escuro viram manchas. Usar `bg-card`, `bg-muted`, `text-muted-foreground`.
+- **Como validar de verdade:** script CDP mede `scrollHeight`, `scrollWidth-clientWidth` e calcula contraste WCAG (limite 4.5 / 3 para texto grande) em elementos-folha. Isso pegou que uma auditoria anterior rodou em `/auth` em vez do chat — sempre imprimir `location.pathname`.
