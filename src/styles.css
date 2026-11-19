@@ -2110,6 +2110,65 @@
 }
 
 /* ===== Card de identidade do ORCID (dentro do chat) ===== */
+/* Card do fluxo "Ciência sem crachá" no chat: um bocado por vez. Herda a
+   estética editorial do card da home para o pesquisador reconhecer que é o
+   mesmo assunto, mas é compacto porque divide espaço com a conversa. */
+.ciencia-chat-card {
+  --ci-ink: oklch(0.24 0.03 260);
+  --ci-soft: oklch(0.46 0.03 260);
+  --ci-accent: oklch(0.5 0.15 32);
+  --ci-accent-2: oklch(0.5 0.1 205);
+  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ci-rule);
+  border-radius: var(--radius-xl);
+  padding: 0.85rem 0.95rem;
+  color: var(--ci-ink);
+  background:
+    radial-gradient(130% 120% at 100% 0%, color-mix(in oklab, var(--ci-accent) 10%, transparent), transparent 60%),
+    linear-gradient(180deg, oklch(0.995 0.006 85), oklch(0.975 0.012 80));
+  box-shadow: 0 18px 40px -30px color-mix(in oklab, var(--ci-accent) 80%, transparent);
+  animation: orcid-card-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.ciencia-chat-card__seal {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 9999px;
+  color: oklch(0.98 0.02 60);
+  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), oklch(0.47 0.17 27));
+  box-shadow:
+    inset 0 1px 2px oklch(1 0 0 / 0.4),
+    inset 0 -2px 4px oklch(0.2 0.05 20 / 0.4);
+}
+.ciencia-chat-card--done .ciencia-chat-card__seal {
+  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.14 155), oklch(0.47 0.13 155));
+}
+.ciencia-chat-card__step {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: none;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--ci-accent) 45%, transparent);
+  color: var(--ci-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ciencia-chat-card__why,
+.ciencia-chat-card__use {
+  border-left: 2px solid color-mix(in oklab, var(--ci-accent) 40%, transparent);
+  padding-left: 0.6rem;
+}
+.ciencia-chat-card__use {
+  border-left-color: color-mix(in oklab, var(--ci-accent-2) 45%, transparent);
+}
+
 .orcid-card {
   --ci-ink: oklch(0.24 0.03 260);
   --ci-soft: oklch(0.46 0.03 260);

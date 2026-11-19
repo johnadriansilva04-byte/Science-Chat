@@ -8,6 +8,7 @@ import {
   SCIENCE_REFERENCES,
   SCIENCE_STEPS,
 } from "@/lib/science-access";
+import { SCIENCE_BITES, SCIENCE_BITES_TOTAL } from "@/lib/science-flow";
 
 describe("ScienceAccessCard", () => {
   it("mostra a chamada e abre o conteúdo ao clicar", () => {
@@ -76,17 +77,49 @@ describe("ScienceAccessCard", () => {
 });
 
 describe("ScienceAccessCard inline (home)", () => {
-  it("ensina o fundamento SEM exigir clique", () => {
+  it("responde a dúvida SEM exigir clique", () => {
     render(<ScienceAccessCard inline />);
-    // O conteúdo precisa estar à vista: quem chega com a dúvida não pode
-    // precisar descobrir que o guia existe.
-    expect(screen.getByText("Passo a passo")).toBeInTheDocument();
-    expect(screen.getByText("O que NÃO é exigido")).toBeInTheDocument();
-    expect(screen.getByText("O que realmente conta")).toBeInTheDocument();
+    // Quem chega com "posso publicar sem vínculo?" precisa da resposta à vista.
     expect(screen.getByText(/posso publicar/i)).toBeInTheDocument();
     for (const point of DIRECT_ANSWER_POINTS) {
       expect(screen.getByText(point.claim)).toBeInTheDocument();
     }
+    expect(screen.getByText("O que NÃO é exigido")).toBeInTheDocument();
+    expect(screen.getByText("O que realmente conta")).toBeInTheDocument();
+  });
+
+  it("não despeja o caminho inteiro: entrega em partes", () => {
+    render(<ScienceAccessCard inline />);
+    expect(screen.getByText("O caminho, em partes")).toBeInTheDocument();
+    // Só o primeiro bocado aparece; o resto vem sob demanda.
+    expect(screen.getByText(SCIENCE_BITES[0]!.title)).toBeInTheDocument();
+    for (const bite of SCIENCE_BITES.slice(1)) {
+      expect(screen.queryByText(bite.title)).not.toBeInTheDocument();
+    }
+  });
+
+  it("avança um bocado por vez até o fim", () => {
+    render(<ScienceAccessCard inline />);
+    expect(screen.getByText(`1 de ${SCIENCE_BITES_TOTAL}`)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /continuar/i }));
+    expect(screen.getByText(SCIENCE_BITES[1]!.title)).toBeInTheDocument();
+    expect(screen.queryByText(SCIENCE_BITES[0]!.title)).not.toBeInTheDocument();
+
+    for (let i = 2; i < SCIENCE_BITES_TOTAL; i++) {
+      fireEvent.click(screen.getByRole("button", { name: /próximo/i }));
+    }
+    expect(screen.getByText(SCIENCE_BITES[SCIENCE_BITES_TOTAL - 1]!.title)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /rever do começo/i })).toBeInTheDocument();
+  });
+
+  it("ensina o porquê e o para-que-serve de cada parte", () => {
+    render(<ScienceAccessCard inline />);
+    const first = SCIENCE_BITES[0]!;
+    expect(screen.getByText("Por que importa")).toBeInTheDocument();
+    expect(screen.getByText("Para que serve")).toBeInTheDocument();
+    expect(screen.getByText(first.why)).toBeInTheDocument();
+    expect(screen.getByText(first.whatFor)).toBeInTheDocument();
   });
 
   it("destaca o ORCID com link gratuito e sem instituição", () => {
@@ -95,14 +128,14 @@ describe("ScienceAccessCard inline (home)", () => {
     expect(orcid).toHaveAttribute("href", ORCID_REGISTER_URL);
   });
 
-  it("mostra os primeiros passos e libera o resto sob demanda", () => {
+  it("guarda o aprofundamento (fontes, países, carta) num diálogo", () => {
     render(<ScienceAccessCard inline />);
-    expect(screen.getByText(SCIENCE_STEPS[0]!.title)).toBeInTheDocument();
-    expect(screen.queryByText(SCIENCE_STEPS[9]!.title)).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /ver os outros/i }));
-
-    expect(screen.getByText(SCIENCE_STEPS[9]!.title)).toBeInTheDocument();
+    // Os 10 passos completos vivem no modo não-inline (publicações/museu); aqui
+    // o diálogo entrega o que o bocado não mostra: fontes por país e carta-modelo.
+    expect(screen.queryByRole("tab", { name: "Brasil" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /fontes, países e carta-modelo/i }));
+    expect(screen.getByRole("tab", { name: "Brasil" })).toBeInTheDocument();
+    expect(screen.getByText(SCIENCE_REFERENCES[0]!.label)).toBeInTheDocument();
   });
 
   it("abre fontes, países e carta-modelo a partir do conteúdo visível", () => {

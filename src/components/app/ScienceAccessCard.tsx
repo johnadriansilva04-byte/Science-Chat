@@ -33,10 +33,11 @@ import {
   referencesByRegion,
   type ReferenceRegion,
 } from "@/lib/science-access";
+import { SCIENCE_FLOW_SEED } from "@/lib/science-flow";
+import { ScienceBiteStepper } from "@/components/app/ScienceBiteStepper";
 
 /** Semente que o botão "levar para o Pracinha" injeta no artigo novo. */
-export const PRACINHA_ACCESS_SEED =
-  "Quero publicar como pesquisador(a) independente, sem vínculo institucional. Me ajude a escolher a revista pelo escopo, preencher a afiliação como “Pesquisador(a) independente”, criar meu ORCID e seguir as diretrizes oficiais.";
+export const PRACINHA_ACCESS_SEED = SCIENCE_FLOW_SEED;
 
 /** Cor de cada região/aba, para dar identidade visual sem depender do tema. */
 const REGION_COLOR: Record<ReferenceRegion, string> = {
@@ -522,14 +523,18 @@ export function ScienceAccessCard({
           <hr className="ciencia-rule ciencia-rule--double mt-4" />
 
           <DirectAnswerSection />
-          <OrcidSeal />
+
+          {/* O caminho é servido em partes: um bocado por vez, com o porquê e o
+              para-que-serve. Ninguém lê dez passos de uma vez — e a dúvida aqui
+              é "posso?", não "me dê o manual". */}
+          <ScienceBiteStepper />
 
           <section className="mt-5 grid gap-3 sm:grid-cols-2">
             <NotRequiredPanel />
             <WhatCountsPanel />
           </section>
 
-          <StepsSection compact />
+          <OrcidSeal />
 
           <footer className="mt-5 flex flex-wrap items-center gap-2">
             <Button

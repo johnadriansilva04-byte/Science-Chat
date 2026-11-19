@@ -43,6 +43,18 @@ import { PracinhaAvatar, type PracinhaState } from "@/components/app/PracinhaAva
 import { PracinhaRest } from "@/components/app/PracinhaRest";
 import { ChatAttachments } from "@/components/app/ChatAttachments";
 import { OrcidPrompt } from "@/components/app/OrcidPrompt";
+import { ScienceFlowCard } from "@/components/app/ScienceFlowCard";
+import {
+  SCIENCE_FLOW_IDLE,
+  advanceScienceFlow,
+  currentScienceBite,
+  detectScienceDoubt,
+  startScienceFlow,
+  SCIENCE_FLOW_SEED,
+  dismissScienceFlow,
+  wasScienceFlowDismissed,
+  type ScienceFlowState,
+} from "@/lib/science-flow";
 import { interviewProgress } from "@/lib/interview-progress";
 import { cleanQuestion } from "@/lib/interview-notes";
 import { asksForOrcid, suggestReplies } from "@/lib/chat-suggestions";
@@ -296,6 +308,40 @@ export function ChatDock({
   // não é a última do turno.
   const orcidAsked = useMemo(() => asksForOrcid(lastQuestionText), [lastQuestionText]);
   const [orcidDismissed, setOrcidDismissed] = useState(false);
+
+  // Fluxo "Ciência sem crachá": picado, um bocado por vez, e SÓ se o pesquisador
+  // pedir. A oferta é um convite de uma linha; o conteúdo só aparece depois do
+  // "sim". Nada aqui chama a IA, então funciona mesmo com a cota esgotada.
+  const [scienceFlow, setScienceFlow] = useState<ScienceFlowState>(SCIENCE_FLOW_IDLE);
+  // A recusa sobrevive à recarga: insistir a cada visita vira propaganda.
+  const [scienceFlowDismissed, setScienceFlowDismissed] = useState(() =>
+    wasScienceFlowDismissed(articleId),
+  );
+
+  // Detecta a dúvida no que o PESQUISADOR escreveu (não na fala da IA): é sinal
+  // mais confiável e não gasta cota. Só oferece se o fluxo ainda não foi usado.
+  const lastUserText = useMemo(() => {
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    return lastUser?.parts
+      .filter((p) => p.type === "text")
+      .map((p) => p.text)
+      .join(" ");
+  }, [messages]);
+
+  useEffect(() => {
+    if (scienceFlow.stage !== "idle" || scienceFlowDismissed) return;
+    if (detectScienceDoubt(lastUserText ?? "")) {
+      setScienceFlow({ stage: "offered", index: 0 });
+    }
+  }, [lastUserText, scienceFlow.stage, scienceFlowDismissed]);
+
+  // O caminho é texto determinístico — não gasta cota. Quando o Pracinha está em
+  // descanso, o chat fica mudo; oferecer o guia é a única coisa útil que ainda
+  // funciona, e é justamente a dúvida que a pessoa veio tirar.
+  useEffect(() => {
+    if (!resting || scienceFlow.stage !== "idle" || scienceFlowDismissed) return;
+    setScienceFlow({ stage: "offered", index: 0 });
+  }, [resting, scienceFlow.stage, scienceFlowDismissed]);
   useEffect(() => {
     if (orcidAsked) setOrcidDismissed(false);
   }, [orcidAsked]);
@@ -697,6 +743,27 @@ export function ChatDock({
                 </Button>
               ))}
             </div>
+          )}
+          {scienceFlow.stage !== "idle" && !scienceFlowDismissed && (
+            <ScienceFlowCard
+              state={scienceFlow}
+              onStart={() => setScienceFlow(startScienceFlow())}
+              onNext={() => setScienceFlow(advanceScienceFlow)}
+              onDismiss={() => {
+                dismissScienceFlow(articleId);
+                setScienceFlowDismissed(true);
+                setScienceFlow(SCIENCE_FLOW_IDLE);
+              }}
+              onCreate={() => {
+                setScienceFlowDismissed(true);
+                send(SCIENCE_FLOW_SEED);
+              }}
+              onCreateFromScratch={() => {
+                setScienceFlowDismissed(true);
+                setScienceFlow(SCIENCE_FLOW_IDLE);
+              }}
+              canCreate={!resting}
+            />
           )}
           {orcidAsked && !orcidDismissed && (
             <OrcidPrompt
