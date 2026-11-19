@@ -74,3 +74,46 @@ describe("ScienceAccessCard", () => {
     expect(onUseGuide).toHaveBeenCalledWith(PRACINHA_ACCESS_SEED);
   });
 });
+
+describe("ScienceAccessCard inline (home)", () => {
+  it("ensina o fundamento SEM exigir clique", () => {
+    render(<ScienceAccessCard inline />);
+    // O conteúdo precisa estar à vista: quem chega com a dúvida não pode
+    // precisar descobrir que o guia existe.
+    expect(screen.getByText("Passo a passo")).toBeInTheDocument();
+    expect(screen.getByText("O que NÃO é exigido")).toBeInTheDocument();
+    expect(screen.getByText("O que realmente conta")).toBeInTheDocument();
+    expect(screen.getByText(/posso publicar/i)).toBeInTheDocument();
+    for (const point of DIRECT_ANSWER_POINTS) {
+      expect(screen.getByText(point.claim)).toBeInTheDocument();
+    }
+  });
+
+  it("destaca o ORCID com link gratuito e sem instituição", () => {
+    render(<ScienceAccessCard inline />);
+    const orcid = screen.getByRole("link", { name: /criar meu orcid/i });
+    expect(orcid).toHaveAttribute("href", ORCID_REGISTER_URL);
+  });
+
+  it("mostra os primeiros passos e libera o resto sob demanda", () => {
+    render(<ScienceAccessCard inline />);
+    expect(screen.getByText(SCIENCE_STEPS[0]!.title)).toBeInTheDocument();
+    expect(screen.queryByText(SCIENCE_STEPS[9]!.title)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /ver os outros/i }));
+
+    expect(screen.getByText(SCIENCE_STEPS[9]!.title)).toBeInTheDocument();
+  });
+
+  it("abre fontes, países e carta-modelo a partir do conteúdo visível", () => {
+    render(<ScienceAccessCard inline />);
+    fireEvent.click(screen.getByRole("button", { name: /fontes, países e carta-modelo/i }));
+
+    expect(screen.getByRole("tab", { name: "Brasil" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Uruguai" })).toBeInTheDocument();
+    for (const ref of SCIENCE_REFERENCES) {
+      const link = screen.getByText(ref.label).closest("a");
+      expect(link).toHaveAttribute("href", ref.url);
+    }
+  });
+});

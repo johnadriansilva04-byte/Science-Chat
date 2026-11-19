@@ -96,7 +96,7 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
   {
     label: "Portal de Periódicos da CAPES",
     url: "https://www.periodicos.capes.gov.br/",
-    note: "Reúne bases científicas assinadas pelo governo brasileiro. A consulta é feita pelo seu login (inclusive de pesquisador sem vínculo, quando a instituição parceira libera o acesso).",
+    note: "Bases científicas assinadas pelo governo brasileiro. O acesso é liberado pelo reconhecimento de IP ou pela conta CAFe de uma instituição participante — por isso nem sempre está aberto a quem não tem vínculo. Publicar não depende dele: os artigos abertos do SciELO e os preprints cobrem boa parte do que você precisa ler.",
     region: "brasil",
   },
   {
@@ -106,9 +106,21 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
     region: "uruguai",
   },
   {
-    label: "Udelar — Apoio a publicações (CSIC)",
-    url: "https://investigacion.udelar.edu.uy/apoyo-a-publicaciones/",
-    note: "Programa da Udelar que apoia a publicação científica e dá acesso às instruções e aos periódicos da universidade. Serve para localizar a versão oficial das normas de cada revista.",
+    label: "SciELO Uruguay",
+    url: "https://www.scielo.edu.uy/",
+    note: "Coleção uruguaia do SciELO, hospedada na BINAME–CENDIM da Faculdade de Medicina da Udelar. Reúne revistas científicas do país com acesso aberto e revisão por pares — é onde você confere escopo, normas e prazos de cada revista antes de submeter.",
+    region: "uruguai",
+  },
+  {
+    label: "CVUy (ANII)",
+    url: "https://cvuy.uy/",
+    note: "Currículo único uruguaio, gratuito, mantido pela ANII — o equivalente ao Lattes no Uruguai. Já permite vincular seu ORCID e é usado por instituições do país para encontrar pesquisadores. Você cria o seu sem precisar de vínculo.",
+    region: "uruguai",
+  },
+  {
+    label: "Colibri (Udelar)",
+    url: "https://www.colibri.udelar.edu.uy/",
+    note: "Repositório institucional de acesso aberto da Udelar: teses, artigos e produção científica. Serve para publicar em acesso aberto e para ver como outros autores uruguaios apresentam seus trabalhos.",
     region: "uruguai",
   },
   {
@@ -182,14 +194,14 @@ export const SCIENCE_STEPS: ScienceStep[] = [
   {
     n: 9,
     title: "Brasil: registre a trajetória",
-    do: "Mantenha o currículo Lattes e use as normas da ABNT; consulte o Portal de Periódicos da CAPES.",
-    why: "O Lattes é público e aceita quem não tem vínculo; a ABNT padroniza seu texto; o Portal da CAPES dá acesso a bases assinadas.",
+    do: "Mantenha o currículo Lattes, use as normas da ABNT e leia pelo SciELO (aberto).",
+    why: "O Lattes é público e aceita quem não tem vínculo; a ABNT padroniza seu texto; o SciELO é aberto e não pede login. O Portal da CAPES só abre por IP ou CAFe de instituição participante — não conte com ele.",
   },
   {
     n: 10,
-    title: "Uruguai: comece pela Udelar",
-    do: "Localize a revista na Udelar (veja o apoio a publicações do CSIC) e, se pesquisar lá, veja o apoio da ANII.",
-    why: "A Udelar é a referência inicial do ScienceChat; o apoio a publicações reúne os periódicos e as instruções aos autores, e a ANII apoia pesquisa e formação no país.",
+    title: "Uruguai: SciELO Uruguay, CVUy e ANII",
+    do: "Procure a revista no SciELO Uruguay, registre seu currículo no CVUy e, se for o caso, busque as convocatórias da ANII.",
+    why: "O SciELO Uruguay reúne as revistas científicas do país com normas e prazos oficiais; o CVUy é o currículo público gratuito (já integrado ao ORCID) e a ANII financia pesquisa — nenhum dos três exige vínculo para você começar.",
   },
 ];
 
@@ -278,18 +290,18 @@ export const COUNTRY_PATHS: CountryPath[] = [
     highlights: [
       "Currículo Lattes (CNPq): registro público, aberto a quem não tem vínculo.",
       "Normas ABNT para formatação e citações (ex.: NBR 14724).",
-      "SciELO: periódicos de acesso aberto avaliados por pares.",
-      "Portal de Periódicos da CAPES: acesso a bases assinadas.",
+      "SciELO: periódicos de acesso aberto avaliados por pares — leia e publique sem login.",
+      "SciELO Preprints: deixe o manuscrito público antes da revista, com autoria e data.",
     ],
   },
   {
     id: "uruguai",
     label: "Uruguai",
     highlights: [
-      "Udelar: referência inicial do ScienceChat; cada unidade tem revistas.",
-      "Udelar — Apoio a publicações (CSIC): onde ficam os periódicos e as instruções aos autores.",
-      "ANII: apoio à pesquisa e à formação (não é pré-requisito para submeter).",
-      "SciELO e SciELO Preprints: publicação e preprints em acesso aberto.",
+      "SciELO Uruguay: as revistas científicas do país, com normas e prazos oficiais.",
+      "CVUy (ANII): currículo público gratuito, já integrado ao ORCID — o “Lattes” uruguaio.",
+      "Colibri (Udelar): repositório de acesso aberto para depositar sua produção.",
+      "ANII: financia pesquisa e formação; não é pré-requisito para submeter um artigo.",
     ],
   },
 ];

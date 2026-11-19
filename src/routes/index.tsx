@@ -92,11 +92,8 @@ function Index() {
   }
 
   return (
-    <div className="landing-shell flex min-h-screen flex-col bg-background lg:h-screen lg:overflow-hidden">
-      <div
-        ref={heroRef}
-        className="landing-hero relative flex min-h-screen flex-col lg:h-full lg:min-h-0"
-      >
+    <div className="landing-shell flex min-h-screen flex-col bg-background">
+      <div ref={heroRef} className="landing-hero relative flex min-h-screen flex-col">
         <AppHeader variant="overlay" />
 
         {authError && (
@@ -109,9 +106,9 @@ function Index() {
           </div>
         )}
 
-        <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:overflow-hidden lg:pb-4">
+        <main className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10 lg:pb-10">
           {/* Coluna esquerda: a promessa e o começo */}
-          <section className="flex min-h-0 flex-col justify-center">
+          <section className="order-1 flex min-h-0 flex-col justify-center">
             <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-primary/25 bg-white/70 px-3 py-1 text-[11px] font-medium text-primary landing-badge backdrop-blur">
               <Sparkles className="size-3.5" />
               Rascunho científico · entrevista inteligente · normas reais
@@ -172,8 +169,6 @@ function Index() {
               </span>
             </div>
 
-            <ScienceAccessCard className="mt-5 max-w-xl" onUseGuide={(seed) => setIdea(seed)} />
-
             <ol className="mt-6 hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
               {JOURNEY_ACTS.map((act, i) => (
                 <li key={act.id} className="flex items-center gap-2">
@@ -192,8 +187,14 @@ function Index() {
             </ol>
           </section>
 
+          {/* O guia ocupa a largura toda: no celular sobe para logo depois do
+              formulário (order-2); no desktop vai para baixo das colunas. */}
+          <section className="order-2 lg:order-3 lg:col-span-2">
+            <ScienceAccessCard onUseGuide={(seed) => setIdea(seed)} inline />
+          </section>
+
           {/* Coluna direita: o mural do acervo */}
-          <section className="flex min-h-0 flex-col justify-center">
+          <section className="order-3 flex min-h-0 flex-col justify-center lg:order-2">
             <div className="landing-shelf-card rounded-2xl border bg-white/70 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="size-4 text-primary" />

@@ -318,13 +318,26 @@ async function handle(request: Request) {
       return "Não foi possível concluir a resposta. Tente novamente.";
     },
     onFinish: async ({ responseMessage }) => {
-      const parts = responseMessage.parts
-        .filter((p) => p.type === "text")
-        .map((p) => ({ ...p, text: cleanAssistantText(stripLeakedToolCalls(p.text, TOOL_NAMES)) }))
-        .filter((p) => p.text.trim().length > 0);
-      if (!parts.length) return;
-      await repo.addMessage(user.id, article.id, "assistant", parts);
-      await repo.updateArticle(user.id, article.id, {});
+      // Roda DEPOIS de o texto já ter ido para a tela: uma falha aqui não pode
+      // derrubar a requisição nem virar erro para o pesquisador. A resposta já
+      // está visível; o pior caso é ela não ficar salva.
+      try {
+        const parts = responseMessage.parts
+          .filter((p) => p.type === "text")
+          .map((p) => ({
+            ...p,
+            text: cleanAssistantText(stripLeakedToolCalls(p.text, TOOL_NAMES)),
+          }))
+          .filter((p) => p.text.trim().length > 0);
+        if (!parts.length) return;
+        await repo.addMessage(user.id, article.id, "assistant", parts);
+        await repo.updateArticle(user.id, article.id, {});
+      } catch (error) {
+        console.error(
+          "[chat-error] resposta entregue, mas não foi salva:",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     },
   });
 }

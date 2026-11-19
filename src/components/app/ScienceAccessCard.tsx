@@ -120,7 +120,7 @@ function ProofCard({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) 
             href={point.url}
             target="_blank"
             rel="noreferrer"
-            className="mt-1.5 inline-flex min-h-9 items-center gap-1 py-1 text-[0.72rem] font-semibold text-[var(--ci-accent)] hover:underline"
+            className="mt-1.5 inline-flex min-h-11 items-center gap-1 py-1.5 text-[0.75rem] font-semibold text-[var(--ci-accent)] hover:underline sm:min-h-9"
           >
             Fonte: {point.source}
             <ExternalLink className="size-3" />
@@ -174,22 +174,401 @@ function SourceCard({ reference }: { reference: (typeof SCIENCE_REFERENCES)[numb
   );
 }
 
+/** Selo do ORCID: a identidade de pesquisador que não depende de instituição. */
+function OrcidSeal() {
+  return (
+    <section className="mt-6 flex flex-col items-start gap-4 rounded-2xl border border-[var(--ci-rule)] bg-[color-mix(in_oklab,oklch(1_0_0)_45%,transparent)] p-4 sm:flex-row sm:items-center">
+      <span className="ciencia-seal" aria-hidden>
+        <IdCard className="size-7" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-serif text-[0.98rem] font-semibold">
+          Sua assinatura de pesquisador — o ORCID
+        </p>
+        <p className="mt-0.5 text-[0.78rem] leading-relaxed text-[var(--ci-soft)]">
+          Um número único, permanente e <strong>gratuito</strong> (formato 0000-0000-0000-0000). É
+          seu, pessoal, e independe de vínculo: distingue você de homônimos e fixa a autoria. Aceito
+          por revistas e universidades.
+        </p>
+      </div>
+      <Button asChild size="lg" className="w-full shrink-0 gap-1.5 sm:w-auto">
+        <a href={ORCID_REGISTER_URL} target="_blank" rel="noreferrer">
+          <IdCard className="size-4" />
+          Criar meu ORCID (grátis)
+        </a>
+      </Button>
+    </section>
+  );
+}
+
+function NotRequiredPanel() {
+  return (
+    <div className="rounded-2xl border border-red-200/70 bg-red-50/50 p-3.5">
+      <p className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-red-800">
+        <XCircle className="size-4" />O que NÃO é exigido
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {NOT_REQUIRED.map((item) => (
+          <li key={item} className="flex gap-1.5 text-[0.78rem] text-red-900/80">
+            <span className="mt-1.5 size-1 shrink-0 rounded-full bg-red-400" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function WhatCountsPanel() {
+  return (
+    <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 p-3.5">
+      <p className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-emerald-800">
+        <BadgeCheck className="size-4" />O que realmente conta
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {WHAT_COUNTS.map((item) => (
+          <li key={item} className="flex gap-1.5 text-[0.78rem] text-emerald-900/80">
+            <span className="mt-1.5 size-1 shrink-0 rounded-full bg-emerald-400" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Passo a passo. `compact` mostra os 4 primeiros e libera o resto sob demanda. */
+function StepsSection({ compact = false }: { compact?: boolean }) {
+  const [all, setAll] = useState(!compact);
+  const shown = all ? SCIENCE_STEPS : SCIENCE_STEPS.slice(0, 4);
+  return (
+    <section className="mt-6">
+      <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
+        <BookOpenCheck className="size-4 text-[var(--ci-accent)]" />
+        Passo a passo
+      </h3>
+      <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
+        Do zero ao artigo publicado. Em cada passo, o porquê acompanha a ação.
+      </p>
+      <ol className="ciencia-rail mt-4">
+        {shown.map((step) => (
+          <li key={step.n} className="ciencia-step">
+            <span className="ciencia-step__dot" aria-hidden>
+              {step.n}
+            </span>
+            <p className="text-[0.84rem] font-semibold leading-snug">{step.title}</p>
+            <p className="text-[0.78rem] text-[var(--ci-soft)]">{step.do}</p>
+            <p className="ciencia-step__why text-[0.75rem] italic text-[var(--ci-soft)]">
+              Por quê: {step.why}
+            </p>
+          </li>
+        ))}
+      </ol>
+      {!all && (
+        <Button
+          variant="ghost"
+          className="mt-2 min-h-11 w-full gap-1.5 text-[0.8rem]"
+          onClick={() => setAll(true)}
+        >
+          <ChevronDown className="size-4" />
+          Ver os outros {SCIENCE_STEPS.length - shown.length} passos
+        </Button>
+      )}
+    </section>
+  );
+}
+
+/** Caminhos por país: Brasil, Uruguai e o caminho internacional. */
+function CountriesSection() {
+  return (
+    <section className="mt-6">
+      <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
+        <Globe2 className="size-4 text-[var(--ci-accent)]" />
+        Caminhos por país
+      </h3>
+      <Tabs defaultValue={COUNTRY_PATHS[0]!.id} className="mt-3">
+        <TabsList className="ciencia-tabs h-auto justify-start bg-transparent p-0">
+          {COUNTRY_PATHS.map((path) => (
+            <TabsTrigger
+              key={path.id}
+              value={path.id}
+              className="ciencia-tab"
+              style={{ ["--ci-tab" as string]: REGION_COLOR[path.id] }}
+            >
+              {path.label}
+            </TabsTrigger>
+          ))}
+          <TabsTrigger
+            value="internacional"
+            className="ciencia-tab"
+            style={{ ["--ci-tab" as string]: REGION_COLOR.internacional }}
+          >
+            Internacional
+          </TabsTrigger>
+        </TabsList>
+        {COUNTRY_PATHS.map((path) => (
+          <TabsContent
+            key={path.id}
+            value={path.id}
+            className="ciencia-tab-panel mt-3"
+            style={{ ["--ci-tab" as string]: REGION_COLOR[path.id] }}
+          >
+            <ul className="space-y-2">
+              {path.highlights.map((h) => (
+                <li key={h} className="ciencia-path-item text-[0.78rem]">
+                  <span className="min-w-0">{h}</span>
+                </li>
+              ))}
+            </ul>
+          </TabsContent>
+        ))}
+        <TabsContent
+          value="internacional"
+          className="ciencia-tab-panel mt-3"
+          style={{ ["--ci-tab" as string]: REGION_COLOR.internacional }}
+        >
+          <ul className="space-y-2">
+            {referencesByRegion("internacional").map((r) => (
+              <li key={r.url} className="ciencia-path-item text-[0.78rem]">
+                <span className="min-w-0">
+                  <span className="font-semibold">{r.label}</span> — {r.note}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </TabsContent>
+      </Tabs>
+    </section>
+  );
+}
+
+/** Todas as fontes oficiais, com a nota de por que cada uma importa. */
+function ReferencesSection() {
+  return (
+    <section className="mt-6">
+      <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
+        <ShieldCheck className="size-4 text-[var(--ci-accent)]" />
+        Fontes oficiais
+      </h3>
+      <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
+        Nada aqui é norma inventada. Confira sempre a versão oficial da revista de destino.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {SCIENCE_REFERENCES.map((ref) => (
+          <SourceCard key={ref.url} reference={ref} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Carta de apresentação pronta para preencher e copiar. */
+function CoverLetterSection() {
+  return (
+    <section className="mt-6">
+      <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
+        <FileText className="size-4 text-[var(--ci-accent)]" />
+        Carta de apresentação (modelo)
+      </h3>
+      <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
+        Muitas revistas pedem uma carta ao editor junto com o manuscrito. Não é exigência de vínculo
+        — é documento de autoria. Preencha os campos entre [ ] e a afiliação já vem resolvida como
+        “Pesquisador(a) independente”.
+      </p>
+      <div className="mt-3 rounded-2xl border border-[var(--ci-rule)] bg-[color-mix(in_oklab,oklch(1_0_0)_45%,transparent)] p-3.5">
+        <pre className="ciencia-letter max-h-72 overflow-auto whitespace-pre-wrap break-words text-[0.76rem] leading-relaxed text-[var(--ci-ink)]">
+          {COVER_LETTER_TEMPLATE}
+        </pre>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <CopyButton text={COVER_LETTER_TEMPLATE} />
+          <span className="text-[0.72rem] text-[var(--ci-soft)]">
+            Cole no seu editor de texto e ajuste ao pedido de cada revista.
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Aprofundamento do guia: países, fontes e carta-modelo. */
+function GuideContent({
+  onUseGuide,
+  onClose,
+}: {
+  onUseGuide?: ((seed: string) => void) | undefined;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <CountriesSection />
+      <ReferencesSection />
+      <CoverLetterSection />
+
+      <hr className="ciencia-rule mt-6" />
+
+      <footer className="mt-4 flex flex-wrap items-center gap-2">
+        {onUseGuide && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="min-h-11 sm:min-h-8"
+            onClick={() => {
+              onUseGuide(PRACINHA_ACCESS_SEED);
+              onClose();
+            }}
+          >
+            <Wand2 className="size-4" />
+            Levar isso para o Pracinha
+          </Button>
+        )}
+        <Button size="sm" className="min-h-11 sm:min-h-8" onClick={onClose}>
+          Entendi, quero começar
+        </Button>
+        <span className="text-[0.72rem] text-[var(--ci-soft)]">
+          {referencesByRegion("brasil").length} fontes do Brasil ·{" "}
+          {referencesByRegion("uruguai").length} do Uruguai ·{" "}
+          {referencesByRegion("internacional").length} internacionais
+        </span>
+      </footer>
+    </>
+  );
+}
+
+/** Cabeçalho de boletim, usado no modo inline e no diálogo. */
+function GuideHeader({ compact = false }: { compact?: boolean }) {
+  return (
+    <>
+      <header className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--ci-accent)] text-[oklch(0.99_0.01_85)]">
+          <GraduationCap className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <span className="ciencia-kicker">
+            <Landmark className="size-3.5" /> Boletim do pesquisador independente
+          </span>
+          <h2
+            className={`ciencia-title mt-1 leading-[1.05] ${
+              compact ? "text-[1.55rem] sm:text-[1.9rem]" : "text-[1.7rem] sm:text-[2rem]"
+            }`}
+          >
+            Ciência sem crachá
+          </h2>
+        </div>
+      </header>
+
+      <p className="ciencia-lede mt-3">
+        Dá para fazer ciência e submeter um artigo a uma revista{" "}
+        <strong>sem universidade, diploma ou orientador</strong>. O que qualifica o trabalho é o{" "}
+        <strong>método</strong> e a <strong>responsabilidade do autor</strong> — não a grife da
+        instituição.
+      </p>
+    </>
+  );
+}
+
+/** As cinco provas de que publicar não depende de vínculo. */
+function DirectAnswerSection({ hint = false }: { hint?: boolean }) {
+  return (
+    <section className="mt-5">
+      <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
+        <HelpCircle className="size-4 text-[var(--ci-accent)]" />
+        “Mas eu não sou de instituição… posso publicar?”
+      </h3>
+      {hint && (
+        <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
+          Toque em cada prova para ver o fundamento e a fonte oficial.
+        </p>
+      )}
+      <ul className="mt-3 space-y-2.5">
+        {DIRECT_ANSWER_POINTS.map((point) => (
+          <ProofCard key={point.claim} point={point} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /**
- * Card educativo da página inicial: ensina que fazer ciência e submeter um
- * artigo a uma revista NÃO depende de crachá ou instituição. Estética de boletim
- * científico: papel quente com grão, filetes de jornal, provas e fontes
- * recolhidas (não poluem a leitura) e o selo de cera do ORCID como assinatura de
- * quem pesquisa sem vínculo. Traz Brasil, Uruguai e o caminho internacional.
+ * Guia "Ciência sem crachá": ensina que fazer ciência e submeter um artigo a
+ * uma revista NÃO depende de crachá ou instituição.
+ *
+ * Dois modos:
+ * - `inline` (home): o fundamento e o passo a passo ficam À VISTA. Quem chega
+ *   precisando dessa resposta não pode ter que descobrir que ela existe.
+ * - padrão: uma chamada compacta que abre o guia completo num diálogo.
  */
 export function ScienceAccessCard({
   className = "",
   onUseGuide,
+  inline = false,
 }: {
   className?: string;
   /** Cria um artigo com a semente do guia (a home preenche a ideia e navega). */
   onUseGuide?: (seed: string) => void;
+  /** Conteúdo ensinado direto na página, sem clique para revelar. */
+  inline?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+
+  if (inline) {
+    return (
+      <section className={`ciencia-inline ${className}`} aria-labelledby="ciencia-inline-title">
+        <div className="ciencia-inline__body">
+          <h2 id="ciencia-inline-title" className="sr-only">
+            Ciência sem crachá: como publicar sem vínculo institucional
+          </h2>
+          <GuideHeader compact />
+
+          <hr className="ciencia-rule ciencia-rule--double mt-4" />
+
+          <DirectAnswerSection />
+          <OrcidSeal />
+
+          <section className="mt-5 grid gap-3 sm:grid-cols-2">
+            <NotRequiredPanel />
+            <WhatCountsPanel />
+          </section>
+
+          <StepsSection compact />
+
+          <footer className="mt-5 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="min-h-11 gap-1.5"
+              onClick={() => setOpen(true)}
+            >
+              <ShieldCheck className="size-4" />
+              Fontes, países e carta-modelo
+            </Button>
+            {onUseGuide && (
+              <Button
+                size="sm"
+                className="min-h-11 gap-1.5"
+                onClick={() => onUseGuide(PRACINHA_ACCESS_SEED)}
+              >
+                <Wand2 className="size-4" />
+                Levar isso para o Pracinha
+              </Button>
+            )}
+          </footer>
+        </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-h-[94vh] overflow-hidden border-0 bg-transparent p-0 shadow-none sm:max-w-3xl">
+            <DialogTitle className="sr-only">
+              Ciência sem crachá: fontes, países e carta-modelo
+            </DialogTitle>
+            <div className="ciencia-dialog max-h-[94vh] overflow-y-auto">
+              <div className="ciencia-dialog__body p-5 sm:p-7">
+                <GuideContent onUseGuide={onUseGuide} onClose={() => setOpen(false)} />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -226,252 +605,21 @@ export function ScienceAccessCard({
           </DialogTitle>
           <div className="ciencia-dialog max-h-[94vh] overflow-y-auto">
             <div className="ciencia-dialog__body p-5 sm:p-7">
-              {/* Cabeçalho de boletim */}
-              <header className="flex items-start gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--ci-accent)] text-[oklch(0.99_0.01_85)]">
-                  <GraduationCap className="size-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <span className="ciencia-kicker">
-                    <Landmark className="size-3.5" /> Boletim do pesquisador independente
-                  </span>
-                  <h2 className="ciencia-title mt-1 text-[1.7rem] leading-[1.05] sm:text-[2rem]">
-                    Ciência sem crachá
-                  </h2>
-                </div>
-              </header>
-
-              <p className="ciencia-lede mt-3">
-                Você está certo: dá para fazer ciência e submeter um artigo a uma revista{" "}
-                <strong>sem universidade, diploma ou orientador</strong>. O que qualifica o trabalho
-                é o <strong>método</strong> e a <strong>responsabilidade do autor</strong> — não a
-                grife da instituição.
-              </p>
+              <GuideHeader />
 
               <hr className="ciencia-rule ciencia-rule--double mt-5" />
 
-              {/* Resposta direta — provas recolhidas */}
-              <section className="mt-5">
-                <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
-                  <HelpCircle className="size-4 text-[var(--ci-accent)]" />
-                  “Mas eu não sou de instituição… posso publicar?”
-                </h3>
-                <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
-                  Toque em cada prova para ver o fundamento e a fonte oficial.
-                </p>
-                <ul className="mt-3 space-y-2.5">
-                  {DIRECT_ANSWER_POINTS.map((point) => (
-                    <ProofCard key={point.claim} point={point} />
-                  ))}
-                </ul>
-              </section>
+              <DirectAnswerSection hint />
+              <OrcidSeal />
 
-              {/* Selo de cera: ORCID */}
-              <section className="mt-6 flex flex-col items-start gap-4 rounded-2xl border border-[var(--ci-rule)] bg-[color-mix(in_oklab,oklch(1_0_0)_45%,transparent)] p-4 sm:flex-row sm:items-center">
-                <span className="ciencia-seal" aria-hidden>
-                  <IdCard className="size-7" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-serif text-[0.98rem] font-semibold">
-                    Sua assinatura de pesquisador — o ORCID
-                  </p>
-                  <p className="mt-0.5 text-[0.78rem] leading-relaxed text-[var(--ci-soft)]">
-                    Um número único, permanente e <strong>gratuito</strong> (formato
-                    0000-0000-0000-0000). É seu, pessoal, e independe de vínculo: distingue você de
-                    homônimos e fixa a autoria. Aceito por revistas e universidades.
-                  </p>
-                </div>
-                <Button asChild size="lg" className="shrink-0 gap-1.5">
-                  <a href={ORCID_REGISTER_URL} target="_blank" rel="noreferrer">
-                    <IdCard className="size-4" />
-                    Criar meu ORCID (grátis)
-                  </a>
-                </Button>
-              </section>
-
-              {/* O que não é exigido × o que realmente conta */}
               <section className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-red-200/70 bg-red-50/50 p-3.5">
-                  <p className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-red-800">
-                    <XCircle className="size-4" />O que NÃO é exigido
-                  </p>
-                  <ul className="mt-2 space-y-1.5">
-                    {NOT_REQUIRED.map((item) => (
-                      <li key={item} className="flex gap-1.5 text-[0.78rem] text-red-900/80">
-                        <span className="mt-1.5 size-1 shrink-0 rounded-full bg-red-400" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 p-3.5">
-                  <p className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-emerald-800">
-                    <BadgeCheck className="size-4" />O que realmente conta
-                  </p>
-                  <ul className="mt-2 space-y-1.5">
-                    {WHAT_COUNTS.map((item) => (
-                      <li key={item} className="flex gap-1.5 text-[0.78rem] text-emerald-900/80">
-                        <span className="mt-1.5 size-1 shrink-0 rounded-full bg-emerald-400" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <NotRequiredPanel />
+                <WhatCountsPanel />
               </section>
 
-              {/* Passo a passo — trilho com "porquê" no hover */}
-              <section className="mt-6">
-                <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
-                  <BookOpenCheck className="size-4 text-[var(--ci-accent)]" />
-                  Passo a passo
-                </h3>
-                <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
-                  Dez movimentos do crachá ao artigo publicado. Em cada passo, o porquê acompanha a
-                  ação.
-                </p>
-                <ol className="ciencia-rail mt-4">
-                  {SCIENCE_STEPS.map((step) => (
-                    <li key={step.n} className="ciencia-step">
-                      <span className="ciencia-step__dot" aria-hidden>
-                        {step.n}
-                      </span>
-                      <p className="text-[0.84rem] font-semibold leading-snug">{step.title}</p>
-                      <p className="text-[0.78rem] text-[var(--ci-soft)]">{step.do}</p>
-                      <p className="ciencia-step__why text-[0.75rem] italic text-[var(--ci-soft)]">
-                        Por quê: {step.why}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              </section>
+              <StepsSection />
 
-              {/* Caminhos por país */}
-              <section className="mt-6">
-                <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
-                  <Globe2 className="size-4 text-[var(--ci-accent)]" />
-                  Caminhos por país
-                </h3>
-                <Tabs defaultValue={COUNTRY_PATHS[0]!.id} className="mt-3">
-                  <TabsList className="ciencia-tabs h-auto justify-start bg-transparent p-0">
-                    {COUNTRY_PATHS.map((path) => (
-                      <TabsTrigger
-                        key={path.id}
-                        value={path.id}
-                        className="ciencia-tab"
-                        style={{ ["--ci-tab" as string]: REGION_COLOR[path.id] }}
-                      >
-                        {path.label}
-                      </TabsTrigger>
-                    ))}
-                    <TabsTrigger
-                      value="internacional"
-                      className="ciencia-tab"
-                      style={{ ["--ci-tab" as string]: REGION_COLOR.internacional }}
-                    >
-                      Internacional
-                    </TabsTrigger>
-                  </TabsList>
-                  {COUNTRY_PATHS.map((path) => (
-                    <TabsContent
-                      key={path.id}
-                      value={path.id}
-                      className="ciencia-tab-panel mt-3"
-                      style={{ ["--ci-tab" as string]: REGION_COLOR[path.id] }}
-                    >
-                      <ul className="space-y-2">
-                        {path.highlights.map((h) => (
-                          <li key={h} className="ciencia-path-item text-[0.78rem]">
-                            <span className="min-w-0">{h}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </TabsContent>
-                  ))}
-                  <TabsContent
-                    value="internacional"
-                    className="ciencia-tab-panel mt-3"
-                    style={{ ["--ci-tab" as string]: REGION_COLOR.internacional }}
-                  >
-                    <ul className="space-y-2">
-                      {referencesByRegion("internacional").map((r) => (
-                        <li key={r.url} className="ciencia-path-item text-[0.78rem]">
-                          <span className="min-w-0">
-                            <span className="font-semibold">{r.label}</span> — {r.note}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </TabsContent>
-                </Tabs>
-              </section>
-
-              {/* Fontes oficiais */}
-              <section className="mt-6">
-                <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
-                  <ShieldCheck className="size-4 text-[var(--ci-accent)]" />
-                  Fontes oficiais
-                </h3>
-                <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
-                  Nada aqui é norma inventada. Confira sempre a versão oficial da revista de
-                  destino.
-                </p>
-                <ul className="mt-3 space-y-2">
-                  {SCIENCE_REFERENCES.map((ref) => (
-                    <SourceCard key={ref.url} reference={ref} />
-                  ))}
-                </ul>
-              </section>
-
-              {/* Carta de apresentação pronta para preencher */}
-              <section className="mt-6">
-                <h3 className="flex items-center gap-2 font-serif text-[0.95rem] font-semibold">
-                  <FileText className="size-4 text-[var(--ci-accent)]" />
-                  Carta de apresentação (modelo)
-                </h3>
-                <p className="mt-1 text-[0.74rem] text-[var(--ci-soft)]">
-                  Muitas revistas pedem uma carta ao editor junto com o manuscrito. Não é exigência
-                  de vínculo — é documento de autoria. Preencha os campos entre [ ] e a afiliação já
-                  vem resolvida como “Pesquisador(a) independente”.
-                </p>
-                <div className="mt-3 rounded-2xl border border-[var(--ci-rule)] bg-[color-mix(in_oklab,oklch(1_0_0)_45%,transparent)] p-3.5">
-                  <pre className="ciencia-letter max-h-72 overflow-auto whitespace-pre-wrap break-words text-[0.76rem] leading-relaxed text-[var(--ci-ink)]">
-                    {COVER_LETTER_TEMPLATE}
-                  </pre>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <CopyButton text={COVER_LETTER_TEMPLATE} />
-                    <span className="text-[0.72rem] text-[var(--ci-soft)]">
-                      Cole no seu editor de texto e ajuste ao pedido de cada revista.
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              <hr className="ciencia-rule mt-6" />
-
-              <footer className="mt-4 flex flex-wrap items-center gap-2">
-                {onUseGuide && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="min-h-11 sm:min-h-8"
-                    onClick={() => {
-                      onUseGuide(PRACINHA_ACCESS_SEED);
-                      setOpen(false);
-                    }}
-                  >
-                    <Wand2 className="size-4" />
-                    Levar isso para o Pracinha
-                  </Button>
-                )}
-                <Button size="sm" className="min-h-11 sm:min-h-8" onClick={() => setOpen(false)}>
-                  Entendi, quero começar
-                </Button>
-                <span className="text-[0.72rem] text-[var(--ci-soft)]">
-                  {referencesByRegion("brasil").length} fontes do Brasil ·{" "}
-                  {referencesByRegion("uruguai").length} do Uruguai ·{" "}
-                  {referencesByRegion("internacional").length} internacionais
-                </span>
-              </footer>
+              <GuideContent onUseGuide={onUseGuide} onClose={() => setOpen(false)} />
             </div>
           </div>
         </DialogContent>

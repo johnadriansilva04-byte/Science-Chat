@@ -1693,6 +1693,39 @@
 /* ===== Card "Ciência sem crachá" — boletim do pesquisador independente ===== */
 /* Estética editorial: papel quente com grão, filetes finos, numeral de revista,
    selo de cera para o ORCID e acordeões que mantêm o conteúdo no DOM. */
+/* Modo inline (home): o guia fica à vista. Mesma paleta do diálogo, mas sem
+   virar modal — é conteúdo da página, então respira com a rolagem normal. */
+.ciencia-inline {
+  --ci-ink: oklch(0.24 0.03 260);
+  --ci-soft: oklch(0.46 0.03 260);
+  --ci-accent: oklch(0.5 0.15 32);
+  --ci-accent-2: oklch(0.5 0.1 205);
+  --ci-seal: oklch(0.47 0.17 27);
+  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ci-rule);
+  border-radius: var(--radius-2xl);
+  background:
+    radial-gradient(120% 90% at 100% 0%, oklch(0.97 0.03 60 / 0.55), transparent 55%),
+    radial-gradient(90% 80% at 0% 100%, oklch(0.96 0.03 205 / 0.45), transparent 60%),
+    linear-gradient(180deg, oklch(0.992 0.008 85), oklch(0.975 0.012 80));
+  color: var(--ci-ink);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.6) inset,
+    0 18px 44px -30px oklch(0.3 0.04 260 / 0.45);
+}
+.ciencia-inline__body {
+  position: relative;
+  z-index: 1;
+  padding: 1.1rem;
+}
+@media (min-width: 640px) {
+  .ciencia-inline__body {
+    padding: 1.5rem;
+  }
+}
+
 .ciencia-dialog {
   --ci-ink: oklch(0.24 0.03 260);
   --ci-soft: oklch(0.46 0.03 260);

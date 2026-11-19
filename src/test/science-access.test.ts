@@ -26,12 +26,26 @@ describe("scienceAccessSteps", () => {
     }
   });
 
-  it("cobre o Brasil e o Uruguai (Udelar)", () => {
+  it("cobre o Brasil e o Uruguai", () => {
     const all = SCIENCE_STEPS.map((s) => `${s.title} ${s.do} ${s.why}`).join(" ");
     expect(all).toMatch(/Lattes/);
     expect(all).toMatch(/ABNT/);
-    expect(all).toMatch(/Udelar/);
+    expect(all).toMatch(/SciELO Uruguay/);
+    expect(all).toMatch(/CVUy/);
     expect(all).toMatch(/ANII/);
+  });
+
+  it("não promete apoio institucional a quem não tem vínculo", () => {
+    // O "Apoyo a publicaciones" da Udelar é para LIVROS e exige cargo docente
+    // orçamentado: não serve de caminho para pesquisador independente.
+    const all = [
+      ...SCIENCE_STEPS.map((s) => `${s.title} ${s.do} ${s.why}`),
+      ...COUNTRY_PATHS.flatMap((c) => c.highlights),
+      ...SCIENCE_REFERENCES.map((r) => `${r.label} ${r.note}`),
+    ].join(" ");
+    expect(all).not.toMatch(/apoio a publicaç/i);
+    // E o acesso restrito da CAPES é dito com clareza.
+    expect(all).toMatch(/CAFe|IP/);
   });
 });
 
@@ -76,6 +90,8 @@ describe("SCIENCE_REFERENCES", () => {
     expect(urls).toMatch(/lattes\.cnpq\.br/);
     expect(urls).toMatch(/udelar\.edu\.uy/);
     expect(urls).toMatch(/anii\.org\.uy/);
+    expect(urls).toMatch(/cvuy\.uy/);
+    expect(urls).toMatch(/scielo\.edu\.uy/);
   });
 
   it("cada referência explica por que importa", () => {
