@@ -131,3 +131,11 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Home tinha `lg:h-screen` + `overflow-hidden`**: cortava o guia no desktop (1885px em 273px). Página agora rola; guia em `lg:col-span-2`, `order-2 lg:order-3`.
 - `onFinish` do `/api/chat` é blindado com try/catch (roda depois do texto ir à tela).
 - Dev local exige `CLOUDFLARE_API_TOKEN`; Chrome do container é `chromium`.
+
+## "Ciência sem crachá" em bocados (2026-11-18)
+- Conteúdo vive em `SCIENCE_BITES` (`src/lib/science-flow.ts`): 6 bocados com `what`/`why`/`whatFor`. Um por vez, sob demanda — nunca despejar os 10 passos.
+- `ScienceFlowCard` (chat, com `canCreate`) e `ScienceBiteStepper` (home) consomem a mesma fonte.
+- **Detecção:** exige falta de credencial (vínculo/instituição/diploma/orientador). Termo acadêmico solto ("não tenho certeza do título") NÃO pode disparar.
+- **Recusa persiste por artigo** (`dismissScienceFlow`/`wasScienceFlowDismissed`, localStorage, máx. 20 ids) — sem isso o card volta a cada recarga.
+- Guia não usa IA → funciona com cota esgotada (4006). Criar artigo usa IA → `canCreate:false` avisa em vez de falhar.
+- Ao citar normas, checar por `curl` na fonte oficial: ICMJE (4 critérios, nenhum exige instituição) e DOAJ confirmados. Tavily pode estar sem cota.
