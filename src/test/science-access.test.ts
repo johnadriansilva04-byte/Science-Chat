@@ -35,6 +35,17 @@ describe("scienceAccessSteps", () => {
     expect(all).toMatch(/ANII/);
   });
 
+  // Quem publica sem vínculo é o alvo preferido das revistas predatórias: sem
+  // orientador nem instituição, ninguém avisa que a "revista" só quer a taxa.
+  it("avisa sobre revista predatória e taxa (APC)", () => {
+    const all = SCIENCE_STEPS.map((s) => `${s.title} ${s.do} ${s.why} ${s.whatFor ?? ""}`).join(
+      " ",
+    );
+    expect(all).toMatch(/predat/i);
+    expect(all).toMatch(/taxa|APC/i);
+    expect(SCIENCE_REFERENCES.some((r) => /thinkchecksubmit\.org/.test(r.url))).toBe(true);
+  });
+
   it("não promete apoio institucional a quem não tem vínculo", () => {
     // O "Apoyo a publicaciones" da Udelar é para LIVROS e exige cargo docente
     // orçamentado: não serve de caminho para pesquisador independente.

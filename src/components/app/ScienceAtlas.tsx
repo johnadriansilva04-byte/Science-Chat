@@ -192,7 +192,8 @@ function TopicCaminho() {
   return (
     <div>
       <p className="ciencia-lede">
-        Seis etapas. Em cada uma, o que fazer e <strong>por que</strong> isso importa.
+        {`O essencial em ${SCIENCE_BITES.length} etapas — e, logo abaixo, o caminho completo em ${SCIENCE_STEPS.length}. Em cada uma: o que fazer e `}
+        <strong>por que</strong> importa.
       </p>
       <ol className="ciencia-rail mt-4">
         {SCIENCE_BITES.map((bite) => (

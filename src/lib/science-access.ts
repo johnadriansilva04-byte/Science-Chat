@@ -76,6 +76,12 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
     region: "internacional",
   },
   {
+    label: "Think. Check. Submit. — Revistas confiáveis",
+    url: "https://thinkchecksubmit.org/journals/",
+    note: "Checklist internacional (COPE, DOAJ, OASPA, ISSN, STM) para saber se uma revista é séria antes de submeter. Quem publica sem vínculo é o alvo preferido das revistas predatórias: elas cobram taxa e não revisam nada. Responda as perguntas da lista antes de enviar qualquer texto.",
+    region: "internacional",
+  },
+  {
     label: "ORCID — Criar o seu iD",
     url: ORCID_REGISTER_URL,
     note: "Cadastro gratuito e pessoal do identificador (formato 0000-0000-0000-0000). Em poucos minutos você tem uma identidade de pesquisador permanente, que não depende de nenhuma instituição e é aceita por revistas e universidades.",
@@ -140,6 +146,8 @@ export type ScienceStep = {
   do: string;
   /** Por que isso importa (o fundamento). */
   why: string;
+  /** Para que serve, na prática (opcional). */
+  whatFor?: string;
 };
 
 export const SCIENCE_STEPS: ScienceStep[] = [
@@ -181,24 +189,32 @@ export const SCIENCE_STEPS: ScienceStep[] = [
   },
   {
     n: 7,
+    title: "Antes de pagar: a revista é séria?",
+    do: "Passe a revista pelo checklist do Think. Check. Submit. e desconfie de convite por e-mail com prazo curto e taxa alta.",
+    why: "Revista predatória cobra taxa (APC) e não faz revisão de verdade: o artigo é publicado em dias, sem parecerista. Quem publica sem vínculo é o alvo preferido dessas revistas, justamente porque procura uma porta aberta. Revista legítima de acesso aberto também pode cobrar taxa — a diferença é que ela diz o valor antes, tem corpo editorial identificável e processo de revisão declarado.",
+    whatFor:
+      "Serve para você não pagar caro por um selo que não vale nada e não queimar o seu artigo numa publicação que ninguém cita.",
+  },
+  {
+    n: 8,
     title: "Submeta e passe pela revisão por pares",
     do: "Envie o manuscrito pelo sistema da revista e responda aos pareceres.",
     why: "A revisão por pares é feita pela REVISTA, não por você nem pela plataforma. É ela que dá o selo de qualidade — e está aberta a autores de qualquer origem.",
   },
   {
-    n: 8,
+    n: 9,
     title: "Torne público e registre a autoria",
     do: "Depois do aceite, use o DOI. Antes, se quiser, publique um preprint.",
     why: "Preprint (ex.: SciELO Preprints) garante autoria e data de forma pública e gratuita, sem vínculo. O DOI é a identidade permanente do artigo.",
   },
   {
-    n: 9,
+    n: 10,
     title: "Brasil: registre a trajetória",
     do: "Mantenha o currículo Lattes, use as normas da ABNT e leia pelo SciELO (aberto).",
     why: "O Lattes é público e aceita quem não tem vínculo; a ABNT padroniza seu texto; o SciELO é aberto e não pede login. O Portal da CAPES só abre por IP ou CAFe de instituição participante — não conte com ele.",
   },
   {
-    n: 10,
+    n: 11,
     title: "Uruguai: SciELO Uruguay, CVUy e ANII",
     do: "Procure a revista no SciELO Uruguay, registre seu currículo no CVUy e, se for o caso, busque as convocatórias da ANII.",
     why: "O SciELO Uruguay reúne as revistas científicas do país com normas e prazos oficiais; o CVUy é o currículo público gratuito (já integrado ao ORCID) e a ANII financia pesquisa — nenhum dos três exige vínculo para você começar.",
