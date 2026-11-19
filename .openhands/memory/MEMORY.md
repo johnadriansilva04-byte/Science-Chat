@@ -80,7 +80,7 @@ Prod: **https://sciencechat.sciencechat.workers.dev**. **260 testes** (34 arquiv
 - `ACERVO_HOMAGES` em `src/lib/acervo.ts`: mapa slug→{honoree, dedication}. Artigos da comunidade elevados a tributo; **saem** de revisados/não-revisados e viram `acervo.homages`.
 - Hoje: `calculo-mental-sem-papel-adaptacao-cognitiva-hawking` → homenagem a Stephen Hawking (1942–2018).
 - UI: `HomageBanner` (faixa dourada + chama) em `/publicacoes`; faixa compacta `.acervo-mural__homage` no `PublishedShelf` (home); dedicatória em `$slug.tsx`.
-- **D1 local vazio por padrão** (dev usa `--local`): para validar visualmente, semear usuário (FK `publications.user_id`) + publicações. Usuários remotos: variant@sciencechat.local, autor@sciencechat.local (ids em /tmp/users.json).
+- **D1 local ≠ D1 de produção.** Produção hoje tem **uma única conta real**: `variantfeb@gmail.com` (senha não registrada aqui). Contas `@sciencechat.local` existem só no D1 local — nunca usar em teste de produção.
 
 ## Formatação por norma + modo livro (2026-11-16)
 - **`src/lib/format-profile.ts` (novo):** `FormatProfile` por `CitationStandard` — centraliza fonte, margens (por lado), entrelinha, recuo, citações e referências. **ABNT (NBR 14724)** é o default: Times New Roman 12, 1,5, justificado, recuo 1,25 cm, margens 3 cm (topo/esq) / 2 cm (base/dir), nº de página no topo direito. Exporta `formatProfile`, `lineToTwips`, `mmToTwips`, `ptToHalfPoints`.
@@ -98,7 +98,7 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Aviso:** digitar texto longo com `\n` na UI envia várias mensagens (Enter = enviar). Ao automatizar via browser, usar Shift+Enter ou colar.
 
 ## Deploy & push (importante)
-- **`npm run deploy` exige `CLOUDFLARE_API_TOKEN` (secret `cfat_*`) no ambiente.** Sem ele o build roda mas **não publica** — foi assim que a produção ficou servindo build antigo (sintoma "modo livro corta o texto", 16/11: prod era anterior ao commit do recurso). Sempre conferir o **Version ID novo** no `wrangler deploy` e validar no navegador.
+- **`npm run deploy` exige `CLOUDFLARE_API_TOKEN` (secret `cfat_*`) + `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`.** Sem ele o build roda mas **não publica** — foi assim que a produção ficou servindo build antigo (sintoma "modo livro corta o texto", 16/11: prod era anterior ao commit do recurso). Sempre conferir o **Version ID novo** no `wrangler deploy` e validar no navegador.
 - **Push GitHub:** token do remote / `GITHUB_TOKEN` / `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` são **read-only (403)**. Usar o **`GH_PUSH_TOKEN`** (escopo `repo`) sem gravar no remote:
   `git -c credential.helper= push "https://x-access-token:${GH_PUSH_TOKEN}@github.com/johnadriansilva04-byte/Science-Chat.git" main`
 - **Modo livro (`BookReader`):** overlay `overflow-y-auto` + wrapper `min-h-full … justify-center`; cada folha `max-h-[82vh] overflow-y-auto` (rola, nunca corta). Teste de regressão em `book-reader.test.tsx`.
@@ -139,3 +139,12 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 - **Recusa persiste por artigo** (`dismissScienceFlow`/`wasScienceFlowDismissed`, localStorage, máx. 20 ids) — sem isso o card volta a cada recarga.
 - Guia não usa IA → funciona com cota esgotada (4006). Criar artigo usa IA → `canCreate:false` avisa em vez de falhar.
 - Ao citar normas, checar por `curl` na fonte oficial: ICMJE (4 critérios, nenhum exige instituição) e DOAJ confirmados. Tavily pode estar sem cota.
+
+## Login: como diagnosticar "senha inválida" (2026-11-18)
+- **O login não estava quebrado.** Antes de suspeitar de código/tabela, prove qual conta e senha estão em jogo: `verifyLogin` só lê `users` (não existe outra tabela), PBKDF2-SHA256 100k, salt hex.
+- Verificar hash **offline** contra o D1 (`select password_hash, password_salt from users where email=?` + `hashlib.pbkdf2_hmac('sha256', senha, salt, 100000)`) diz na hora se é senha errada ou bug.
+- **Cookie `sc_session` é HttpOnly** → `document.cookie` nunca mostra. "cookie ausente" no teste não é falha; confira `location.pathname` virando `/`.
+- Teste de ciclo completo exige `Network.clearBrowserCookies` **antes** de cada etapa — sessão antiga fazia o signup nem rodar.
+- **Erro de login agora fica no formulário** (`role=alert`), não só em toast: o toast some em segundos e no celular com teclado aberto o usuário perde o motivo. Botão de envio com `min-h-11` (44px).
+- Migrations: `schema_migrations` é a tabela válida (10 arquivos aplicados); `d1_migrations` é legado com só 4. Números de arquivo duplicados (dois `0006_`, dois `0007_`) — ordem real é a de `applied_at`.
+- Limpeza feita em 19/11: 11 contas de teste + 73 linhas em cascata + 7 objetos R2 órfãos. Sobrou `variantfeb@gmail.com` (2 artigos, 1 publicação, 129 mensagens).
