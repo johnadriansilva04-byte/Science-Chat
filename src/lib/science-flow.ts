@@ -69,7 +69,7 @@ export const SCIENCE_BITES: ScienceBite[] = [
     what: "No campo de afiliação, escreva “Pesquisador(a) independente”.",
     why: "O campo é descritivo, não é prova de elegibilidade — é o que a sua situação é, dito com clareza.",
     whatFor:
-      "Serve para você submeter sem mentir e sem medo de ser desclassificado por não ter laboratório.",
+      "Serve para você preencher o formulário com honestidade, sem inventar vínculo e sem deixar o campo em branco.",
   },
   {
     n: 6,
