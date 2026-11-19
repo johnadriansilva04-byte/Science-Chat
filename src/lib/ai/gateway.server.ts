@@ -4,6 +4,7 @@ import { getEnv, requireAi, type AiBinding } from "@/lib/cf/bindings.server";
 import { drainLeakedCalls } from "@/lib/ai/leak-filter";
 import { toolNameScrubTransform } from "@/lib/ai/leaked-tool-call";
 import { antiRepeatTransform } from "@/lib/ai/anti-repeat";
+import { holdTextEndTransform } from "@/lib/ai/stream-order";
 
 /**
  * Inferência via Cloudflare Workers AI (binding `AI`), no lugar de um gateway externo.
@@ -271,6 +272,9 @@ export function startResponses(
       // Nomes internos ("definir_orcid") não devem aparecer na prosa.
       () => toolNameScrubTransform(Object.keys(tools ?? {})),
       ...(extraTransforms ?? []),
+      // Por último: nenhum delta pode sair depois do `text-end` da sua parte,
+      // senão o SDK descarta a resposta com "text part <id> not found".
+      () => holdTextEndTransform(),
     ],
     ...(tools
       ? {
