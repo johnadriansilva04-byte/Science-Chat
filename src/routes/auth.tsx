@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BadgeCheck, ChevronDown, IdCard, Sparkles } from "lucide-react";
+import { BadgeCheck, IdCard, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { signIn, signUp } from "@/lib/auth.functions";
 import { isValidOrcid, normalizeOrcid } from "@/lib/front-matter";
@@ -122,7 +122,6 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [orcid, setOrcid] = useState("");
-  const [showOrcid, setShowOrcid] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -256,52 +255,39 @@ function AuthPage() {
 
               {mode === "up" && (
                 <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowOrcid((v) => !v)}
-                    aria-expanded={showOrcid}
-                    className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <ChevronDown
-                      className={`size-3.5 transition-transform ${showOrcid ? "rotate-180" : ""}`}
+                  <Label htmlFor="orcid">
+                    ORCID <span className="font-normal text-muted-foreground">(opcional)</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="orcid"
+                      value={orcid}
+                      onChange={(e) => setOrcid(e.target.value)}
+                      inputMode="text"
+                      autoComplete="off"
+                      placeholder="0000-0000-0000-0000"
+                      className="pr-9 font-mono tracking-wide"
                     />
-                    Tenho ORCID (opcional)
-                  </button>
-                  {showOrcid && (
-                    <div className="space-y-1.5 pt-1">
-                      <div className="relative">
-                        <Input
-                          id="orcid"
-                          value={orcid}
-                          onChange={(e) => setOrcid(e.target.value)}
-                          inputMode="text"
-                          autoComplete="off"
-                          placeholder="0000-0000-0000-0000"
-                          aria-label="Número do ORCID"
-                          className="pr-9 font-mono tracking-wide"
-                        />
-                        {orcidValid && (
-                          <BadgeCheck className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-success)]" />
-                        )}
-                      </div>
-                      {orcidIncomplete && (
-                        <p className="text-[0.72rem] text-destructive">
-                          Não passou na checagem do dígito — confira o número.
-                        </p>
-                      )}
-                      <p className="text-[0.72rem] text-muted-foreground">
-                        Não tem? É grátis:{" "}
-                        <a
-                          href={ORCID_REGISTER_URL}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-medium text-primary hover:underline"
-                        >
-                          criar em orcid.org
-                        </a>
-                        . Você pode deixar em branco e adicionar depois.
-                      </p>
-                    </div>
+                    {orcidValid && (
+                      <BadgeCheck className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-success)]" />
+                    )}
+                  </div>
+                  {orcidIncomplete ? (
+                    <p className="text-[0.72rem] text-destructive">
+                      Não passou na checagem do dígito — confira o número.
+                    </p>
+                  ) : (
+                    <p className="text-[0.72rem] text-muted-foreground">
+                      Identidade científica que não depende de instituição. Não tem?{" "}
+                      <a
+                        href={ORCID_REGISTER_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-11 items-center font-medium text-primary hover:underline"
+                      >
+                        criar em orcid.org (grátis)
+                      </a>
+                    </p>
                   )}
                 </div>
               )}
