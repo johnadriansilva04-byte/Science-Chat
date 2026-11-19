@@ -187,6 +187,20 @@ describe("recusa sobrevive à recarga", () => {
     expect(detectScienceDoubt(artigo)).toBe(false);
   });
 
+  // Regressão: o TEMA do artigo ("como o autodidata sem vínculo institucional
+  // valida o método") casava "sem" + "vínculo" e abria o card como se fosse
+  // insegurança do autor.
+  it("tema de pesquisa não é dúvida sobre credencial", () => {
+    expect(
+      detectScienceDoubt(
+        "Quero pesquisar como o autodidata sem vínculo institucional valida o próprio método.",
+      ),
+    ).toBe(false);
+    expect(detectScienceDoubt("Vou estudar pesquisadores independentes e seus métodos.")).toBe(
+      false,
+    );
+  });
+
   it("dúvida curta de verdade continua abrindo o caminho", () => {
     expect(detectScienceDoubt("posso publicar sem vinculo institucional?")).toBe(true);
   });

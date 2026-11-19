@@ -19,6 +19,7 @@ import { stripLeakedToolCalls } from "@/lib/ai/leaked-tool-call";
 import { errorTextStream } from "@/lib/ai/error-stream";
 import { cleanAssistantText, collectAssistantSentences } from "@/lib/ai/anti-repeat";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
+import { windowHistory } from "@/lib/ai/history-window";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
 import { parsePageCommand, parseRewriteRequest, type PageCommand } from "@/lib/ai/page-command";
 import { getSessionUser } from "@/lib/cf/auth.server";
@@ -235,7 +236,11 @@ async function handle(request: Request) {
         )}`;
 
   const sanitized = sanitizeMessages(body.messages);
-  const lastUserText = [...sanitized]
+  // Recorta o histórico ANTES de tudo que lê a última mensagem: sem a janela, o
+  // prompt fixo (~5.300 tokens) mais o histórico inteiro esgotava a cota diária
+  // da Workers AI em poucos turnos.
+  const windowed = windowHistory(sanitized);
+  const lastUserText = [...windowed]
     .reverse()
     .find((m) => m.role === "user")
     ?.parts.filter((p) => p.type === "text")
@@ -280,7 +285,7 @@ async function handle(request: Request) {
   ]);
   const forcedTool =
     article.phase === "interview" ? (forced && interviewTools.has(forced) ? forced : null) : forced;
-  const modelMessages = await convertToModelMessages(sanitized);
+  const modelMessages = await convertToModelMessages(windowed);
   // Semeia o filtro anti-repetição com o que o Pracinha JÁ disse no histórico,
   // para ele não repetir, turno após turno, a mesma pergunta ou o mesmo fecho.
   const antiRepeatSeed = collectAssistantSentences(modelMessages);

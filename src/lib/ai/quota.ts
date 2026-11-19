@@ -35,9 +35,21 @@ export function nextQuotaReset(now: number = Date.now()): number {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0);
 }
 
-/** Formata a hora (HH:MM) em que a IA volta a funcionar. */
+/**
+ * Formata a hora (HH:MM, 24h) em que a IA volta a funcionar.
+ *
+ * Locale fixo em pt-BR: com `[]` o formato vem do navegador, e num sistema em
+ * inglês a tela mostrava "12:00 AM" no meio de um app em português. Também
+ * fixamos `hour12: false` — "meia-noite UTC" precisa aparecer como 21:00/00:00,
+ * nunca como "12:00 AM".
+ */
 export function formatResetTime(ts: number): string {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Sao_Paulo",
+  });
 }
 
 /** Texto de contagem regressiva até a volta da IA. */

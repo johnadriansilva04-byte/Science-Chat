@@ -128,6 +128,16 @@ const ASKS_PERMISSION =
 const DOUBT_SHORT = 200;
 const DOUBT_ABSOLUTE_MAX = 600;
 
+/**
+ * Verbo de pesquisa: "quero PESQUISAR como…", "vou ESTUDAR…", "minha pesquisa
+ * é sobre…". É TEMA, não dúvida. Sem esta guarda, "quero pesquisar como o
+ * autodidata sem vínculo institucional valida o método" abria o card, porque
+ * casa "sem" + "vínculo" — o assunto do artigo era lido como insegurança do
+ * autor.
+ */
+const RESEARCH_TOPIC =
+  /\b(quero|pretendo|vou|gostaria de|busco|minha pesquisa|meu estudo|meu artigo|meu tema|a pesquisa|o estudo|pesquisar|investigar|estudar|analisar|compreender|entender como|comparar|mapear)\b[^.?]{0,80}\b(pesquisar|investigar|estudar|analisar|compreender|comparar|mapear|como|sobre|a respeito)\b/;
+
 export function detectScienceDoubt(text: string): boolean {
   const q = normalize(text ?? "")
     .replace(/\s+/g, " ")
@@ -136,8 +146,12 @@ export function detectScienceDoubt(text: string): boolean {
   if (q.length > DOUBT_ABSOLUTE_MAX) return false;
   // Acima do tamanho de uma pergunta, só passa se for de fato uma pergunta.
   if (q.length > DOUBT_SHORT && !q.includes("?")) return false;
-  // "pesquisador independente" sozinho já é a persona do fluxo.
+  // "pesquisador independente" sozinho já é a persona do fluxo — vem ANTES da
+  // guarda de tema, senão "quero publicar como pesquisador independente" seria
+  // lido como assunto de pesquisa.
   if (/pesquisador(a)? independente/.test(q)) return true;
+  // Tema de pesquisa não é insegurança sobre credencial.
+  if (RESEARCH_TOPIC.test(q) && !q.includes("?")) return false;
   // A falta precisa recair sobre a CREDENCIAL (vínculo, diploma, orientador),
   // não sobre qualquer palavra acadêmica.
   if (CREDENTIAL.test(q) && LACK.test(q)) return true;

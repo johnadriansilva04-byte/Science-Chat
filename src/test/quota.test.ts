@@ -73,6 +73,15 @@ describe("formatResetTime", () => {
   it("produz uma hora HH:MM", () => {
     expect(formatResetTime(Date.UTC(2026, 0, 6, 0, 0, 0))).toMatch(/\d{2}:\d{2}/);
   });
+
+  // Regressão: com locale do navegador, a tela mostrava "12:00 AM" no meio de um
+  // app em português. Formato fixo: 24h, pt-BR, fuso de Brasília.
+  it("mostra 24h em pt-BR (nunca '12:00 AM')", () => {
+    const midnightUtc = Date.UTC(2026, 0, 6, 0, 0, 0);
+    const out = formatResetTime(midnightUtc);
+    expect(out).not.toMatch(/AM|PM/i);
+    expect(out).toBe("21:00"); // meia-noite UTC = 21h do dia anterior em Brasília
+  });
 });
 
 describe("quotaRestMessage", () => {

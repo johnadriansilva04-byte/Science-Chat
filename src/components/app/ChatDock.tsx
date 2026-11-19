@@ -332,22 +332,20 @@ export function ChatDock({
       .join(" ");
   }, [messages]);
 
-  // UMA fonte de oferta. Antes eram dois efeitos (dúvida e descanso) que
-  // reabriam o card por caminhos diferentes: "Agora não" zerava o estágio e o
-  // outro efeito oferecia de novo, duplicando o cartão na tela.
+  // UMA fonte de oferta, e ela é só a DÚVIDA. O descanso da cota já tem o seu
+  // próprio cartão (`PracinhaRest`); incluí-lo aqui fazia o card de "Ciência sem
+  // crachá" aparecer junto com o aviso de cota, no meio de qualquer conversa.
   const offeredFor = useRef<string | null>(null);
   useEffect(() => {
     if (scienceFlowDismissed) return;
     if (scienceFlow.stage !== "idle") return;
     // A mesma mensagem nunca reoferta; só uma dúvida NOVA abre o convite.
     const trigger = lastUserText?.trim() ?? "";
-    const doubt = trigger.length > 0 && detectScienceDoubt(trigger);
-    if (!doubt && !resting) return;
-    const key = doubt ? trigger : "rest";
-    if (offeredFor.current === key) return;
-    offeredFor.current = key;
+    if (!trigger || !detectScienceDoubt(trigger)) return;
+    if (offeredFor.current === trigger) return;
+    offeredFor.current = trigger;
     setScienceFlow({ stage: "offered", index: 0 });
-  }, [lastUserText, resting, scienceFlow.stage, scienceFlowDismissed]);
+  }, [lastUserText, scienceFlow.stage, scienceFlowDismissed]);
   useEffect(() => {
     if (orcidAsked) setOrcidDismissed(false);
   }, [orcidAsked]);
