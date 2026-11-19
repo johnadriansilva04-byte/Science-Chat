@@ -186,4 +186,20 @@ describe("anti-repeat", () => {
     expect(later).not.toContain("Olá, sou Pracinha");
     expect(later).toContain("Qual é a sua tese?");
   });
+  // Regressão: o filtro de saudação existia só em `cleanAssistantText` (texto
+  // final/salvo). O que o pesquisador VÊ vem do stream, que nunca chamava
+  // `isGreetingSentence` — daí o "Olá, sou o Pracinha…" reaparecer no meio da
+  // conversa depois de uma mensagem longa.
+  it("remove a reapresentação já no stream, a partir do 2º turno", async () => {
+    const said = "Olá, sou o Pracinha, assistente da ScienceChat. Qual é a sua tese em uma frase?";
+    const { text } = await throughTransform([...said], ["uma fala anterior"]);
+    expect(text).not.toContain("sou o Pracinha");
+    expect(text).toContain("Qual é a sua tese");
+  });
+
+  it("mantém a apresentação no primeiro turno do stream", async () => {
+    const said = "Olá, sou o Pracinha, assistente da ScienceChat. Vamos começar?";
+    const { text } = await throughTransform([...said], []);
+    expect(text).toContain("Pracinha");
+  });
 });

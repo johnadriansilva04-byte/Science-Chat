@@ -186,7 +186,13 @@ export function cleanAssistantText(text: string, seed?: Iterable<string>): strin
 export function buildAntiRepeatStream(
   seedSentences: Iterable<string> = [],
 ): TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>> {
-  const seen = new Set(seedSentences);
+  const seedList = [...seedSentences];
+  const seen = new Set(seedList);
+  // Semente vazia = primeira mensagem da conversa: aí a apresentação é devida.
+  // A partir do 2º turno ela é ruído, e precisa ser barrada AQUI — este stream é
+  // o que o pesquisador vê na tela; limpar só o texto final (`cleanAssistantText`)
+  // não impedia o "Olá, sou o Pracinha…" de aparecer no meio do diálogo.
+  const allowGreeting = seedList.length === 0;
   const buffers = new Map<string, string>();
   const heldClosers = new Map<string, Piece[]>();
   const substantive = new Map<string, boolean>();
@@ -204,6 +210,7 @@ export function buildAntiRepeatStream(
       for (const piece of parts) {
         const norm = normalizeSentence(piece.sentence);
         if (isSubstantive(norm) && seen.has(norm)) continue;
+        if (!allowGreeting && isGreetingSentence(piece.sentence)) continue;
         if (isCloserSentence(piece.sentence)) {
           closers.push(piece);
           continue;
@@ -227,6 +234,7 @@ export function buildAntiRepeatStream(
         if (!text.trim()) continue;
         const norm = normalizeSentence(text);
         if (isSubstantive(norm) && seen.has(norm)) continue;
+        if (!allowGreeting && isGreetingSentence(text)) continue;
         controller.enqueue({ type: "text-delta", id, text });
       }
     },
