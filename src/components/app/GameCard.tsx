@@ -12,15 +12,15 @@ import {
 import { GAME_NAME, GAME_TAGLINE, STOP_CATEGORIES, gameEmbedUrl } from "@/lib/game";
 
 /**
- * Card discreto do joguinho.
+ * Card compacto do joguinho: uma linha com ícone, categorias e botão.
  *
- * Aparece só em momentos de espera — quando a cota da IA acabou ou quando a
- * pessoa caiu numa página que não existe. Nunca no meio da produção do artigo:
- * ali o foco é o texto, e um convite para jogar seria ruído.
+ * Vive nas telas de espera (cota da IA esgotada, página não encontrada) e na
+ * home, onde a pessoa descobre que o jogo existe. Nunca no meio da produção do
+ * artigo: ali o foco é o texto, e um convite para jogar seria ruído.
  *
  * O jogo não mora aqui. Este card é o encaixe: quando `VITE_GAME_URL` está
  * definida, o botão abre o jogo num diálogo; sem ela, o botão fica desabilitado
- * e o card ainda explica o que é o jogo.
+ * e o card ainda mostra as categorias.
  */
 export function GameCard({ className }: { className?: string }) {
   const embedUrl = gameEmbedUrl();
@@ -29,9 +29,9 @@ export function GameCard({ className }: { className?: string }) {
   return (
     <section
       aria-labelledby="game-card-title"
-      className={cn("game-card rounded-xl border p-3.5", className)}
+      className={cn("game-card rounded-xl border px-3 py-2.5", className)}
     >
-      <div className="flex items-start gap-3">
+      <div className="relative z-10 flex items-center gap-2.5">
         <span className="game-card__icon" aria-hidden>
           <Gamepad2 className="size-4" />
         </span>
@@ -41,34 +41,26 @@ export function GameCard({ className }: { className?: string }) {
             className="flex flex-wrap items-baseline gap-x-1.5 text-sm font-medium"
           >
             {GAME_NAME}
-            <span className="text-xs font-normal text-muted-foreground">— de bobeira?</span>
+            <span className="text-[0.7rem] font-normal text-muted-foreground">— de bobeira?</span>
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{GAME_TAGLINE}</p>
-
-          <ul className="mt-2 flex flex-wrap gap-1">
-            {STOP_CATEGORIES.slice(0, 4).map((category) => (
+          <ul className="mt-1.5 flex flex-wrap gap-1">
+            {STOP_CATEGORIES.slice(0, 3).map((category) => (
               <li key={category} className="game-card__chip">
                 {category}
               </li>
             ))}
-            <li className="game-card__chip game-card__chip--more">+{STOP_CATEGORIES.length - 4}</li>
+            <li className="game-card__chip game-card__chip--more">+{STOP_CATEGORIES.length - 3}</li>
           </ul>
-
-          <button
-            type="button"
-            disabled={!embedUrl}
-            onClick={() => setOpen(true)}
-            className="game-card__cta mt-2.5"
-          >
-            {embedUrl ? "Jogar agora" : "Em breve"}
-            {embedUrl && <ArrowRight className="size-3.5" aria-hidden />}
-          </button>
-          {!embedUrl && (
-            <p className="mt-1.5 text-[0.7rem] text-muted-foreground">
-              O jogo está sendo finalizado. Enquanto isso, o Pracinha volta com fôlego novo.
-            </p>
-          )}
         </div>
+        <button
+          type="button"
+          disabled={!embedUrl}
+          onClick={() => setOpen(true)}
+          className="game-card__cta"
+        >
+          {embedUrl ? "Jogar" : "Em breve"}
+          {embedUrl && <ArrowRight className="size-3.5" aria-hidden />}
+        </button>
       </div>
 
       {embedUrl && (

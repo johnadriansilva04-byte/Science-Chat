@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AFFILIATION_CAVEAT,
   COUNTRY_PATHS,
   COVER_LETTER_TEMPLATE,
   DIRECT_ANSWER_POINTS,
@@ -24,6 +25,22 @@ describe("scienceAccessSteps", () => {
       expect(s.do.length).toBeGreaterThan(10);
       expect(s.why.length).toBeGreaterThan(10);
     }
+  });
+
+  // Regra editorial: nada aqui é norma inventada. Cada etapa precisa abrir na
+  // fonte primária, senão o card ensina por autoridade e não por fundamento.
+  it("cada etapa aponta para a fonte oficial que a sustenta", () => {
+    for (const step of SCIENCE_STEPS) {
+      expect(step.source, `etapa ${step.n} sem fonte`).toBeDefined();
+      expect(step.source!.url).toMatch(/^https:\/\//);
+      expect(step.source!.label.trim().length).toBeGreaterThan(3);
+    }
+  });
+
+  it("as etapas de país vêm marcadas com a região", () => {
+    const byRegion = (region: string) => SCIENCE_STEPS.filter((s) => s.region === region);
+    expect(byRegion("brasil").some((s) => /^Brasil/.test(s.title))).toBe(true);
+    expect(byRegion("uruguai").some((s) => /Uruguai|CVUy/.test(s.title))).toBe(true);
   });
 
   it("cobre o Brasil e o Uruguai", () => {
@@ -72,10 +89,15 @@ describe("ciência sem crachá", () => {
     expect(WHAT_COUNTS.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("oferece caminhos para Brasil e Uruguai", () => {
+  it("oferece caminhos para Brasil, Uruguai e os demais países da região", () => {
     const ids = COUNTRY_PATHS.map((c) => c.id);
-    expect(ids).toEqual(["brasil", "uruguai"]);
+    expect(ids).toEqual(["brasil", "uruguai", "latam"]);
     for (const c of COUNTRY_PATHS) expect(c.highlights.length).toBeGreaterThanOrEqual(3);
+    // O caminho regional não repete um país: ele aponta os índices que cobrem
+    // toda a América Latina (Latindex, Redalyc, coleções nacionais do SciELO).
+    const latam = COUNTRY_PATHS.find((c) => c.id === "latam")!;
+    expect(latam.highlights.join(" ")).toMatch(/Latindex/);
+    expect(latam.highlights.join(" ")).toMatch(/Redalyc/);
   });
 });
 
@@ -110,6 +132,16 @@ describe("SCIENCE_REFERENCES", () => {
       expect(r.label.length).toBeGreaterThan(2);
       expect(r.note.length).toBeGreaterThan(20);
     }
+  });
+
+  // Regressão: cvuy.uy não documenta interoperabilidade com ORCID em nenhuma
+  // página pública (checado 18/11). Afirmar isso era inventar norma — o projeto
+  // proíbe. Se a fonte oficial passar a documentar, reintroduza com a citação.
+  it("não afirma interoperabilidade CVUy↔ORCID sem fonte", () => {
+    const all = SCIENCE_REFERENCES.map((r) => `${r.label} ${r.note}`).join(" ");
+    const cvuy = SCIENCE_REFERENCES.find((r) => /CVUy/.test(r.label));
+    expect(cvuy?.note).not.toMatch(/ORCID/);
+    expect(all).not.toMatch(/interoperabilidade/i);
   });
 });
 
@@ -159,6 +191,33 @@ describe("DIRECT_ANSWER_POINTS", () => {
     const icmje = DIRECT_ANSWER_POINTS.find((p) => /icmje/i.test(p.source));
     expect(icmje?.proof).toMatch(/4 critérios|quatro critérios/i);
     expect(icmje?.proof).toMatch(/responsabiliz|responsabilid/i);
+  });
+
+  // Regressão: o arXiv NÃO é "só ORCID" — o primeiro envio exige endosso. A
+  // versão anterior dizia "nos dois, basta o ORCID", que é falso e desanimaria
+  // exatamente o público sem vínculo (sem e-mail institucional para acelerar).
+  it("diz a verdade sobre o endosso do arXiv", () => {
+    const preprints = DIRECT_ANSWER_POINTS.find((p) => /arXiv/.test(p.proof));
+    expect(preprints?.proof).toMatch(/endosso/i);
+    expect(preprints?.proof).not.toMatch(/Nos dois, basta o ORCID/i);
+  });
+});
+
+describe("AFFILIATION_CAVEAT", () => {
+  // Regressão: o campo "afiliação" existe no formulário e algumas revistas
+  // exigem afiliação acadêmica (AnFaMed/Udelar pede afiliação, e-mail e ORCID).
+  // Sem a ressalva, o card prometia mais do que a fonte sustenta.
+  it("avisa que algumas revistas exigem afiliação acadêmica", () => {
+    expect(AFFILIATION_CAVEAT).toMatch(/afilia/i);
+    expect(AFFILIATION_CAVEAT).toMatch(/Pesquisador\(a\) independente/);
+    expect(AFFILIATION_CAVEAT).toMatch(/Nunca invente/i);
+  });
+
+  it("a etapa de afiliação cita a fonte que a sustenta", () => {
+    const step = SCIENCE_STEPS.find((s) => /afilia/i.test(s.title));
+    expect(step).toBeDefined();
+    expect(step!.source!.url).toMatch(/scielo\.edu\.uy/);
+    expect(step!.why).toMatch(/afiliação acadêmica explícita/i);
   });
 });
 

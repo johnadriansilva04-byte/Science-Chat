@@ -5,6 +5,7 @@ import {
   buildAntiRepeatStream,
   extractComplete,
   isCloserSentence,
+  isFillerSentence,
   isGreetingSentence,
   normalizeSentence,
 } from "@/lib/ai/anti-repeat";
@@ -238,5 +239,53 @@ describe("saudação repetida", () => {
     expect(cleanAssistantText("Olá! A tese é defensável e tem limites claros.", ["x"])).toBe(
       "A tese é defensável e tem limites claros.",
     );
+  });
+});
+
+describe("isFillerSentence — encheção de linguiça", () => {
+  // Frases literais do chat real que empurraram o pesquisador para o desânimo.
+  const REAIS = [
+    "a influência do vínculo institucional no método científico é um tema relevante e amplo",
+    "É um assunto complexo e multidisciplinar.",
+    "O tema é abordado em diversas áreas do conhecimento, como psicologia, sociologia e ciência da informação.",
+    "A literatura científica sugere que a ausência de vínculo pode influenciar o método.",
+    "É uma questão ampla e relevante para a área.",
+    "O assunto vem ganhando crescente destaque no cenário atual.",
+  ];
+
+  for (const frase of REAIS) {
+    it(`barra a encheção: "${frase.slice(0, 45)}…"`, () => {
+      expect(isFillerSentence(frase)).toBe(true);
+    });
+  }
+
+  it("preserva frase com dado concreto, mesmo usando 'relevante'", () => {
+    expect(
+      isFillerSentence(
+        "Silva (2021) mostra que 63% dos periódicos exigem filiação institucional na submissão.",
+      ),
+    ).toBe(false);
+    expect(isFillerSentence("A revista aceita submissão sem vínculo desde 2019.")).toBe(false);
+  });
+
+  it("não toca em frase argumentativa comum", () => {
+    expect(isFillerSentence("Becker (1963) deslocou o olhar para a rotulagem social.")).toBe(false);
+  });
+});
+
+describe("cleanAssistantText — encheção de linguiça", () => {
+  it("remove a encheção e mantém a resposta real", () => {
+    const text =
+      "A sua pergunta é se a ausência de vínculo muda o método. " +
+      "A literatura científica sugere que é um tema relevante e amplo. " +
+      "Nenhum dos trabalhos que achei mede isso diretamente.";
+    const out = cleanAssistantText(text);
+    expect(out).toContain("muda o método");
+    expect(out).toContain("Nenhum dos trabalhos");
+    expect(out).not.toContain("relevante e amplo");
+  });
+
+  it("nunca devolve vazio: se só há encheção, ela é liberada", () => {
+    expect(cleanAssistantText("É um tema relevante e amplo.").length).toBeGreaterThan(0);
   });
 });

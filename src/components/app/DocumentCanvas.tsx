@@ -28,7 +28,13 @@ import { TraceabilityPanel } from "@/components/app/TraceabilityPanel";
 import { AuditPanel } from "@/components/app/AuditPanel";
 import { EditorialPanel } from "@/components/app/EditorialPanel";
 import { ExportDialog } from "@/components/app/ExportDialog";
-import { documentSections, parseBlocks, serializeBlocks, type Block } from "@/lib/article-blocks";
+import {
+  blockText,
+  documentSections,
+  parseBlocks,
+  serializeBlocks,
+  type Block,
+} from "@/lib/article-blocks";
 import { useA4Pagination, mmToPx, A4 } from "@/lib/a4";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { stripMarkers } from "@/lib/article-marker";
@@ -285,10 +291,14 @@ export function DocumentCanvas({
     return last ? last.title : null;
   }, [outline, activeSheet]);
 
-  const wordTotal = useMemo(
-    () => pages.reduce((sum, p) => sum + countWords(stripMarkers(p.content)), 0),
-    [pages],
-  );
+  // Na entrevista ainda não há páginas: o texto visível são as notas. Contar só
+  // `pages` mostrava "0 palavras" com a Introdução já escrita na folha.
+  const wordTotal = useMemo(() => {
+    if (pages.length > 0) {
+      return pages.reduce((sum, p) => sum + countWords(stripMarkers(p.content)), 0);
+    }
+    return measureBlocks.reduce((sum, block) => sum + countWords(blockText(block)), 0);
+  }, [pages, measureBlocks]);
   const shortPages = useMemo(
     () => pages.filter((p) => countWords(stripMarkers(p.content)) < MIN_PAGE_WORDS),
     [pages],
@@ -586,14 +596,8 @@ export function DocumentCanvas({
                   isActive ? "bg-accent text-accent-foreground" : "hover:bg-muted"
                 }`}
                 title={`${s.title} — folha ${s.page}`}
+                aria-label={`${s.title} — folha ${s.page}`}
               >
-                <span
-                  className={`shrink-0 tabular-nums text-[11px] ${
-                    isActive ? "text-primary" : "text-muted-foreground/70"
-                  }`}
-                >
-                  {s.page}
-                </span>
                 <span
                   className={`min-w-0 flex-1 truncate ${
                     s.level === 1
@@ -602,6 +606,16 @@ export function DocumentCanvas({
                   }`}
                 >
                   {s.title}
+                </span>
+                {/* O número vem DEPOIS do título: antes ele abria a linha e o
+                    sumário lia-se "1Introdução", como se a seção estivesse
+                    numerada duas vezes. */}
+                <span
+                  className={`shrink-0 tabular-nums text-[11px] ${
+                    isActive ? "text-primary" : "text-muted-foreground/70"
+                  }`}
+                >
+                  {s.page}
                 </span>
               </button>
             );

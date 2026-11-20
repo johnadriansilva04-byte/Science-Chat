@@ -5,7 +5,7 @@
  */
 import { parseBlocks, parseInline, type Align, type Block } from "@/lib/article-blocks";
 import { frontMatterSequence, type FrontMatter } from "@/lib/front-matter";
-import { formatProfile, type FormatProfile } from "@/lib/format-profile";
+import { formatProfile } from "@/lib/format-profile";
 import type { CitationStandard } from "@/lib/editorial";
 
 function latexEscape(text: string): string {

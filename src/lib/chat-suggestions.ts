@@ -47,12 +47,35 @@ const RULES: Rule[] = [
     options: ["Pesquise referências", "Tenho fontes próprias"],
   },
   {
-    test: /amostra|metod|instrumento|variave|coleta|experiment|questionari/,
-    options: ["Vou detalhar agora", "Ainda não defini"],
+    test: /pergunta central|problema central|qual (?:é |e )?o objetivo|justificativa|hipotese|do que trata/,
+    options: ["Vou explicar em uma frase", "Me ajude a formular"],
   },
   {
-    test: /resultado|achado|conclu|evidencia/,
+    test: /amostra|metod|instrumento|variave|coleta|experiment|questionari|procediment|criterio|materiais|demonstrar/,
+    options: ["Vou detalhar agora", "Ainda não defini"],
+  },
+  // Conclusão ANTES de resultados: a pergunta de fecho do guard ("Fechando: qual
+  // é a conclusão…") casava `conclu` na regra de resultados e oferecia "Tenho os
+  // resultados" — resposta que não fecha nada.
+  {
+    test: /conclus|considerac|fechando|levar embora/,
+    options: ["Já tenho a conclusão", "Me ajude a fechar"],
+  },
+  {
+    test: /resultado|achado|evidencia/,
     options: ["Tenho os resultados", "Ainda estou analisando"],
+  },
+  // Pergunta de discussão do guard: sem regra própria, ela só oferecia as
+  // saídas de emergência ("Pular"), que abandonam justamente a seção mais rica.
+  {
+    test: /muda na|implic|limite mais honesto|se a sua tese/,
+    options: ["Muda quem pode publicar", "Ainda não sei medir"],
+  },
+  // Última pergunta do guard (aprofundamento). Sem regra, ela oferecia só
+  // "Pular" — e a seção mais valiosa da entrevista ficava sem resposta.
+  {
+    test: /mais fragil|mais solida|ponto fraco|afirmacao/,
+    options: ["Sei qual é o ponto fraco", "Me ajude a achar"],
   },
   {
     test: /destino|revista|editorial|norma|abnt|udelar/,

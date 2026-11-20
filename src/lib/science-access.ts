@@ -54,7 +54,7 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
   {
     label: "SciELO Preprints",
     url: "https://preprints.scielo.org/",
-    note: "Servidor de preprints: você pode tornar público um manuscrito ANTES da revista, sem vínculo institucional, e garantir autoria e data.",
+    note: "Servidor de preprints: você pode tornar público um manuscrito ANTES da revista, sem vínculo institucional, e garantir autoria e data. Basta registrar-se com ORCID. A postagem é automática para quem já tem 3 artigos com DOI ativo (ou 2 dos últimos 2 anos); os demais passam por uma triagem básica.",
     region: "internacional",
   },
   {
@@ -66,7 +66,7 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
   {
     label: "arXiv — Submissão",
     url: "https://info.arxiv.org/help/submit/index.html",
-    note: "Servidor de preprints aberto à submissão; pede endosso por área (de um pesquisador já ativo), não vínculo institucional.",
+    note: "Servidor de preprints aberto à submissão. Quem submete pela primeira vez precisa de endosso por área — de um pesquisador já ativo — ou de um e-mail institucional; nenhum dos dois é exigência de vínculo formal.",
     region: "internacional",
   },
   {
@@ -79,6 +79,21 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
     label: "Think. Check. Submit. — Revistas confiáveis",
     url: "https://thinkchecksubmit.org/journals/",
     note: "Checklist internacional (COPE, DOAJ, OASPA, ISSN, STM) para saber se uma revista é séria antes de submeter. Quem publica sem vínculo é o alvo preferido das revistas predatórias: elas cobram taxa e não revisam nada. Responda as perguntas da lista antes de enviar qualquer texto.",
+    region: "internacional",
+  },
+  // Índices regionais: são o caminho para "outros países" sem inventar um
+  // passo a passo por país. Os dois cobrem Brasil e Uruguai e o resto da
+  // América Latina, e servem como teste de seriedade da revista.
+  {
+    label: "Latindex",
+    url: "https://www.latindex.org/latindex/inicio",
+    note: "Sistema regional de informação para revistas científicas da América Latina, Caribe, Espanha e Portugal. O catálogo mostra se a revista é indexada e cumpre critérios editoriais — vale para o Brasil, o Uruguai e os países vizinhos, sem exigir vínculo de quem consulta.",
+    region: "internacional",
+  },
+  {
+    label: "Redalyc",
+    url: "https://www.redalyc.org/",
+    note: "Rede de revistas científicas ibero-americanas em acesso aberto. Serve para ler e para conferir se a revista de destino é indexada — e é uma alternativa de leitura quando o Portal da CAPES não abre para quem não tem vínculo.",
     region: "internacional",
   },
   {
@@ -120,7 +135,7 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
   {
     label: "CVUy (ANII)",
     url: "https://cvuy.uy/",
-    note: "Currículo único uruguaio, gratuito, mantido pela ANII — o equivalente ao Lattes no Uruguai. Já permite vincular seu ORCID e é usado por instituições do país para encontrar pesquisadores. Você cria o seu sem precisar de vínculo.",
+    note: "Currículo único uruguaio, mantido pela ANII — o equivalente ao Lattes no Uruguai. É gratuito e aberto a quem não tem vínculo. Não é pré-requisito para submeter um artigo: serve para você ter um currículo público consultável por instituições e empresas do país.",
     region: "uruguai",
   },
   {
@@ -137,7 +152,7 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
   },
 ];
 
-/** Passo a passo para publicar sem crachá. Cada passo tem um "porquê". */
+/** Passo a passo para publicar sem crachá. Cada passo tem um "porquê" e a fonte. */
 export type ScienceStep = {
   /** Número do passo (1, 2, 3, …). */
   n: number;
@@ -148,6 +163,13 @@ export type ScienceStep = {
   why: string;
   /** Para que serve, na prática (opcional). */
   whatFor?: string;
+  /**
+   * Documento oficial que sustenta a etapa. Sem isto o card seria opinião: a
+   * regra editorial é que cada afirmação normativa abra na fonte primária.
+   */
+  source?: { label: string; url: string };
+  /** Onde a etapa vale de forma explícita (para o selo Brasil/Uruguai). */
+  region?: "brasil" | "uruguai";
 };
 
 export const SCIENCE_STEPS: ScienceStep[] = [
@@ -156,68 +178,105 @@ export const SCIENCE_STEPS: ScienceStep[] = [
     title: "Entenda: ciência é método, não clube",
     do: "Trate a ciência como um jeito rigoroso de perguntar e provar — não como um clube com porteiro.",
     why: "Um artigo é aceito ou recusado pelo que ele demonstra e por como demonstra. A instituição ajuda, mas não é a credencial que valida o argumento.",
+    source: { label: "ICMJE — Recommendations", url: "https://www.icmje.org/recommendations/" },
   },
   {
     n: 2,
     title: "Garanta o método e a responsabilidade",
     do: "Tenha uma pergunta clara, evidência de verdade e honestidade sobre limites.",
     why: "O ICMJE define autoria por 4 critérios — contribuição, escrita/revisão, aprovação da versão final e responsabilidade — e nenhum deles exige vínculo institucional.",
+    source: {
+      label: "ICMJE — critérios de autoria",
+      url: "https://www.icmje.org/recommendations/browse/roles-and-responsibilities/defining-the-role-of-authors-and-contributors.html",
+    },
   },
   {
     n: 3,
-    title: "Assine como pesquisador (ORCID)",
-    do: "Crie um ORCID gratuito e use-o na submissão e no rodapé do artigo.",
-    why: "O ORCID é um identificador único e SEU: distingue você de homônimos e fixa sua autoria, com ou sem instituição. É aceito pelas revistas e universidades.",
+    title: "Resolva a ética — o único ponto que pode exigir instituição",
+    do: "Se a pesquisa envolve seres humanos, submeta o projeto a um Comitê de Ética em Pesquisa (CEP) ANTES de coletar dados.",
+    why: "No Brasil, a Resolução CNS nº 466/2012 exige aprovação por CEP para pesquisa com seres humanos, e o CEP é um colegiado criado por uma instituição. Sem vínculo, você submete pelo CEP de uma instituição que aceite ser a proponente do projeto. Não é um crachá seu: é o comitê avaliando o projeto e o consentimento — e a exigência vale igual para quem tem vínculo. Pesquisa teórica, bibliográfica ou com dados públicos não passa por CEP.",
+    whatFor:
+      "Serve para você não descobrir isso depois de já ter entrevistado alguém: sem parecer do CEP, a revista recusa o artigo e os dados não podem ser usados.",
+    source: {
+      label: "CONEP — Comissão Nacional de Ética em Pesquisa (CNS)",
+      url: "https://conselho.saude.gov.br/comissoes-cns/conep/",
+    },
   },
   {
     n: 4,
-    title: "Escolha a revista pelo escopo, não pela grife",
-    do: "Procure revistas cujo tema bate com o seu e leia as “instruções aos autores”.",
-    why: "A chance de aceite depende do encaixe com a revista. O DOAJ lista o que uma revista séria deve publicar — use como teste de confiabilidade.",
+    title: "Assine como pesquisador (ORCID)",
+    do: "Crie um ORCID gratuito e use-o na submissão e no rodapé do artigo.",
+    why: "O ORCID é um identificador único e SEU: distingue você de homônimos e fixa sua autoria, com ou sem instituição. É aceito pelas revistas e universidades.",
+    source: { label: "ORCID — criar o iD", url: "https://orcid.org/register" },
   },
   {
     n: 5,
-    title: "Siga as diretrizes oficiais da revista",
-    do: "Formate o texto exatamente como a revista pede (norma, tamanho, estrutura).",
-    why: "A revista é dona das próprias regras. Conferir a versão oficial evita recusa por detalhe de forma. O ScienceChat registra as diretrizes que você colar.",
+    title: "Escolha a revista pelo escopo, não pela grife",
+    do: "Procure revistas cujo tema bate com o seu e leia as “instruções aos autores”.",
+    why: "A chance de aceite depende do encaixe com a revista. O DOAJ lista o que uma revista séria deve publicar — use como teste de confiabilidade.",
+    source: { label: "DOAJ — Guide to applying", url: "https://doaj.org/apply/guide/" },
   },
   {
     n: 6,
-    title: "Preencha a afiliação como puder",
-    do: "Se não tiver vínculo, escreva “Pesquisador(a) independente” — é legítimo.",
-    why: "Muitas revistas pedem a afiliação, mas ela é descritiva, não um requisito de elegibilidade. O parecer recai sobre o manuscrito — e o editor decide pelo que o texto demonstra.",
+    title: "Siga as diretrizes oficiais da revista",
+    do: "Formate o texto exatamente como a revista pede (norma, tamanho, estrutura).",
+    why: "A revista é dona das próprias regras. Conferir a versão oficial evita recusa por detalhe de forma. O ScienceChat registra as diretrizes que você colar.",
+    source: {
+      label: "SciELO — modelo de publicação",
+      url: "https://www.scielo.org/pt-br/sobre-o-scielo/programa-scielo-modelo-scielo-de-publicacao-e-rede-scielo/",
+    },
   },
   {
     n: 7,
+    title: "Preencha a afiliação com honestidade",
+    do: "Se não tiver vínculo, declare “Pesquisador(a) independente” e dê um contato verificável (ORCID e e-mail).",
+    why: "Muitas revistas pedem o campo “afiliação” — algumas exigem afiliação acadêmica explícita, como a Anales de la Facultad de Medicina (Udelar), que pede afiliação, e-mail e ORCID de cada autor. O que não se pode é INVENTAR vínculo: “Pesquisador(a) independente” é uma afiliação real, usada em artigos publicados e registrada nos metadados do Crossref. Leia as instruções aos autores da revista e preencha o campo como ele é — sem crachá emprestado.",
+    source: {
+      label: "SciELO Uruguay — Anales de la Facultad de Medicina (instrucciones)",
+      url: "https://www.scielo.edu.uy/revistas/afm/iinstruc.htm",
+    },
+  },
+  {
+    n: 8,
     title: "Antes de pagar: a revista é séria?",
     do: "Passe a revista pelo checklist do Think. Check. Submit. e desconfie de convite por e-mail com prazo curto e taxa alta.",
     why: "Revista predatória cobra taxa (APC) e não faz revisão de verdade: o artigo é publicado em dias, sem parecerista. Quem publica sem vínculo é o alvo preferido dessas revistas, justamente porque procura uma porta aberta. Revista legítima de acesso aberto também pode cobrar taxa — a diferença é que ela diz o valor antes, tem corpo editorial identificável e processo de revisão declarado.",
+    source: { label: "Think. Check. Submit.", url: "https://thinkchecksubmit.org/journals/" },
     whatFor:
       "Serve para você não pagar caro por um selo que não vale nada e não queimar o seu artigo numa publicação que ninguém cita.",
   },
   {
-    n: 8,
+    n: 9,
     title: "Submeta e passe pela revisão por pares",
     do: "Envie o manuscrito pelo sistema da revista e responda aos pareceres.",
     why: "A revisão por pares é feita pela REVISTA, não por você nem pela plataforma. É ela que dá o selo de qualidade — e está aberta a autores de qualquer origem.",
-  },
-  {
-    n: 9,
-    title: "Torne público e registre a autoria",
-    do: "Depois do aceite, use o DOI. Antes, se quiser, publique um preprint.",
-    why: "Preprint (ex.: SciELO Preprints) garante autoria e data de forma pública e gratuita, sem vínculo. O DOI é a identidade permanente do artigo.",
+    source: {
+      label: "ICMJE — revisão por pares",
+      url: "https://www.icmje.org/recommendations/browse/roles-and-responsibilities/responsibilities-in-the-submission-and-peer-peview-process.html",
+    },
   },
   {
     n: 10,
-    title: "Brasil: registre a trajetória",
-    do: "Mantenha o currículo Lattes, use as normas da ABNT e leia pelo SciELO (aberto).",
-    why: "O Lattes é público e aceita quem não tem vínculo; a ABNT padroniza seu texto; o SciELO é aberto e não pede login. O Portal da CAPES só abre por IP ou CAFe de instituição participante — não conte com ele.",
+    title: "Torne público e registre a autoria",
+    do: "Depois do aceite, use o DOI. Antes, se quiser, publique um preprint.",
+    why: "Preprint (ex.: SciELO Preprints) garante autoria e data de forma pública e gratuita, sem vínculo. O DOI é a identidade permanente do artigo.",
+    source: { label: "SciELO Preprints", url: "https://preprints.scielo.org/" },
   },
   {
     n: 11,
+    title: "Brasil: registre a trajetória",
+    do: "Mantenha o currículo Lattes, use as normas da ABNT e leia pelo SciELO (aberto).",
+    why: "O Lattes é público e aceita quem não tem vínculo; a ABNT padroniza seu texto; o SciELO é aberto e não pede login. O Portal da CAPES só abre por IP ou CAFe de instituição participante — não conte com ele.",
+    source: { label: "Plataforma Lattes (CNPq)", url: "https://lattes.cnpq.br/" },
+    region: "brasil",
+  },
+  {
+    n: 12,
     title: "Uruguai: SciELO Uruguay, CVUy e ANII",
     do: "Procure a revista no SciELO Uruguay, registre seu currículo no CVUy e, se for o caso, busque as convocatórias da ANII.",
-    why: "O SciELO Uruguay reúne as revistas científicas do país com normas e prazos oficiais; o CVUy é o currículo público gratuito (já integrado ao ORCID) e a ANII financia pesquisa — nenhum dos três exige vínculo para você começar.",
+    why: "O SciELO Uruguay reúne as revistas científicas do país com normas e prazos oficiais; o CVUy é o currículo público gratuito e a ANII financia pesquisa — nenhum dos três exige vínculo para você começar.",
+    source: { label: "SciELO Uruguay", url: "https://www.scielo.edu.uy/" },
+    region: "uruguai",
   },
 ];
 
@@ -237,6 +296,44 @@ export const WHAT_COUNTS: string[] = [
   "Aderência ao escopo e às normas da revista",
   "Referências reais (nunca inventadas)",
   "Responsabilidade sobre tudo o que está publicado",
+];
+
+/**
+ * Ressalva honesta sobre o campo "afiliação".
+ *
+ * "Vínculo" não é exigido, mas o FORMULÁRIO de muitas revistas pede uma
+ * afiliação — e algumas (ex.: Anales de la Facultad de Medicina, da Udelar)
+ * pedem afiliação acadêmica explícita. Sem esta ressalva o card prometia mais do
+ * que a fonte sustenta: quem lesse "não é exigido vínculo" e encontrasse o campo
+ * obrigatório poderia inventar instituição — o erro que o card existe para evitar.
+ */
+export const AFFILIATION_CAVEAT =
+  "Atenção ao campo “afiliação”: algumas revistas pedem afiliação acadêmica explícita. Se for o seu caso, declare “Pesquisador(a) independente” — é afiliação real, não vínculo — ou escolha uma revista cujas instruções aceitem autor sem instituição. Nunca invente vínculo.";
+
+/**
+ * A única etapa em que a instituição costuma aparecer de verdade: a ÉTICA.
+ *
+ * O card afirma que publicar não exige vínculo, e isso se sustenta — mas omitir
+ * o comitê de ética seria prometer mais do que a norma entrega. No Brasil, a
+ * Resolução CNS nº 466/2012 exige que pesquisa com seres humanos seja aprovada
+ * por um CEP, e o CEP é um colegiado CRIADO POR UMA INSTITUIÇÃO: quem não tem
+ * vínculo submete pelo CEP de uma instituição que aceite ser a proponente (ou
+ * por um CEP credenciado que receba projetos externos).
+ *
+ * Isso não contradiz a ideia central: a ética vale para TODO mundo — inclusive
+ * para quem tem crachá — e o que ela exige é projeto e consentimento, não
+ * diploma. Mas é uma dependência institucional real e o card precisa dizê-la.
+ */
+export const ETHICS_CAVEAT =
+  "Pesquisa com seres humanos (entrevistas, questionários, dados de pacientes) precisa de aprovação de um Comitê de Ética em Pesquisa (CEP) antes de começar. O CEP é criado por uma instituição — então, nesse caso, você submete pelo CEP de uma instituição que aceite ser a proponente do seu projeto. É a única etapa em que a instituição aparece de fato; e ela vale igual para quem tem crachá: o que o comitê avalia é o projeto e o consentimento, não o seu diploma. Pesquisa teórica, bibliográfica ou com dados públicos não passa por CEP.";
+
+/** Fontes oficiais do requisito de ética (Brasil). */
+export const ETHICS_SOURCES: { label: string; url: string }[] = [
+  {
+    label: "CONEP — Comissão Nacional de Ética em Pesquisa (CNS)",
+    url: "https://conselho.saude.gov.br/comissoes-cns/conep/",
+  },
+  { label: "Plataforma Brasil — submissão a CEP", url: "https://plataformabrasil.saude.gov.br/" },
 ];
 
 /**
@@ -294,7 +391,7 @@ export const DIRECT_ANSWER_POINTS: DirectAnswerPoint[] = [
     question: "Dá para tornar o trabalho público antes da revista?",
     answer: "Dá: preprint público, com autoria e data, sem pedir vínculo.",
     proof:
-      "No SciELO Preprints e no arXiv você torna público um manuscrito antes da revista — o arXiv pede endosso de um pesquisador já ativo, não vínculo institucional — e garante autoria e data.",
+      "No SciELO Preprints e no arXiv você torna público um manuscrito antes da revista e garante autoria e data, sem vínculo institucional. Cada um tem a sua porta: no SciELO Preprints a postagem é automática para quem já tem 3 artigos com DOI ativo (ou 2 dos últimos 2 anos) e passa por triagem básica nos demais casos; no arXiv, o primeiro envio exige endosso — um pesquisador já ativo na área, ou um e-mail institucional que acelere o processo. Nos dois, o ORCID é o que assina a autoria.",
     source: "SciELO Preprints / arXiv",
     url: "https://preprints.scielo.org/",
   },
@@ -317,7 +414,7 @@ export const NOT_REQUIRED_CAVEAT =
 
 /** Países cobertos, com o nome do que orientar em cada um. */
 export type CountryPath = {
-  id: "brasil" | "uruguai";
+  id: "brasil" | "uruguai" | "latam";
   label: string;
   highlights: string[];
 };
@@ -338,9 +435,21 @@ export const COUNTRY_PATHS: CountryPath[] = [
     label: "Uruguai",
     highlights: [
       "SciELO Uruguay: as revistas científicas do país, com normas e prazos oficiais.",
-      "CVUy (ANII): currículo público gratuito, já integrado ao ORCID — o “Lattes” uruguaio.",
+      "CVUy (ANII): currículo público gratuito — o “Lattes” uruguaio. Não é pré-requisito para submeter.",
       "Colibri (Udelar): repositório institucional, aberto para leitura; o depósito exige vínculo com a Udelar.",
       "ANII: financia pesquisa e formação; não é pré-requisito para submeter um artigo.",
+    ],
+  },
+  {
+    // "E outros": o card não promete um passo a passo por país — os índices
+    // regionais fazem esse papel e cobrem toda a América Latina de uma vez.
+    id: "latam",
+    label: "Outros países da América Latina",
+    highlights: [
+      "Latindex: catálogo regional de revistas científicas — mostra se a revista é indexada e cumpre critérios editoriais.",
+      "Redalyc: rede ibero-americana de revistas em acesso aberto, para ler e conferir a revista de destino.",
+      "SciELO (coleções nacionais): Argentina, Chile, Colômbia, México, Peru e outros têm coleção própria, com normas de submissão abertas.",
+      "O ORCID e o preprint funcionam igual em qualquer país — a autoria não depende de fronteira nem de vínculo.",
     ],
   },
 ];

@@ -119,10 +119,26 @@ export function clientIp(request: Request): string {
   );
 }
 
-/** Resposta 429 padrão com o cabeçalho Retry-After. */
+/**
+ * Resposta 429 padrão com o cabeçalho Retry-After.
+ *
+ * Sem `content-type` a resposta é um corpo opaco: o transporte do chat não
+ * consegue ler a mensagem e o aviso amigável se perde (o cliente só via "Não
+ * foi possível enviar"). JSON explícito mantém o texto legível para qualquer
+ * consumidor.
+ */
 export function tooManyRequests(result: RateLimitResult): Response {
-  return new Response("Muitas requisições. Tente novamente em instantes.", {
-    status: 429,
-    headers: { "Retry-After": String(result.retryAfterSec) },
-  });
+  return new Response(
+    JSON.stringify({
+      error: "Muitas requisições. Tente novamente em instantes.",
+      retryAfterSec: result.retryAfterSec,
+    }),
+    {
+      status: 429,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "Retry-After": String(result.retryAfterSec),
+      },
+    },
+  );
 }

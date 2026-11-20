@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { listAudits, runAudit, type AuditView } from "@/lib/audit.functions";
-
-const SEVERITY_BADGE: Record<string, string> = {
-  alta: "bg-red-100 text-red-800 border-red-300",
-  media: "bg-amber-100 text-amber-800 border-amber-300",
-  baixa: "bg-muted/60 text-muted-foreground border-border",
-};
+import { quotaRestMessage } from "@/lib/ai/quota";
 
 /**
  * Auditoria científica independente. Roda separada da geração, verifica coerência
@@ -23,9 +18,16 @@ export function AuditPanel({ articleId }: { articleId: string }) {
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(async () => {
-    const rows = await listAudits({ data: { articleId } });
-    setAudits(rows);
-    setSelected((current) => current ?? rows[0] ?? null);
+    // Sem o catch a falha virava rejeição não tratada no efeito: o painel ficava
+    // em branco, sem aviso, e parecia que a auditoria tinha sumido.
+    try {
+      const rows = await listAudits({ data: { articleId } });
+      setAudits(rows);
+      setSelected((current) => current ?? rows[0] ?? null);
+    } catch {
+      setAudits([]);
+      toast.error("Não foi possível carregar as auditorias");
+    }
   }, [articleId]);
 
   useEffect(() => {
@@ -40,7 +42,8 @@ export function AuditPanel({ articleId }: { articleId: string }) {
       await reload();
       toast.success(`Auditoria concluída — ${res.audit.summary ?? ""}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível auditar");
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(quotaRestMessage(msg) ?? (msg || "Não foi possível auditar"));
     } finally {
       setBusy(false);
     }

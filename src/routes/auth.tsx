@@ -177,7 +177,7 @@ function AuthPage() {
   // conta, guardamos a pergunta e pedimos o cadastro; a home a retoma ao entrar.
   function ask(question: string) {
     if (user) {
-      void createArticle(navigate, faqSeed(question));
+      void createArticle(navigate, faqSeed(question), question);
       return;
     }
     setPendingQuestion(question);

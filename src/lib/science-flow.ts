@@ -43,7 +43,7 @@ export const SCIENCE_BITES: ScienceBite[] = [
     n: 2,
     title: "O que te qualifica é o método",
     what: "Tenha uma pergunta clara, evidência de verdade e diga também o que o seu estudo NÃO prova.",
-    why: "O parecer avalia o manuscrito: se a conclusão se sustenta nos dados que você mostrou. É nisso que a decisão se apoia.",
+    why: "A revisão por pares lê o texto e pergunta se a conclusão se sustenta nos dados que você mostrou — e boa parte das revistas avalia sem saber quem escreveu.",
     whatFor:
       "Serve para o seu artigo passar no que reprova de verdade — argumento sem prova — em vez de travar por um diploma que ninguém vai conferir.",
   },
@@ -67,7 +67,7 @@ export const SCIENCE_BITES: ScienceBite[] = [
     n: 5,
     title: "Afiliação: escreva a verdade",
     what: "No campo de afiliação, escreva “Pesquisador(a) independente”.",
-    why: "O campo é descritivo, não é prova de elegibilidade — é o que a sua situação é, dito com clareza.",
+    why: "O campo é descritivo, não é prova de elegibilidade — é o que a sua situação é, dito com clareza. Algumas revistas exigem afiliação acadêmica explícita; nesse caso, a própria instrução aos autores diz isso, e vale procurar outra revista em vez de inventar vínculo.",
     whatFor:
       "Serve para você preencher o formulário com honestidade, sem inventar vínculo e sem deixar o campo em branco.",
   },
@@ -115,9 +115,9 @@ const LACK = /\b(nao tenho|nao possuo|nao sou|sem|nao fiz|nao terminei|nao me fo
  * autoral, não falta de credencial, e não deve abrir este caminho.
  */
 const CREDENTIAL =
-  /\b(instituicao|universidade|faculdade|vinculo|diploma|graduacao|mestrado|doutorado|orientador|laboratorio|lattes|curriculo|academi\w*|formacao|formei|formad\w*|bolsa|pesquisador independente|independente)\b/;
+  /\b(instituicao|universidade|faculdade|vinculo|diploma|graduacao|mestrado|doutorado|orientador|laboratorio|lattes|curriculo|academi\w*|formacao|formei|formad\w*|bolsa|pesquisador independente|independente|aluno|aluna|estudante|matricula)\b/;
 const ASKS_PERMISSION =
-  /(posso|consigo|da para|da pra|e possivel|tem como|preciso|exige|obrigatorio|necessario)/;
+  /(posso|consigo|da para|da pra|e possivel|tem como|preciso|exige|obrigatorio|necessario|como faco|como comeco|por onde comec|onde publico|onde submeto)/;
 
 /**
  * Dúvida é uma pergunta curta. Um parágrafo corrido é conteúdo: o pesquisador
@@ -147,6 +147,15 @@ const RESEARCH_TOPIC =
 const SELF_PERSONA =
   /\b(sou|seria|quero (?:publicar|submeter|assinar)|publico|assino|me considero|trabalho como)\b[^?]{0,40}\bpesquisador(?:a)? independente\b/;
 
+/**
+ * A dúvida é sobre SI ("não tenho", "posso", "meu"). Sem isso, uma AFIRMAÇÃO
+ * sobre o tema — "a pergunta central é se um pesquisador sem vínculo consegue
+ * publicar" — casava "sem" + "vínculo" e abria o card no meio da entrevista,
+ * interrompendo justamente quem estava respondendo.
+ */
+const FIRST_PERSON =
+  /\b(eu|sou|tenho|estou|meu|minha|me|posso|consigo|preciso|publico|submeto|assino|considero|quero|gostaria|pretendo|busco)\b/;
+
 export function detectScienceDoubt(text: string): boolean {
   const q = normalize(text ?? "")
     .replace(/\s+/g, " ")
@@ -155,6 +164,9 @@ export function detectScienceDoubt(text: string): boolean {
   if (q.length > DOUBT_ABSOLUTE_MAX) return false;
   // Acima do tamanho de uma pergunta, só passa se for de fato uma pergunta.
   if (q.length > DOUBT_SHORT && !q.includes("?")) return false;
+  // Sem interrogação, só vale autodeclaração: frase declarativa sobre terceiros
+  // é conteúdo do trabalho, não insegurança de quem escreve.
+  if (!q.includes("?") && !FIRST_PERSON.test(q)) return false;
   // Autodeclaração de persona ("sou pesquisador independente", "quero publicar
   // como pesquisador independente") já é a dúvida que o fluxo resolve. Vem ANTES
   // da guarda de tema porque "quero publicar como…" casa RESEARCH_TOPIC.
@@ -173,29 +185,6 @@ export function detectScienceDoubt(text: string): boolean {
 /** Convite curto: UMA linha, sem lista e sem despejo de conteúdo. */
 export const SCIENCE_FLOW_OFFER =
   "Essa dúvida tem resposta curta: não precisa. Quer que eu abra o caminho em partes — uma de cada vez, com o porquê de cada uma?";
-
-const ACCEPT =
-  /\b(sim|quero|pode|claro|bora|vamos|manda|mostra|conta|ensina|aceito|por favor|ok|beleza|vai)\b/;
-const DECLINE = /\b(nao|depois|agora nao|dispenso|deixa|para|chega|outra hora|nao quero)\b/;
-
-/** Aceitou ver o caminho? */
-export function acceptsScienceFlow(text: string): boolean {
-  const q = normalize(text ?? "");
-  if (DECLINE.test(q)) return false;
-  return ACCEPT.test(q);
-}
-
-/** Pediu para parar? */
-export function declinesScienceFlow(text: string): boolean {
-  const q = normalize(text ?? "");
-  return DECLINE.test(q) && !/\bsim\b/.test(q);
-}
-
-/** Pediu o próximo bocado? */
-export function advancesScienceFlow(text: string): boolean {
-  const q = normalize(text ?? "");
-  return /(continu|proxim|seguir|segue|avanc|vamos|mais|quero ver|pode|sim|ok|bora)/.test(q);
-}
 
 /** Estado inicial do fluxo já aceito (primeiro bocado à vista). */
 export function startScienceFlow(): ScienceFlowState {

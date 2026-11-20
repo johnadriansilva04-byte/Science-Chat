@@ -168,6 +168,26 @@ export function serializeBlocks(blocks: Block[]): string {
   return blocks.map(serializeBlock).join("\n\n").trim();
 }
 
+/** Texto puro de um bloco, para contagem de palavras e pré-visualizações. */
+export function blockText(block: Block): string {
+  switch (block.type) {
+    case "heading":
+    case "paragraph":
+    case "quote":
+      return block.text;
+    case "list":
+      return block.items.join(" ");
+    case "table":
+      return block.rows.map((row) => row.join(" ")).join(" ");
+    case "frontmatter":
+      return [block.author, block.title, block.institution, block.nature, block.place]
+        .filter(Boolean)
+        .join(" ");
+    default:
+      return "";
+  }
+}
+
 /** Chave estável de um bloco, usada para edição e realce por seção. */
 export function blockKey(pageNumber: number, index: number): string {
   return `p${pageNumber}-b${index}`;

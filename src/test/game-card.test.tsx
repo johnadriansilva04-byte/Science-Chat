@@ -42,17 +42,17 @@ describe("GameCard", () => {
     vi.stubEnv("VITE_GAME_URL", "");
     render(<GameCard />);
 
-    for (const category of STOP_CATEGORIES.slice(0, 4)) {
+    for (const category of STOP_CATEGORIES.slice(0, 3)) {
       expect(screen.getByText(category)).toBeInTheDocument();
     }
-    expect(screen.getByText(`+${STOP_CATEGORIES.length - 4}`)).toBeInTheDocument();
+    expect(screen.getByText(`+${STOP_CATEGORIES.length - 3}`)).toBeInTheDocument();
   });
 
   it("opens the embedded game in a dialog when the URL is set", () => {
     vi.stubEnv("VITE_GAME_URL", "https://stop.example.com/jogar");
     render(<GameCard />);
 
-    fireEvent.click(screen.getByRole("button", { name: /jogar agora/i }));
+    fireEvent.click(screen.getByRole("button", { name: /jogar/i }));
 
     const frame = screen.getByTitle("Stop científico");
     expect(frame).toBeInTheDocument();

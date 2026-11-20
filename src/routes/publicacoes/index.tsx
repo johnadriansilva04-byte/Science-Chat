@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowRight,
@@ -24,7 +24,6 @@ import { AcervoCard } from "@/components/app/AcervoCard";
 import { AppHeader } from "@/components/app/AppHeader";
 import { BookReader } from "@/components/app/BookReader";
 import { BrandFooter } from "@/components/app/BrandFooter";
-import { createArticle } from "@/components/app/ArticlesMenu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +57,6 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
 ];
 
 function AcervoPage() {
-  const navigate = useNavigate();
   const [pubs, setPubs] = useState<PublicationSummary[] | null>(null);
   const [tab, setTab] = useState<TabId>("todos");
   const [query, setQuery] = useState("");

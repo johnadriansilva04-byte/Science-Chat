@@ -7,7 +7,7 @@ import {
   type UIMessage,
 } from "ai";
 import { startResponses, generateFinalText, interviewModelId } from "@/lib/ai/gateway.server";
-import { interviewNotes } from "@/lib/interview-notes";
+import { collectInterviewNotes } from "@/lib/interview-notes";
 import { interviewQuestionTransform } from "@/lib/ai/interview-guard";
 import {
   INTERVIEW_INSTRUCTIONS,
@@ -369,8 +369,12 @@ async function handle(request: Request) {
       // Rede de segurança da entrevista: se o modelo só parafrasear o que o
       // pesquisador escreveu e não perguntar nada, a pergunta da próxima lacuna
       // entra no fim — a conversa nunca trava.
+      //
+      // Lê o histórico INTEIRO (`sanitized`), não a janela: em entrevistas longas
+      // a janela descarta as primeiras respostas, o guard as via como lacunas
+      // abertas e repetia a mesma pergunta a cada turno.
       article.phase === "interview"
-        ? [() => interviewQuestionTransform(interviewNotes(windowed))]
+        ? [() => interviewQuestionTransform(collectInterviewNotes(sanitized))]
         : undefined,
     );
   } catch (error) {

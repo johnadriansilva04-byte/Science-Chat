@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { documentSections, parseBlocks, parseInline, serializeBlocks } from "@/lib/article-blocks";
+import {
+  blockText,
+  documentSections,
+  parseBlocks,
+  parseInline,
+  serializeBlocks,
+} from "@/lib/article-blocks";
 import { A4, A4_CONTENT_HEIGHT_MM, blockAdvances, mmToPx, paginateBlocks } from "@/lib/a4";
 import { countWords, MIN_PAGE_WORDS } from "@/lib/article-page";
 
@@ -119,5 +125,14 @@ describe("page size rule", () => {
     expect(countWords(short)).toBeLessThan(MIN_PAGE_WORDS);
     const long = Array.from({ length: MIN_PAGE_WORDS + 10 }, () => "palavra").join(" ");
     expect(countWords(long)).toBeGreaterThanOrEqual(MIN_PAGE_WORDS);
+  });
+});
+
+describe("blockText — contagem de palavras na entrevista", () => {
+  it("conta o texto de parágrafos, títulos e listas", () => {
+    expect(blockText({ type: "heading", level: 2, text: "Introdução" })).toBe("Introdução");
+    expect(blockText({ type: "paragraph", text: "duas palavras" })).toBe("duas palavras");
+    expect(blockText({ type: "list", ordered: false, items: ["um", "dois"] })).toBe("um dois");
+    expect(blockText({ type: "rule" })).toBe("");
   });
 });

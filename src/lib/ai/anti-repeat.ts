@@ -98,6 +98,48 @@ export function isCloserSentence(sentence: string): boolean {
   return CLOSER_PATTERNS.some((re) => re.test(text));
 }
 
+/**
+ * Encheção de linguiça: frase que soa informativa mas não informa nada.
+ *
+ * No chat real o 8B respondeu "a literatura científica sugere que a influência
+ * do vínculo institucional no método é um tema relevante e amplo, abordado em
+ * diversas áreas do conhecimento, como psicologia, sociologia, ciência da
+ * informação, entre outras". Nada disso responde à pergunta do pesquisador —
+ * é o pior defeito visível, porque ocupa o lugar da resposta.
+ *
+ * Só barra frases GENÉRICAS: o que tem número, ano, autor, DOI ou termo
+ * específico passa, mesmo que use "relevante".
+ */
+const FILLER_PATTERNS: RegExp[] = [
+  /\btema (?:relevante|importante|amplo|complexo|abrangente|multidisciplinar|atual)\b/i,
+  // `\b` não serve antes de "É": sem a flag /u o JS trata letra acentuada como
+  // não-palavra, e "É um assunto complexo…" escapava do filtro.
+  /(?:^|\s)(?:e|é) um (?:tema|assunto|campo|t[óo]pico|quest[ãa]o|discuss[ãa]o|debate)\b[^.!?]{0,60}\b(?:relevante|importante|amplo|complexo|vasto|abrangente|multidisciplinar|atual)\b/i,
+  /\b(?:quest[ãa]o|discuss[ãa]o) (?:ampla|complexa|relevante|importante) e (?:relevante|ampla|complexa|importante)\b/i,
+  /\babordad[oa] em (?:diversas|v[áa]rias|m[úu]ltiplas) (?:áreas|disciplinas|campos)\b/i,
+  /\b(?:diversas|v[áa]rias|m[úu]ltiplas) (?:áreas|disciplinas) do conhecimento\b/i,
+  /\bentre (?:outras|outros|elas|eles)\s*[.,]/i,
+  /\ba literatura (?:cient[íi]fica )?(?:sugere|indica|aponta|mostra) que\b/i,
+  /\b(?:tem|vem) (?:ganhado|ganhando|recebido) (?:crescente )?(?:destaque|aten[çc][ãa]o|import[âa]ncia)\b/i,
+  /\b(?:no|neste) (?:contexto|cen[áa]rio) (?:atual|contempor[âa]neo)\b/i,
+];
+
+/** Marca de conteúdo CONCRETO: número, ano, DOI, citação de autor, aspas. */
+const CONCRETE_RE =
+  /\d{4}|\bdoi\b|10\.\d{4,}|\b[A-Z][a-z]+ \(\d{4}\)|["“”«»]|\b\d+(?:[.,]\d+)?%|\bp\.\s*\d+/i;
+
+/**
+ * A frase é encheção de linguiça? Só quando casa um padrão vago E não traz nada
+ * concreto (ano, número, DOI, citação).
+ */
+export function isFillerSentence(sentence: string): boolean {
+  const text = sentence.trim();
+  if (!text) return false;
+  // Frases longas que trazem um dado concreto são argumento, não encheção.
+  if (CONCRETE_RE.test(text)) return false;
+  return FILLER_PATTERNS.some((re) => re.test(text));
+}
+
 /** Frase com conteúdo suficiente para valer como "repetível". */
 export function isSubstantive(norm: string): boolean {
   return norm.length >= 15;
@@ -151,10 +193,17 @@ export function filterText(
   const { parts, rest } = extractComplete(text);
   const kept: Piece[] = [];
   const closers: Piece[] = [];
+  const fillers: Piece[] = [];
   for (const piece of parts) {
     const norm = normalizeSentence(piece.sentence);
     if (isSubstantive(norm) && seen.has(norm)) continue; // repetição entre turnos
     if (!allowGreeting && isGreetingSentence(piece.sentence)) continue;
+    // Encheção de linguiça sai antes dos clichês: ela não é fecho, é ruído no
+    // meio da resposta ("é um tema relevante e amplo, abordado em diversas áreas").
+    if (isFillerSentence(piece.sentence)) {
+      fillers.push(piece);
+      continue;
+    }
     if (isCloserSentence(piece.sentence)) {
       closers.push(piece);
       continue;
@@ -163,7 +212,8 @@ export function filterText(
     // Marca já aqui para pegar repetições DENTRO da mesma mensagem.
     if (remember && isSubstantive(norm)) seen.add(norm);
   }
-  const chosen = kept.length ? kept : closers;
+  // Sem conteúdo real, a encheção é liberada em vez de deixar a bolha vazia.
+  const chosen = kept.length ? kept : closers.length ? closers : fillers;
   let safe = "";
   for (const piece of chosen) safe += piece.sentence + piece.sep;
   return { safe, rest };
@@ -203,6 +253,7 @@ export function buildAntiRepeatStream(
   const allowGreeting = seedList.length === 0;
   const buffers = new Map<string, string>();
   const heldClosers = new Map<string, Piece[]>();
+  const heldFillers = new Map<string, Piece[]>();
   const substantive = new Map<string, boolean>();
   return new TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>>({
     transform(part, controller) {
@@ -214,6 +265,7 @@ export function buildAntiRepeatStream(
       const { parts, rest } = extractComplete(buffer);
       buffers.set(part.id, rest);
       const closers = heldClosers.get(part.id) ?? [];
+      const fillers = heldFillers.get(part.id) ?? [];
       let out = "";
       for (const piece of parts) {
         const norm = normalizeSentence(piece.sentence);
@@ -223,20 +275,30 @@ export function buildAntiRepeatStream(
           closers.push(piece);
           continue;
         }
+        if (isFillerSentence(piece.sentence)) {
+          fillers.push(piece);
+          continue;
+        }
         out += piece.sentence + piece.sep;
         substantive.set(part.id, true);
         if (isSubstantive(norm)) seen.add(norm);
       }
       heldClosers.set(part.id, closers);
+      heldFillers.set(part.id, fillers);
       if (out) controller.enqueue({ ...part, text: out });
     },
     flush(controller) {
       for (const [id, rest] of buffers) {
         const closers = heldClosers.get(id) ?? [];
-        // Nada substantivo saiu para este id: libera os clichês retidos.
-        const head = substantive.get(id) ? "" : closers.map((p) => p.sentence + p.sep).join("");
+        const fillers = heldFillers.get(id) ?? [];
+        // Nada substantivo saiu para este id: libera o que ficou retido, para a
+        // resposta nunca chegar vazia à tela.
+        const head = substantive.get(id)
+          ? ""
+          : [...fillers, ...closers].map((p) => p.sentence + p.sep).join("");
         buffers.delete(id);
         heldClosers.delete(id);
+        heldFillers.delete(id);
         substantive.delete(id);
         const text = head + rest;
         if (!text.trim()) continue;

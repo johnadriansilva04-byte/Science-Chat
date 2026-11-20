@@ -73,3 +73,32 @@ export function quotaRestMessage(message: string | undefined | null): string | n
     nextQuotaReset(),
   )}.`;
 }
+
+/**
+ * O que um turno do Pracinha diz sobre o descanso da IA.
+ *
+ * O aviso de cota chega como texto no stream. Ele precisa ligar E desligar o
+ * descanso: sem o desligamento, o card "cansou" ficava na tela contradizendo a
+ * resposta que acabara de chegar. Turno vazio não decide nada (é stream em
+ * andamento).
+ */
+export function turnRestState(text: string | undefined | null): "exhausted" | "ok" | "ignore" {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "ignore";
+  return trimmed.includes(QUOTA_MARKER) ? "exhausted" : "ok";
+}
+
+/**
+ * Espera legível a partir do corpo de um 429 (`{ retryAfterSec }`), ou null.
+ *
+ * O corpo do erro chega como texto JSON; se ele não for o nosso formato, a
+ * mensagem cai no aviso genérico em vez de mostrar número errado.
+ */
+export function retryAfterFromBody(body: string | undefined | null): string | null {
+  if (!body) return null;
+  const match = /"retryAfterSec"\s*:\s*(\d+)/.exec(body);
+  if (!match) return null;
+  const seconds = Number(match[1]);
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  return seconds >= 60 ? `${Math.ceil(seconds / 60)} min` : `${seconds} s`;
+}

@@ -112,6 +112,7 @@ export function AcervoCard({ item }: { item: AcervoItem }) {
         <p className="acervo-row__meta">
           {item.venue}
           {item.area ? ` · ${item.area}` : ""}
+          {wing ? ` · ${wing}` : ""}
         </p>
 
         {item.summary && (

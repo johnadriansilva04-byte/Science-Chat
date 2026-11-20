@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  AFFILIATION_CAVEAT,
   COVER_LETTER_TEMPLATE,
   COUNTRY_PATHS,
   DIRECT_ANSWER_POINTS,
@@ -31,7 +32,6 @@ import {
   referencesByRegion,
 } from "@/lib/science-access";
 import { SCIENCE_BITES } from "@/lib/science-flow";
-import { cn } from "@/lib/utils";
 
 type TopicId = "posso" | "caminho" | "orcid" | "revista" | "paises" | "fontes" | "carta";
 
@@ -62,8 +62,8 @@ const TOPICS: { id: TopicId; label: string; hint: string; icon: typeof HelpCircl
   },
   {
     id: "paises",
-    label: "Brasil e Uruguai",
-    hint: "O que existe em cada país e o que é exigido de verdade.",
+    label: "Brasil, Uruguai e América Latina",
+    hint: "O que existe em cada lugar e o que é exigido de verdade.",
     icon: Globe2,
   },
   {
@@ -221,6 +221,9 @@ function TopicPosso() {
           </ul>
         </div>
       </div>
+      <p className="mt-4 rounded-xl border border-[var(--ci-rule)] bg-[var(--ci-surface-2)] p-3 text-[0.78rem] leading-relaxed text-[var(--ci-soft)]">
+        {AFFILIATION_CAVEAT}
+      </p>
     </div>
   );
 }

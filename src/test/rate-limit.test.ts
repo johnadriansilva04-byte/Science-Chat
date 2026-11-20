@@ -5,6 +5,8 @@
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { D1Database, D1PreparedStatement, KVNamespace } from "@/lib/cf/bindings.server";
+import { retryAfterFromBody } from "@/lib/ai/quota";
+import { tooManyRequests } from "@/lib/cf/rate-limit.server";
 
 function createD1(db: DatabaseSync): D1Database {
   return {
@@ -135,5 +137,25 @@ describe("limite de requisições", () => {
     expect(
       clientIp(new Request("https://x", { headers: { "x-forwarded-for": "5.6.7.8, 9.9.9.9" } })),
     ).toBe("5.6.7.8");
+  });
+});
+
+describe("resposta 429 e espera", () => {
+  it("devolve JSON legível com Retry-After", async () => {
+    const res = tooManyRequests({ ok: false, remaining: 0, retryAfterSec: 42 });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    expect(res.headers.get("retry-after")).toBe("42");
+    const body = await res.json();
+    expect(body.error).toContain("Muitas requisições");
+    expect(body.retryAfterSec).toBe(42);
+  });
+
+  it("lê os segundos do corpo JSON do 429", () => {
+    expect(retryAfterFromBody('{"error":"x","retryAfterSec":42}')).toBe("42 s");
+    expect(retryAfterFromBody('{"retryAfterSec":300}')).toBe("5 min");
+    expect(retryAfterFromBody("texto qualquer")).toBeNull();
+    expect(retryAfterFromBody(undefined)).toBeNull();
+    expect(retryAfterFromBody('{"retryAfterSec":0}')).toBeNull();
   });
 });

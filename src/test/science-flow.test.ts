@@ -229,4 +229,26 @@ describe("recusa sobrevive à recarga", () => {
   it("dúvida curta de verdade continua abrindo o caminho", () => {
     expect(detectScienceDoubt("posso publicar sem vinculo institucional?")).toBe(true);
   });
+
+  // Regressão (visto na entrevista real): a RESPOSTA do pesquisador dizia "a
+  // pergunta central é se um pesquisador sem vínculo institucional consegue
+  // publicar…". Sem interrogação e sem primeira pessoa, é conteúdo do trabalho —
+  // abrir o card ali interrompia quem estava justamente respondendo.
+  it("afirmação sobre terceiros não abre o card no meio da entrevista", () => {
+    expect(
+      detectScienceDoubt(
+        "A pergunta central e se um pesquisador sem vinculo institucional consegue publicar em revista revisada por pares no Brasil.",
+      ),
+    ).toBe(false);
+    expect(
+      detectScienceDoubt(
+        "A ausência de vínculo institucional muda o método científico da pesquisa.",
+      ),
+    ).toBe(false);
+  });
+
+  it("autodeclaração sem interrogação continua abrindo o card", () => {
+    expect(detectScienceDoubt("sou independente, sem vínculo com universidade")).toBe(true);
+    expect(detectScienceDoubt("Não tenho instituição")).toBe(true);
+  });
 });

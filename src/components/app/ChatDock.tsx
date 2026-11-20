@@ -46,10 +46,10 @@ import { ChatAttachments } from "@/components/app/ChatAttachments";
 import { OrcidPrompt } from "@/components/app/OrcidPrompt";
 import { ScienceFlowCard } from "@/components/app/ScienceFlowCard";
 import { ChatProtocol } from "@/components/app/ChatProtocol";
+import { InterviewMapRow } from "@/components/app/InterviewMapRow";
 import {
   SCIENCE_FLOW_IDLE,
   advanceScienceFlow,
-  currentScienceBite,
   detectScienceDoubt,
   startScienceFlow,
   SCIENCE_FLOW_SEED,
@@ -57,11 +57,12 @@ import {
   wasScienceFlowDismissed,
   type ScienceFlowState,
 } from "@/lib/science-flow";
-import { interviewProgress } from "@/lib/interview-progress";
+import { interviewMap, interviewProgress, interviewStage } from "@/lib/interview-progress";
 import { cleanQuestion } from "@/lib/interview-notes";
 import { asksForOrcid, suggestReplies } from "@/lib/chat-suggestions";
 import { toolFailed, toolLabel, toolOutputText, toolSucceeded } from "@/lib/tool-trace";
-import { isQuotaError, nextQuotaReset } from "@/lib/ai/quota";
+import { nextQuotaReset, turnRestState } from "@/lib/ai/quota";
+import { chatErrorAction } from "@/lib/ai/chat-error";
 import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
 import { DEFAULT_DOCK_PREFS, clampDockSize, readDockPrefs, writeDockPrefs } from "@/lib/dock-prefs";
 import { useVoice } from "@/hooks/useVoice";
@@ -214,8 +215,6 @@ export function ChatDock({
   const [inbox, setInbox] = useState<InboxWork[]>([]);
   // Momento (ms) em que a IA volta, quando a cota diária de neurônios esgota.
   const [restedAt, setRestedAt] = useState<number | null>(null);
-  // Card de identidade do ORCID: aberto quando o Pracinha pede o número.
-  const [orcidOpen, setOrcidOpen] = useState(false);
   const lastSent = useRef("");
   const sendingRef = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -277,19 +276,9 @@ export function ChatDock({
     messages: initialMessages,
     transport,
     onError: (e) => {
-      const m = e.message || "";
-      // Cota de neurônios esgotada → o Pracinha se cansa, avisa e trava o chat.
-      if (m.includes("PRACINHA_QUOTA_EXHAUSTED") || isQuotaError(m)) {
-        setRestedAt(nextQuotaReset());
-        return;
-      }
-      toast.error(
-        m.includes("429")
-          ? "Muitas requisições. Aguarde um pouco."
-          : m.includes("402")
-            ? "Créditos de IA esgotados."
-            : "Não foi possível enviar. Tente de novo.",
-      );
+      const action = chatErrorAction(e.message, (e as { statusCode?: number }).statusCode);
+      if (action.kind === "rest") setRestedAt(nextQuotaReset());
+      else toast.error(action.message);
     },
     onFinish: () => onActivity(),
   });
@@ -298,6 +287,13 @@ export function ChatDock({
   const planApproved = phase === "writing" || phase === "done";
 
   const progress = useMemo(() => interviewProgress(messages), [messages]);
+  // Mapa da entrevista: quais seções do artigo já têm resposta. Fica numa faixa
+  // abaixo do cabeçalho, para o pesquisador ver o que falta sem abrir a folha.
+  const sectionMap = useMemo(() => interviewMap(messages), [messages]);
+  // Etapa derivada do conteúdo (seção da última pergunta). O marcador "_Etapa:_"
+  // que a IA emite é só o fallback: o 8B esquece dele com frequência.
+  const derivedStage = useMemo(() => interviewStage(messages), [messages]);
+  const currentStage = derivedStage ?? progress.stage;
   // Última pergunta do Pracinha (base das sugestões e da detecção de ORCID).
   const lastQuestionText = useMemo(() => {
     const lastQuestion = [...messages]
@@ -421,7 +417,9 @@ export function ChatDock({
 
   const sendInbox = () => {
     if (!inbox.length) return;
-    send(inboxToMessage(inbox));
+    // Só descarta a fila quando o envio sai: se a trava recusar (envio em curso),
+    // as obras sumiam do dock sem nunca chegarem ao Pracinha.
+    if (!send(inboxToMessage(inbox))) return;
     clearInbox();
     setInbox([]);
   };
@@ -463,12 +461,13 @@ export function ChatDock({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSpeak, busy, lastAssistant, lastAssistantText]);
 
+  /** Devolve `false` quando nada foi enviado — quem chama decide se devolve o texto. */
   const send = (text: string, viaVoice = false) => {
     // Trava SÍNCRONA contra envio duplicado: `busy` vem do `status` do useChat e
     // só muda depois do próximo render, então Enter repetido (ou toque duplo no
     // celular) passava várias vezes e a mesma mensagem ia 3, 4, 5 vezes ao chat.
-    if (sendingRef.current) return;
-    if (!text.trim() || busy) return;
+    if (sendingRef.current) return false;
+    if (!text.trim() || busy) return false;
     sendingRef.current = true;
     window.setTimeout(() => {
       sendingRef.current = false;
@@ -481,16 +480,29 @@ export function ChatDock({
     replyInAudio.current = viaVoice;
     lastSent.current = text;
     sendMessage({ text });
+    return true;
   };
 
-  // Rede de segurança: se o aviso de cota chegar como texto, também trava o chat.
+  // Espelho do aviso de cota: liga quando o turno do Pracinha traz o marcador e
+  // desliga quando chega uma resposta de verdade. Antes só ligava, então depois
+  // de a IA voltar o card "cansou" ficava na tela contradizendo a resposta que
+  // tinha acabado de chegar — e o envio seguinte não o removia.
+  //
+  // Só vale para turnos novos: o histórico salvo pode terminar no aviso de ontem
+  // e, se fosse lido aqui, reabriria o artigo já travado.
+  const historyLength = useRef(initialMessages?.length ?? 0);
   useEffect(() => {
-    if (resting) return;
+    if (messages.length <= historyLength.current) return;
     const last = messages.at(-1);
     if (last?.role !== "assistant") return;
-    const txt = last.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
-    if (txt.includes("PRACINHA_QUOTA_EXHAUSTED")) setRestedAt(nextQuotaReset());
-  }, [messages, resting]);
+    const txt = last.parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join(" ")
+      .trim();
+    const state = turnRestState(txt);
+    if (state === "exhausted") setRestedAt((prev) => prev ?? nextQuotaReset());
+    if (state === "ok") setRestedAt(null);
+  }, [messages]);
 
   // Quando o relógio chega a zero, destrava o chat para o pesquisador continuar.
   useEffect(() => {
@@ -502,8 +514,11 @@ export function ChatDock({
   }, [resting, restedAt]);
 
   const retryRest = () => {
+    // Passa por `send` para herdar a trava anti-duplo-envio: o botão de retorno
+    // fica dois toques de distância no celular e `busy` só muda no render
+    // seguinte, então o mesmo texto saía duas vezes.
     setRestedAt(null);
-    if (lastSent.current) sendMessage({ text: lastSent.current });
+    if (lastSent.current) send(lastSent.current);
   };
 
   // Semente da criação: se o pesquisador começou com uma inquietação, ela vira a
@@ -518,8 +533,14 @@ export function ChatDock({
     // depois desse ciclo, e `seeded` só é marcado quando o envio realmente sai —
     // se o cleanup cancelar este timer, o próximo efeito reagenda.
     const timer = setTimeout(() => {
-      seeded.current = true;
-      sendMessage({ text: seed.trim() });
+      // Passa por `send` para registrar `lastSent`: sem isso, uma cota esgotada
+      // logo na primeira mensagem deixava o botão de retorno sem texto para
+      // reenviar e a entrevista não começava nem quando a IA voltasse.
+      //
+      // Só marca como semeado quando o envio realmente sai: se a trava recusar
+      // (envio em curso), a semente ficaria perdida para sempre e o artigo
+      // abriria numa tela em branco.
+      if (send(seed.trim())) seeded.current = true;
     }, 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -591,8 +612,8 @@ export function ChatDock({
           <p className="truncate text-[11px] text-muted-foreground">
             {busy
               ? thinkingText
-              : progress.stage
-                ? `Etapa: ${progress.stage}`
+              : currentStage
+                ? `Etapa: ${currentStage}`
                 : "assistente da ScienceChat"}
           </p>
         </div>
@@ -631,6 +652,8 @@ export function ChatDock({
           {isMobile ? <PanelRight className="size-4" /> : <Minus className="size-4" />}
         </Button>
       </header>
+
+      {!planApproved && messages.length > 0 && <InterviewMapRow sections={sectionMap} />}
 
       <div className="flex min-h-0 flex-1 flex-col">
         <Conversation className="dock-scroll min-h-0 flex-1">
@@ -764,7 +787,7 @@ export function ChatDock({
                     key={q}
                     size="sm"
                     variant="outline"
-                    className="h-6 rounded-full px-2 text-[11px]"
+                    className="h-9 rounded-full px-3 text-xs sm:h-6 sm:px-2 sm:text-[11px]"
                     disabled={busy}
                     onClick={() => send(q)}
                   >
@@ -791,7 +814,7 @@ export function ChatDock({
                   setScienceFlowDismissed(true);
                   setScienceFlow(SCIENCE_FLOW_IDLE);
                 }}
-                canCreate
+                canCreate={!resting}
               />
             )}
             {orcidAsked && !orcidDismissed && (
@@ -819,11 +842,12 @@ export function ChatDock({
               // O PromptInput limpa o campo antes de chamar este callback e `send`
               // ignora o texto quando o Pracinha está ocupado. Sem devolver o
               // texto, o que foi digitado durante a resposta desaparecia.
-              if (busy && msg.text.trim() && inputRef.current) {
+              // O `send` recusa também na janela de 400 ms da trava anti-duplo-envio,
+              // quando `busy` ainda é false. Antes, o texto digitado nesse intervalo
+              // era descartado em silêncio.
+              if (!send(msg.text, viaVoice) && msg.text.trim() && inputRef.current) {
                 inputRef.current.value = msg.text;
-                return;
               }
-              send(msg.text, viaVoice);
             }}
           >
             {voice.listening && <div className="chat-listening h-0.5 w-full" aria-hidden />}

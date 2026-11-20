@@ -92,10 +92,11 @@ describe("ScienceAtlas", () => {
     expect(screen.getByRole("button", { name: /copiar modelo/i })).toBeInTheDocument();
   });
 
-  it("cobre Brasil e Uruguai no assunto de países", () => {
+  it("cobre Brasil, Uruguai e os demais países no assunto de países", () => {
     render(<ScienceAtlas />);
-    fireEvent.click(screen.getByRole("tab", { name: /brasil e uruguai/i }));
+    fireEvent.click(screen.getByRole("tab", { name: /américa latina/i }));
     expect(screen.getByText(/Currículo Lattes/i)).toBeInTheDocument();
     expect(screen.getByText(/CVUy/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Latindex/i).length).toBeGreaterThan(0);
   });
 });

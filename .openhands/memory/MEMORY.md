@@ -99,7 +99,7 @@ Testei o fluxo completo pela UI (conta `variantfeb`). Erros anotados e corrigido
 
 ## Deploy & push (importante)
 - **`npm run deploy` exige `CLOUDFLARE_API_TOKEN` (secret `cfat_*`) + `CLOUDFLARE_ACCOUNT_ID=e0bc773c8694ee0d7eda3c4549878d52`.** Sem ele o build roda mas **não publica** — foi assim que a produção ficou servindo build antigo (sintoma "modo livro corta o texto", 16/11: prod era anterior ao commit do recurso). Sempre conferir o **Version ID novo** no `wrangler deploy` e validar no navegador.
-- **Push GitHub:** token do remote / `GITHUB_TOKEN` / `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` são **read-only (403)**. Usar o **`GH_PUSH_TOKEN`** (escopo `repo`) sem gravar no remote:
+- **Push GitHub:** token do remote / `GITHUB_TOKEN` / `OH_GIT_CREDENTIAL_ACCESS_TOKEN_GITHUB` são **read-only (403)**. Detalhe: `GITHUB_TOKEN` é `ghu_` (user-to-server) — nega `git push` **e** `POST /git/refs`; o helper lê `~/.openhands/git-credentials/github.token` (JWT `eyJ…`) que costuma estar expirado. Sem `GH_PUSH_TOKEN` não há push. Usar o **`GH_PUSH_TOKEN`** (escopo `repo`) sem gravar no remote:
   `git -c credential.helper= push "https://x-access-token:${GH_PUSH_TOKEN}@github.com/johnadriansilva04-byte/Science-Chat.git" main`
 - **Modo livro (`BookReader`):** overlay `overflow-y-auto` + wrapper `min-h-full … justify-center`; cada folha `max-h-[82vh] overflow-y-auto` (rola, nunca corta). Teste de regressão em `book-reader.test.tsx`.
 
@@ -205,6 +205,26 @@ resolve assíncrono e quebra o `render`).
 - **Slug ao republicar (CORRIGIDO):** `publication.functions.ts` regerava o slug a cada "Atualizar dados" → link mudava para `...-2`. Agora preserva `current.slug`.
 - **Publicação é em 2 passos:** "Preparar publicação" (draft) → "Publicar no mural" → depois "Atualizar dados". Exportar fica desabilitado sem páginas aprovadas.
 - **Overflow mobile (CORRIGIDO):** header de `publicacoes/$slug.tsx` não quebrava linha (472px em 390px). Agora `flex-wrap`.
+
+## Home: layout e acentos (2026-11-18)
+- **`ScienceAccessCard variant="compact"` fica na COLUNA DIREITA da home**, empilhado sob a coletânea e acima do `GameCard` (usuário testou na esquerda e preferiu a direita). Guia completo continua em `/ciencia`.
+- **Acento por card via `--card-accent`** + classes `.card-accent--guide` (ciano) / `--shelf` (magenta) / `--stop` (dourado). Base de cada card declara o fallback, então a classe de acento precisa de seletor duplo (`.landing-shelf-card.card-accent--shelf`).
+- ⚠️ **Regras `.cracha-*`/`.game-*`/`.landing-shelf-card` têm de ficar DENTRO de `@layer components`** — fora do layer vencem o Tailwind e `card-css-layer.test.ts` falha de propósito.
+- Home hoje: esquerda = herói + atos da jornada; direita = coletânea (`landing-shelf-card`) → guia compacto → `GameCard`.
+
+## Modo livro: contraste da folha (2026-11-18)
+- **Bug clássico do tema escuro:** `.paper-sheet` tem fundo claro nos dois temas mas não define `color` → texto herdava branco (1,03:1). Sempre que criar superfície clara em app escuro, pinte fundo **e** tinta.
+- **Não basta `color`:** o markdown emite `text-foreground`/`text-muted-foreground`, que leem `--color-*` e vencem `@layer components`. Solução: **reescrever os tokens `--color-*` no escopo da folha**.
+- Tokens: `--paper-ink` 7,1:1 · `--paper-muted` 4,5:1 · `--paper-link` 5,1:1 (WCAG AA). Helper `.paper-muted` para texto secundário na folha.
+- Mobile: padding do papel cai para `1.5rem 1.25rem`; **`.a4-sheet { padding: 0 }` tem de vir depois da media query**.
+- Setas do leitor: um par único no rodapé (dois pares duplicam rótulo acessível); `.book-nav` dentro de `@layer components` senão `max-sm:hidden` não funciona.
+- Teste: `src/test/paper-contrast.test.ts`.
+
+## Entrevista: repetição de pergunta (2026-11-18)
+- **Guard lia `windowed`, não `sanitized`** em `api/chat.ts`: a janela (24 msgs) descartava respostas antigas e o guard voltava à pergunta 1. Sempre passar o histórico INTEIRO ao `interviewQuestionTransform`.
+- **Perguntas do guard não casam `SECTION_RULES`** ("Como você vai demonstrar isso?" não diz "metod"; "sua tese estiver certa" casa Introdução). `answeredSections` usa `GAP_SECTION_BY_QUESTION` (mapa por texto normalizado) e credita a seção da pergunta EXIBIDA (`note.question`), não `sectionForTurn`.
+- **429 do rate limit:** ChatDock deve olhar `error.statusCode`, não `"429"` no texto. `retryAfterFromBody()` em `quota.ts` formata a espera.
+- Card "Ciência sem crachá": conteúdo/fontes em `src/lib/science-access.ts`; 16 URLs verificadas (CAPES e Colibri dão 403 anti-bot, são válidas).
 
 ## Guia /ciencia (2026-11-20)
 - `DIRECT_ANSWER_POINTS` = `{ question, answer, proof, source, url }`. Nunca abrir todos os itens

@@ -4,6 +4,12 @@
  * assistente e respostas dadas pelo pesquisador, e extrai a etapa atual da marca
  * "_Etapa: ..._" que o prompt acrescenta ao final de cada mensagem.
  */
+import {
+  collectInterviewNotes,
+  isQuestionToAssistant,
+  sectionForQuestion,
+} from "@/lib/interview-notes";
+
 export type MessageLike = { role: string; parts: { type: string; text?: string }[] };
 
 export type InterviewProgress = {
@@ -35,8 +41,29 @@ export function stripStage(text: string): string {
 }
 
 export function isSkipAnswer(text: string): boolean {
-  const normalized = text.trim().toLowerCase();
+  // O ponto final não pode mudar o significado: "Pular." era contado como
+  // resposta de conteúdo pelo progresso, enquanto `isNonContentAnswer` (que já
+  // ignora pontuação) a tratava como pulo — os dois contadores discordavam.
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[.!…]+$/, "")
+    .trim();
   return SKIP_PREFIXES.some((p) => normalized === p.toLowerCase());
+}
+
+/**
+ * A ÚLTIMA pergunta do turno, ou `null` se não houver nenhuma.
+ *
+ * A pergunta pode estar no meio ("Qual é a sua tese? Fale sem pressa."): exigir
+ * o "?" no fim da mensagem fazia o turno não contar como pergunta. Mas contar
+ * DUAS perguntas no mesmo turno também é errado — o contador "x/y" mede turnos,
+ * não frases interrogativas.
+ */
+export function lastQuestion(text: string): string | null {
+  const sentences = text.split(/(?<=[.?!])\s+/);
+  const question = [...sentences].reverse().find((s) => s.trim().endsWith("?"));
+  return question?.trim() ?? null;
 }
 
 export function interviewProgress(messages: MessageLike[]): InterviewProgress {
@@ -51,12 +78,16 @@ export function interviewProgress(messages: MessageLike[]): InterviewProgress {
     if (message.role === "assistant") {
       const s = extractStage(text);
       if (s) stage = s;
-      const lastSentence =
-        stripStage(text)
-          .split(/(?<=[.?!])\s+/)
-          .pop() ?? "";
-      if (lastSentence.trim().endsWith("?")) asked += 1;
+      // Uma pergunta por mensagem basta — mas a pergunta não precisa ser a
+      // ÚLTIMA frase. O modelo emenda "Qual é a sua tese? Fale à vontade." e,
+      // exigindo o "?" no fim do turno, a mensagem não contava como pergunta e o
+      // contador "1/4" ficava parado com a entrevista andando.
+      if (lastQuestion(stripStage(text))) asked += 1;
     } else if (message.role === "user") {
+      // Pergunta ao Pracinha não é resposta da entrevista: no chat real, quem
+      // perguntava "posso submeter sem vínculo?" via o contador subir como se
+      // tivesse respondido — e a etapa avançava sem a lacuna estar preenchida.
+      if (isQuestionToAssistant(text)) continue;
       if (isSkipAnswer(text)) skipped += 1;
       else answered += 1;
     }
@@ -70,4 +101,72 @@ export function interviewProgress(messages: MessageLike[]): InterviewProgress {
   const denominator = Math.max(asked, 1);
   const ratio = asked === 0 ? 0 : Math.min(1, (cappedAnswered + cappedSkipped) / denominator);
   return { asked, answered: cappedAnswered, skipped: cappedSkipped, ratio, stage };
+}
+
+/**
+ * Etapa da entrevista derivada do CONTEÚDO, não de um marcador que a IA pode
+ * esquecer. O prompt pede para o modelo encerrar cada turno com "_Etapa: …_",
+ * mas o 8B frequentemente omite — e então o cabeçalho do chat ficava em
+ * "assistente da ScienceChat" a entrevista inteira, sem dizer onde estamos.
+ *
+ * Aqui a etapa é a seção da ÚLTIMA pergunta feita: é o que a conversa está
+ * interrogando naquele momento, e acompanha o documento ao vivo.
+ */
+export function interviewStage(messages: MessageLike[]): string | null {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (!message || message.role !== "assistant") continue;
+    // A etapa é a seção da última PERGUNTA do turno, não da última frase: o
+    // modelo fecha com um comentário ("Fale sem pressa.") e a etapa ficava
+    // nula, deixando o cabeçalho em "assistente da ScienceChat".
+    const question = lastQuestion(stripStage(messageText(message)));
+    if (!question) continue;
+    return sectionForQuestion(question);
+  }
+  return null;
+}
+
+/** Seções do artigo na ordem em que o documento é montado. */
+export const INTERVIEW_SECTIONS = [
+  "Introdução",
+  "Fundamentação teórica",
+  "Metodologia",
+  "Resultados",
+  "Discussão",
+  "Conclusão",
+] as const;
+
+export type SectionState = "answered" | "current" | "open" | "skipped";
+
+/**
+ * Mapa da entrevista: quais seções do artigo já têm resposta do pesquisador.
+ *
+ * A folha ao lado mostra o texto, mas não diz o que FALTA — e o pesquisador não
+ * tinha como saber se a entrevista estava no começo ou quase no fim. Aqui cada
+ * seção recebe um estado: `answered` (já tem conteúdo), `current` (é a que está
+ * sendo perguntada agora), `skipped` (ele pulou) e `open` (ainda sem resposta).
+ *
+ * Pular não preenche a seção, mas também não é "em aberto": o guard não volta a
+ * perguntar. Mostrar "em aberto" para uma seção que a entrevista já abandonou
+ * deixava a faixa mentindo sobre o que falta.
+ */
+export function interviewMap(messages: MessageLike[]): { section: string; state: SectionState }[] {
+  const answered = new Set<string>();
+  const skipped = new Set<string>();
+  for (const note of collectInterviewNotes(messages)) {
+    const section = note.section ?? sectionForQuestion(note.question);
+    if (note.skipped) skipped.add(section);
+    else answered.add(section);
+  }
+  const current = interviewStage(messages);
+  return INTERVIEW_SECTIONS.map((section) => ({
+    section,
+    state: answered.has(section)
+      ? "answered"
+      : skipped.has(section)
+        ? "skipped"
+        : section === current
+          ? "current"
+          : "open",
+  }));
 }

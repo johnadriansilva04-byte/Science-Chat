@@ -5,6 +5,7 @@ import {
   isQuotaError,
   nextQuotaReset,
   quotaRestMessage,
+  turnRestState,
 } from "@/lib/ai/quota";
 
 describe("isQuotaError", () => {
@@ -93,5 +94,22 @@ describe("quotaRestMessage", () => {
   it("devolve null quando não é caso de cota", () => {
     expect(quotaRestMessage("Não autorizado")).toBeNull();
     expect(quotaRestMessage(undefined)).toBeNull();
+  });
+});
+
+describe("turnRestState", () => {
+  it("liga o descanso quando o turno traz o marcador de cota", () => {
+    expect(turnRestState("PRACINHA_QUOTA_EXHAUSTED")).toBe("exhausted");
+  });
+
+  // O bug que motivou este teste: depois de a IA voltar, o card "cansou"
+  // continuava na tela contradizendo a resposta que acabara de chegar.
+  it("desliga o descanso quando chega uma resposta de verdade", () => {
+    expect(turnRestState("Vou apertar cada lacuna até o argumento ficar sólido.")).toBe("ok");
+  });
+
+  it("não decide nada em turno vazio (stream em andamento)", () => {
+    expect(turnRestState("   ")).toBe("ignore");
+    expect(turnRestState(null)).toBe("ignore");
   });
 });

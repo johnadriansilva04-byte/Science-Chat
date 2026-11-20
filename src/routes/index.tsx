@@ -5,12 +5,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
 import { JOURNEY_ACTS } from "@/lib/journey";
-import { faqSeed, takePendingQuestion } from "@/lib/onboarding";
+import { faqSeed, setPendingQuestion, takePendingQuestion } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/app/AppHeader";
 import { createArticle } from "@/components/app/ArticlesMenu";
 import { PublishedShelf } from "@/components/app/PublishedShelf";
 import { ScienceAccessCard } from "@/components/app/ScienceAccessCard";
+import { GameCard } from "@/components/app/GameCard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,14 +38,16 @@ function Index() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState("");
   const [creating, setCreating] = useState(false);
+  // A inquietação é o ponto de partida do artigo: sem ela a entrevista começa
+  // no vazio e a IA não tem o que interrogar. Por isso é obrigatória.
+  const [ideaTouched, setIdeaTouched] = useState(false);
+  const ideaReady = idea.trim().length >= 8;
   const heroRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Só manda para o login quando a ausência de usuário é legítima. Se a
-    // sessão falhou (erro no servidor), mostramos o aviso — redirecionar aqui
-    // escondia a causa e o login parecia "não funcionar".
-    if (!loading && !user && !authError) navigate({ to: "/auth" });
-  }, [loading, user, authError, navigate]);
+  // O visitante sem conta continua vendo a home: é nela que fica o card
+  // "Ciência sem crachá", cujo público é justamente quem ainda não entrou. Só o
+  // botão de começar exige sessão — antes, um redirect para /auth escondia o
+  // card de quem mais precisava dele.
 
   // Pergunta escolhida no cadastro ("Perguntar ao Pracinha"): ao entrar, ela vira
   // um artigo novo com a pergunta como semente — o chat já responde de cara.
@@ -54,7 +57,7 @@ function Index() {
     const question = takePendingQuestion();
     if (!question) return;
     consumedQuestion.current = true;
-    void createArticle(navigate, faqSeed(question));
+    void createArticle(navigate, faqSeed(question), question);
   }, [loading, user, navigate]);
 
   // O brilho acompanha o ponteiro — dá vida ao fundo sem custo de render.
@@ -70,9 +73,47 @@ function Index() {
     return () => el.removeEventListener("pointermove", onMove);
   }, []);
 
-  if (!user) return <div className="min-h-screen" />;
+  // Falha de sessão é diferente de visitante: só o erro merece uma tela própria.
+  // Sem sessão, a home segue de pé — o visitante vê o guia e é convidado a entrar
+  // quando tenta começar um artigo. E o `loading` NÃO bloqueia a renderização:
+  // bloquear fazia o HTML inicial esconder o card de ensino de quem chega de fora.
+  if (authError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="font-serif text-xl font-semibold">
+          Não foi possível verificar sua sessão agora
+        </h1>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Recarregue a página; se continuar, entre novamente. Seus artigos continuam salvos.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button size="lg" className="h-11 rounded-xl" onClick={() => window.location.reload()}>
+            Recarregar
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-11 rounded-xl"
+            onClick={() => navigate({ to: "/auth" })}
+          >
+            Entrar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  /** Visitante: as ações que gravam exigem conta, então levamos ao cadastro. */
+  function requireAccount(seed?: string) {
+    if (seed?.trim()) setPendingQuestion(seed.trim());
+    navigate({ to: "/auth" });
+  }
 
   async function continueResearch() {
+    if (!user) {
+      requireAccount();
+      return;
+    }
     const rows = await listArticles();
     const first = rows[0];
     if (!first) {
@@ -83,6 +124,12 @@ function Index() {
   }
 
   async function ignite() {
+    setIdeaTouched(true);
+    if (!ideaReady) return;
+    if (!user) {
+      requireAccount(idea);
+      return;
+    }
     setCreating(true);
     try {
       await createArticle(navigate, idea);
@@ -97,16 +144,6 @@ function Index() {
           ficava uma tela inteira abaixo da dobra e ninguém o encontrava. */}
       <div ref={heroRef} className="landing-hero relative flex min-h-0 flex-col lg:min-h-screen">
         <AppHeader variant="overlay" />
-
-        {authError && (
-          <div
-            role="alert"
-            className="relative z-10 mx-auto mt-4 w-full max-w-6xl rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-          >
-            Não foi possível verificar sua sessão agora. Recarregue a página; se persistir, entre
-            novamente.
-          </div>
-        )}
 
         <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 pb-8 sm:px-6 lg:flex-1 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-10 lg:pb-10">
           {/* Coluna esquerda: a promessa e o começo */}
@@ -141,20 +178,36 @@ function Index() {
                 <input
                   value={idea}
                   onChange={(e) => setIdea(e.target.value)}
-                  placeholder="Qual inquietação você quer investigar? (opcional)"
-                  className="h-12 w-full rounded-xl border border-input bg-card/70 pl-9 pr-3 text-sm shadow-sm outline-none backdrop-blur transition focus:border-primary focus:ring-2 focus:ring-primary/25"
+                  onBlur={() => setIdeaTouched(true)}
+                  required
+                  minLength={8}
+                  aria-invalid={ideaTouched && !ideaReady}
+                  aria-describedby="idea-hint"
+                  placeholder="Qual inquietação você quer investigar?"
+                  className="h-12 w-full rounded-xl border border-input bg-card/70 pl-9 pr-3 text-sm shadow-sm outline-none backdrop-blur transition focus:border-primary focus:ring-2 focus:ring-primary/25 aria-[invalid=true]:border-destructive"
                 />
               </div>
               <Button
                 type="submit"
                 size="lg"
-                disabled={creating}
+                disabled={creating || !ideaReady}
                 className="landing-cta h-12 gap-1.5 rounded-xl"
               >
                 <FilePlus2 />
                 {creating ? "Acendendo…" : "Começar meu artigo"}
               </Button>
             </form>
+
+            <p
+              id="idea-hint"
+              className={`mt-2 text-xs ${
+                ideaTouched && !ideaReady ? "text-destructive" : "text-muted-foreground"
+              }`}
+            >
+              {ideaTouched && !ideaReady
+                ? "Escreva a sua inquietação em uma frase — é ela que vira o problema da pesquisa."
+                : "Uma frase basta. É dela que a entrevista parte."}
+            </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button
@@ -167,7 +220,7 @@ function Index() {
                 Continuar pesquisa
               </Button>
               <span className="text-xs text-muted-foreground">
-                Seus artigos ficam no menu ⋮ no topo.
+                {user ? "Seus artigos ficam no menu ⋮ no topo." : "Você entra na hora de salvar."}
               </span>
             </div>
 
@@ -187,31 +240,31 @@ function Index() {
                 </li>
               ))}
             </ol>
+
+            {/* O card de ensino vem no INÍCIO da home, na coluna principal: é a
+                primeira coisa que quem chega sem vínculo precisa ler — e antes
+                ele ficava depois da coletânea, fora da primeira rolagem. */}
+            <ScienceAccessCard className="mt-6" />
           </section>
 
-          {/* Coluna direita: a coletânea. O guia "Ciência sem crachá" saiu daqui:
-              é conteúdo educativo e precisa de largura para ensinar, então vive
-              logo abaixo do herói, em faixa própria. */}
+          {/* Coluna direita: a coletânea e o Stop. */}
           <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
-            <div className="landing-shelf-card rounded-2xl border bg-card/60 p-4 backdrop-blur">
+            <div className="landing-shelf-card card-accent--shelf rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
-                <BookOpenText className="size-4 text-primary" />
-                <h2 className="font-serif text-base font-semibold">Coletânea de artigos</h2>
+                <BookOpenText className="landing-shelf-card__accent size-4" />
+                <h2 className="landing-shelf-card__accent font-serif text-base font-semibold">
+                  Coletânea de artigos
+                </h2>
                 <Link
                   to="/publicacoes"
-                  className="ml-auto inline-flex shrink-0 items-center py-2 text-xs font-medium text-primary hover:underline sm:py-0"
+                  className="landing-shelf-card__accent ml-auto inline-flex min-h-11 shrink-0 items-center text-xs font-medium hover:underline"
                 >
                   Ver tudo →
                 </Link>
               </div>
               <PublishedShelf compact />
             </div>
-          </section>
-
-          {/* O guia ensina, então precisa aparecer cedo: no celular ele vem
-              logo depois da chamada para ação, antes da coletânea. */}
-          <section aria-label="Ciência sem crachá" className="order-2 lg:order-3 lg:col-span-2">
-            <ScienceAccessCard />
+            <GameCard className="card-accent--stop" />
           </section>
         </main>
 

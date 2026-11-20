@@ -112,29 +112,19 @@ export function BookReader({
         </div>
 
         <div className="book-stage relative w-full">
-          <button
-            type="button"
-            onClick={() => go("prev")}
-            disabled={atStart}
-            aria-label="Página anterior"
-            className="book-nav absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 disabled:opacity-30"
-          >
-            <ChevronLeft className="size-6" />
-          </button>
-
           <article
             key={index}
-            className={`paper-sheet book-leaf mx-auto max-h-[82vh] max-w-3xl overflow-y-auto rounded-lg border ${
+            className={`paper-sheet book-leaf mx-auto max-h-[calc(100dvh-9rem)] max-w-3xl overflow-y-auto rounded-lg border sm:max-h-[82vh] ${
               flip === "next" ? "book-flip-next" : flip === "prev" ? "book-flip-prev" : ""
             }`}
           >
             {leaf.kind === "cover" && (
               <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-                <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                <span className="paper-muted text-xs uppercase tracking-[0.3em]">
                   Artigo científico
                 </span>
                 <h1 className="font-serif text-3xl font-semibold leading-tight">{title}</h1>
-                <span className="text-sm italic text-muted-foreground">
+                <span className="paper-muted text-sm italic">
                   Uma criação <span className="font-serif font-semibold not-italic">Variant</span>
                 </span>
               </div>
@@ -148,38 +138,48 @@ export function BookReader({
 
             {leaf.kind === "signature" && (
               <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-                <p className="text-sm text-muted-foreground">Fim</p>
+                <p className="paper-muted text-sm">Fim</p>
                 <p className="variant-signature">{ARTICLE_SIGNATURE}</p>
               </div>
             )}
           </article>
+        </div>
 
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => go("prev")}
+            disabled={atStart}
+            aria-label="Página anterior"
+            className="book-nav shrink-0 disabled:opacity-30"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <div className="flex items-center justify-center gap-1.5">
+            {leaves.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Ir para a folha ${i + 1}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIndex(i);
+                }}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? "w-6 bg-neutral-100" : "w-1.5 bg-neutral-500 hover:bg-neutral-300"
+                }`}
+              />
+            ))}
+          </div>
           <button
             type="button"
             onClick={() => go("next")}
             disabled={atEnd}
             aria-label="Próxima página"
-            className="book-nav absolute right-0 top-1/2 z-10 translate-x-1/2 -translate-y-1/2 disabled:opacity-30"
+            className="book-nav shrink-0 disabled:opacity-30"
           >
-            <ChevronRight className="size-6" />
+            <ChevronRight className="size-5" />
           </button>
-        </div>
-
-        <div className="mt-3 flex items-center justify-center gap-1.5">
-          {leaves.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Ir para a folha ${i + 1}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIndex(i);
-              }}
-              className={`h-1.5 rounded-full transition-all ${
-                i === index ? "w-6 bg-neutral-100" : "w-1.5 bg-neutral-500 hover:bg-neutral-300"
-              }`}
-            />
-          ))}
         </div>
       </div>
     </div>

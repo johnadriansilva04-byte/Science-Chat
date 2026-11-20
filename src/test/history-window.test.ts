@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { HISTORY_MAX_CHARS, HISTORY_WINDOW, windowHistory } from "@/lib/ai/history-window";
+import { interviewNotes } from "@/lib/interview-notes";
+import { nextInterviewQuestion } from "@/lib/ai/interview-guard";
 
 type Msg = { role: string; parts: { type: string; text?: string }[] };
 
@@ -56,5 +58,25 @@ describe("windowHistory", () => {
     expect(HISTORY_WINDOW).toBeGreaterThan(0);
     expect(HISTORY_WINDOW).toBeLessThanOrEqual(40);
     expect(HISTORY_MAX_CHARS).toBeLessThanOrEqual(40_000);
+  });
+});
+
+// Regressão (visto no chat real): o guard da entrevista lia o histórico
+// RECORTADO. Numa entrevista longa a janela descarta as primeiras respostas, o
+// guard as via como lacunas abertas e voltava à primeira pergunta — o
+// pesquisador respondia e recebia "qual é a pergunta central?" de novo.
+// Por isso `api/chat.ts` passa `sanitized` (histórico inteiro), não `windowed`.
+describe("janela de histórico x guard da entrevista", () => {
+  it("a janela perde seções já respondidas; o histórico inteiro não", () => {
+    const messages: Msg[] = [user("tema inicial")];
+    for (let i = 0; i < 14; i += 1) {
+      const question = nextInterviewQuestion(interviewNotes(messages));
+      messages.push(assistant(question), user(`resposta ${i + 1} `.padEnd(1500, "x")));
+    }
+
+    const windowed = windowHistory(messages);
+    expect(windowed.length).toBeLessThan(messages.length);
+    expect(nextInterviewQuestion(interviewNotes(windowed))).toContain("pergunta central");
+    expect(nextInterviewQuestion(interviewNotes(messages))).not.toContain("pergunta central");
   });
 });

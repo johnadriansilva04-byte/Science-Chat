@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   extractStage,
+  interviewMap,
   interviewProgress,
+  interviewStage,
   isSkipAnswer,
   messageText,
   type MessageLike,
@@ -85,5 +87,67 @@ describe("interviewProgress", () => {
     expect(progress.answered).toBe(1);
     expect(progress.answered).toBeLessThanOrEqual(progress.asked);
     expect(progress.ratio).toBe(1);
+  });
+});
+
+describe("interviewStage", () => {
+  it("deriva a etapa da última pergunta, mesmo sem marcador _Etapa:_", () => {
+    const stage = interviewStage([
+      { role: "assistant", parts: [{ type: "text", text: "Qual é a sua tese?" }] },
+      { role: "user", parts: [{ type: "text", text: "A ausência de vínculo." }] },
+      { role: "assistant", parts: [{ type: "text", text: "Quais materiais você vai analisar?" }] },
+    ]);
+    expect(stage).toBe("Metodologia");
+  });
+
+  it("devolve null sem pergunta do assistente", () => {
+    expect(interviewStage([{ role: "user", parts: [{ type: "text", text: "Oi" }] }])).toBeNull();
+  });
+});
+
+describe("interviewMap", () => {
+  const M = (role: string, text: string) => ({ role, parts: [{ type: "text", text }] });
+
+  it("marca como respondida só a seção com resposta de conteúdo", () => {
+    const map = interviewMap([
+      M("user", "A ausência de vínculo muda o método?"),
+      M("assistant", "Qual é a pergunta central que o artigo quer responder?"),
+      M("user", "Saber se dá para publicar sem vínculo."),
+      M("assistant", "Quais autores sustentam essa ideia?"),
+      M("user", "Pular"),
+      M("assistant", "Como você vai demonstrar isso: quais materiais e procedimentos?"),
+    ]);
+    const bySection = new Map(map.map((item) => [item.section, item.state]));
+    expect(bySection.get("Introdução")).toBe("answered");
+    // "Pular" não preenche a Fundamentação, mas o guard não volta a perguntá-la:
+    // a faixa mostra "pulada" em vez de "em aberto" (que mentiria sobre o que falta).
+    expect(bySection.get("Fundamentação teórica")).toBe("skipped");
+    expect(bySection.get("Metodologia")).toBe("current");
+  });
+
+  it("devolve as seis seções na ordem do documento", () => {
+    expect(interviewMap([]).map((item) => item.section)).toEqual([
+      "Introdução",
+      "Fundamentação teórica",
+      "Metodologia",
+      "Resultados",
+      "Discussão",
+      "Conclusão",
+    ]);
+  });
+});
+
+describe("interviewProgress — pergunta não é resposta", () => {
+  const M = (role: string, text: string) => ({ role, parts: [{ type: "text", text }] });
+
+  it("não conta a pergunta do pesquisador como resposta", () => {
+    const p = interviewProgress([
+      M("user", "A ausência de vínculo muda o método?"),
+      M("assistant", "Qual é a pergunta central que o artigo quer responder?"),
+      M("user", "Posso submeter sem vínculo institucional?"),
+    ]);
+    expect(p.asked).toBe(1);
+    expect(p.answered).toBe(0);
+    expect(p.ratio).toBe(0);
   });
 });

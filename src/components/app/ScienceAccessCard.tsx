@@ -9,12 +9,10 @@ import {
   ExternalLink,
   GraduationCap,
   IdCard,
-  Lightbulb,
   ShieldCheck,
   X,
 } from "lucide-react";
 import {
-  COUNTRY_PATHS,
   NOT_REQUIRED,
   NOT_REQUIRED_CAVEAT,
   ORCID_REGISTER_URL,
@@ -23,8 +21,12 @@ import {
   referencesByRegion,
   type ReferenceRegion,
 } from "@/lib/science-access";
-import { SCIENCE_BITES } from "@/lib/science-flow";
 import { cn } from "@/lib/utils";
+
+const REGION_LABEL: Record<"brasil" | "uruguai", string> = {
+  brasil: "Brasil",
+  uruguai: "Uruguai",
+};
 
 const REGION_TABS: { id: ReferenceRegion; label: string }[] = [
   { id: "brasil", label: "Brasil" },
@@ -54,22 +56,30 @@ type ScienceAccessCardProps = {
 export function ScienceAccessCard({ className = "", variant = "full" }: ScienceAccessCardProps) {
   const [region, setRegion] = useState<ReferenceRegion>("brasil");
   const references = referencesByRegion(region);
-  const country = COUNTRY_PATHS.find((path) => path.id === region);
+  // A nota é da REGIÃO, não do país: `COUNTRY_PATHS` só tem Brasil e Uruguai, e
+  // a aba "Internacional" nunca exibia a sua explicação (o texto existia, mas
+  // ficava atrás de uma condição que nunca era verdadeira).
+  const regionNote =
+    region === "brasil"
+      ? "No Brasil, a trajetória é pública e a leitura é aberta: você registra e publica sem vínculo."
+      : region === "uruguai"
+        ? "No Uruguai, o caminho passa pelo SciELO Uruguay — e o CVUy (ANII) é o currículo público gratuito."
+        : "Fora do Brasil e do Uruguai, o caminho é o mesmo em qualquer país: Latindex e Redalyc mostram as revistas da América Latina, e o ORCID e os preprints não dependem de fronteira.";
 
   if (variant === "compact") {
     return (
       <Link
         to="/ciencia"
         aria-label="Ciência sem crachá — abrir o guia"
-        className={cn("cracha-compact group", className)}
+        className={cn("cracha-compact card-accent--guide group", className)}
       >
         <span className="cracha-compact__icon">
           <GraduationCap className="size-5" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5 font-serif text-sm font-semibold">
+          <span className="cracha-compact__title flex items-center gap-1.5 font-serif text-sm font-semibold">
             Ciência sem crachá
-            <BadgeCheck className="size-3.5 text-primary" aria-hidden />
+            <BadgeCheck className="size-3.5" aria-hidden />
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
             Publicar não exige universidade, diploma ou orientador. Veja o passo a passo.
@@ -134,30 +144,95 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
         {NOT_REQUIRED_CAVEAT}
       </p>
 
-      {/* O passo a passo completo (11 etapas, com o "por quê" e o "para que
-          serve" de cada uma) vive em /ciencia. Aqui fica o resumo: o card da
-          home é a porta de entrada, não o manual — empilhado, ele ocupava 1,7
-          telas e empurrava a coletânea para fora da primeira rolagem. */}
+      {/* O caminho com o fundamento de cada etapa. Os títulos ficam visíveis
+          (a pessoa vê o percurso inteiro de relance) e o corpo abre sob demanda:
+          o que fazer, por que se sustenta e a FONTE oficial que sustenta. Sem a
+          fonte, o card seria opinião — e quem publica sem vínculo precisa poder
+          conferir cada afirmação. */}
       <div className="cracha-steps mt-3">
         <p className="cracha-steps__title">
-          <BookOpenCheck className="size-4" aria-hidden />O caminho, em resumo
+          <BookOpenCheck className="size-4" aria-hidden />O caminho, e por que cada etapa se
+          sustenta
         </p>
-        <ol>
-          {SCIENCE_BITES.slice(0, 4).map((bite) => (
-            <li key={bite.n} className="cracha-step cracha-step--brief">
-              <span className="cracha-step__n" aria-hidden>
-                {bite.n}
-              </span>
-              <span className="cracha-step__title">{bite.title}</span>
+        <ol className="mt-1.5 grid gap-1">
+          {SCIENCE_STEPS.slice(0, 4).map((step) => (
+            <li key={step.n}>
+              <details className="cracha-step">
+                <summary>
+                  <span className="cracha-step__n" aria-hidden>
+                    {step.n}
+                  </span>
+                  <span className="cracha-step__title">{step.title}</span>
+                  {step.region && (
+                    <span className="cracha-step__tag">{REGION_LABEL[step.region]}</span>
+                  )}
+                  <ChevronDown className="cracha-step__chevron" aria-hidden />
+                </summary>
+                <div className="cracha-step__body">
+                  <p className="cracha-step__do">{step.do}</p>
+                  <p className="cracha-step__why">{step.why}</p>
+                  {step.source && (
+                    <a
+                      href={step.source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="cracha-step__source"
+                    >
+                      Fonte: {step.source.label}
+                      <ExternalLink className="size-3 shrink-0" aria-hidden />
+                    </a>
+                  )}
+                </div>
+              </details>
             </li>
           ))}
-          <li className="cracha-step cracha-step--brief cracha-step--more">
-            <span className="cracha-step__n" aria-hidden>
-              +{SCIENCE_BITES.length - 4}
-            </span>
-            <span className="cracha-step__title">Etapas essenciais restantes</span>
-          </li>
         </ol>
+        <details className="cracha-more mt-2">
+          <summary className="cracha-list__more inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
+            Ver as {SCIENCE_STEPS.length} etapas, com as fontes
+            <ChevronDown className="cracha-more__chev size-3" aria-hidden />
+          </summary>
+          <ol className="mt-1.5 grid gap-1">
+            {SCIENCE_STEPS.slice(4).map((step) => (
+              <li key={step.n}>
+                <details className="cracha-step">
+                  <summary>
+                    <span className="cracha-step__n" aria-hidden>
+                      {step.n}
+                    </span>
+                    <span className="cracha-step__title">{step.title}</span>
+                    {step.region && (
+                      <span className="cracha-step__tag">{REGION_LABEL[step.region]}</span>
+                    )}
+                    <ChevronDown className="cracha-step__chevron" aria-hidden />
+                  </summary>
+                  <div className="cracha-step__body">
+                    <p className="cracha-step__do">{step.do}</p>
+                    <p className="cracha-step__why">{step.why}</p>
+                    {step.source && (
+                      <a
+                        href={step.source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="cracha-step__source"
+                      >
+                        Fonte: {step.source.label}
+                        <ExternalLink className="size-3 shrink-0" aria-hidden />
+                      </a>
+                    )}
+                  </div>
+                </details>
+              </li>
+            ))}
+          </ol>
+          <Link
+            to="/ciencia"
+            className="cracha-list__more mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            Guia completo, assunto por assunto
+            <ArrowRight className="size-3" aria-hidden />
+          </Link>
+        </details>
       </div>
 
       {/* Fechado por padrão: o card precisa caber numa tela. Quem quer o
@@ -166,7 +241,6 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
         <summary className="cracha-steps__title">
           <ShieldCheck className="size-4 shrink-0" aria-hidden />
           Onde submeter, com fonte oficial
-          <span className="cracha-sources__hint">Brasil · Uruguai · Internacional</span>
           <ChevronDown className="cracha-sources__chev size-4 shrink-0" aria-hidden />
         </summary>
         <div
@@ -213,15 +287,7 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
           aria-labelledby={`cracha-tab-${region}`}
           tabIndex={0}
         >
-          {country && (
-            <p className="cracha-region-note">
-              {region === "brasil"
-                ? "No Brasil, a trajetória é pública e a leitura é aberta: você registra e publica sem vínculo."
-                : region === "uruguai"
-                  ? "No Uruguai, o caminho passa pela Udelar e pelo SciELO Uruguay — e o CVUy já integra o ORCID."
-                  : "Fora da América Latina, o ORCID e os preprints abertos são o caminho mais curto para quem não tem vínculo."}
-            </p>
-          )}
+          <p className="cracha-region-note">{regionNote}</p>
           <ul className="cracha-refs">
             {references.map((ref) => (
               <li key={ref.url}>

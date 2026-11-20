@@ -42,6 +42,7 @@ import {
   type ClaimState,
 } from "@/lib/traceability";
 import type { WorkspaceDocument } from "@/lib/article.functions";
+import { quotaRestMessage } from "@/lib/ai/quota";
 
 const STATE_STYLE: Partial<Record<ClaimState, string>> = {
   sustentada: "border-emerald-500/40 bg-emerald-50 text-emerald-800",
@@ -72,8 +73,14 @@ export function TraceabilityPanel({
   const [newClaim, setNewClaim] = useState("");
 
   const reload = useCallback(async () => {
-    const data = await getMatrix({ data: { articleId } });
-    setMatrix(data);
+    // Falha de carregamento não pode virar rejeição sem dono no efeito: a matriz
+    // simplesmente não aparecia e o painel parecia vazio por falta de dados.
+    try {
+      setMatrix(await getMatrix({ data: { articleId } }));
+    } catch {
+      setMatrix(null);
+      toast.error("Não foi possível carregar a matriz de rastreabilidade");
+    }
   }, [articleId]);
 
   useEffect(() => {
@@ -87,7 +94,8 @@ export function TraceabilityPanel({
       await reload();
       toast.success(ok);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Algo deu errado");
+      const msg = e instanceof Error ? e.message : "";
+      toast.error(quotaRestMessage(msg) ?? (msg || "Algo deu errado"));
     } finally {
       setBusy(false);
     }

@@ -10,6 +10,7 @@ import {
   listArticles,
 } from "@/lib/article.functions";
 import { signOut } from "@/lib/auth.functions";
+import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/sciencechat-logo.png";
 
 type Row = { id: string; title: string; phase: string; updated_at: string };
@@ -20,13 +21,29 @@ const PHASE: Record<string, string> = {
   done: "Concluído",
 };
 
-export async function createArticle(navigate: ReturnType<typeof useNavigate>, seed?: string) {
+/**
+ * Cria um artigo e abre o chat.
+ *
+ * `title` existe porque a semente do chat nem sempre serve como título: quando a
+ * pergunta vem do onboarding, a semente é a pergunta MAIS a instrução de
+ * resposta ("… Me explique de forma clara e prática…"), e o menu de artigos
+ * ficava com esse texto inteiro. A semente continua sendo o que o Pracinha
+ * recebe; o título é só a pergunta.
+ */
+export async function createArticle(
+  navigate: ReturnType<typeof useNavigate>,
+  seed?: string,
+  title?: string,
+) {
   try {
     const clean = seed?.trim();
     // A inquietação digitada na home vira o título inicial do artigo (o
     // pesquisador pode renomear depois). Sem isto, todo artigo nascia como
     // "Novo artigo" mesmo quando ele já tinha escrito o tema.
-    const { id } = await createArticleFn({ data: clean ? { title: clean } : {} });
+    const cleanTitle = (title ?? seed)?.trim();
+    const { id } = await createArticleFn({
+      data: cleanTitle ? { title: cleanTitle } : {},
+    });
     navigate({
       to: "/a/$articleId",
       params: { articleId: id },
@@ -41,13 +58,16 @@ export function ArticlesMenu({ activeId }: { activeId?: string }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const navigate = useNavigate();
+  // O menu aparece também para quem não tem conta (a home é pública): aí ele é
+  // a porta de entrada, não a lista de artigos.
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !user) return;
     listArticles()
       .then((data) => setRows(data))
       .catch(() => setRows([]));
-  }, [open]);
+  }, [open, user]);
 
   async function remove(id: string) {
     if (!confirm("Excluir este artigo e todo o seu conteúdo?")) return;
@@ -63,6 +83,18 @@ export function ArticlesMenu({ activeId }: { activeId?: string }) {
   async function logout() {
     await signOut();
     navigate({ to: "/auth" });
+  }
+
+  if (!loading && !user) {
+    return (
+      <Button
+        asChild
+        variant="ghost"
+        className="min-h-11 gap-1.5 rounded-full px-3 text-sm font-medium"
+      >
+        <Link to="/auth">Entrar</Link>
+      </Button>
+    );
   }
 
   return (

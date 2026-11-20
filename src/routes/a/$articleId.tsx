@@ -75,14 +75,27 @@ function ArticleWorkspace() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [loading, user, navigate]);
 
+  // Recarregar é chamado em vários eventos do chat e do documento. Uma falha
+  // aqui (rede, sessão expirada, resposta sem content-type) virava rejeição não
+  // tratada no console. Se o artigo já está na tela, avisamos sem derrubá-la:
+  // trocar o workspace inteiro por um erro apagaria o chat por uma falha
+  // transitória.
   const reload = useCallback(async () => {
-    const data = await getWorkspace({ data: { articleId } });
-    setArticle(data.article);
-    setMessages(data.messages);
-    setPages(data.pages);
-    setDocuments(data.documents);
-    return data;
-  }, [articleId]);
+    try {
+      const data = await getWorkspace({ data: { articleId } });
+      setArticle(data.article);
+      setMessages(data.messages);
+      setPages(data.pages);
+      setDocuments(data.documents);
+      setLoadError(null);
+      return data;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Não foi possível recarregar o artigo";
+      if (article) toast.error(message);
+      else setLoadError(message);
+      return null;
+    }
+  }, [articleId, article]);
 
   useEffect(() => {
     if (!user) return;

@@ -161,7 +161,7 @@ function paragraph(
 }
 
 /** Elemento pré-textual (capa/folha de rosto): folha inteira, texto centralizado. */
-function frontMatterXml(block: Extract<Block, { type: "frontmatter" }>, p: FormatProfile): string {
+function frontMatterXml(block: Extract<Block, { type: "frontmatter" }>): string {
   const line = (text: string, o: { bold?: boolean; center?: boolean } = {}) =>
     `<w:p><w:pPr>${o.center ? '<w:jc w:val="center"/>' : '<w:jc w:val="right"/>'}</w:pPr>${
       o.bold
@@ -237,7 +237,7 @@ function blockXml(block: Block, p: FormatProfile, inReferences: boolean): string
     case "pagebreak":
       return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
     case "frontmatter":
-      return frontMatterXml(block, p);
+      return frontMatterXml(block);
   }
 }
 

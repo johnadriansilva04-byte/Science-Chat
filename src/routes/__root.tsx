@@ -8,7 +8,7 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { CosmicBackdrop } from "@/components/app/CosmicBackdrop";
 
