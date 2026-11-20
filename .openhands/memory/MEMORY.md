@@ -211,3 +211,8 @@ resolve assíncrono e quebra o `render`).
   com a mesma palavra ("Sim:") — teste trava isso.
 - Prova da revisão por pares vem do ICMJE (seção "Submission and Peer-Review"), não do DOAJ.
 - `NOT_REQUIRED_CAVEAT` ressalva as listas "não é exigido": chamada específica/edital pode pedir vínculo.
+
+## ORCID no guia /ciencia (2026-11-20)
+- **`OrcidChip`** em `ScienceAtlas.tsx` (props `label`, `href`), em 4 pontos: prova em destaque, etapa 3 do caminho, aba ORCID e aba carta. 36px de altura + `::after{inset:-5px -2px}` = alvo de 44px.
+- Destaque: `data-featured="true"` na prova pinta borda/barra de acento; aba ORCID tem selo `.atlas-nav__flag`.
+- **Nunca `prettier --write src/styles.css`** — o arquivo já está fora do padrão e o write reindenta ~900 linhas. Editar pontualmente.
