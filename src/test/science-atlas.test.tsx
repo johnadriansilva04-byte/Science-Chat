@@ -40,6 +40,28 @@ describe("ScienceAtlas", () => {
     expect(link).toHaveAttribute("href", ORCID_REGISTER_URL);
   });
 
+  // O ORCID é o primeiro passo concreto de quem não tem vínculo: o atalho
+  // acompanha a dúvida em três lugares, não só na aba própria.
+  it("repete o atalho do ORCID onde a dúvida aparece", () => {
+    render(<ScienceAtlas />);
+    expect(screen.getByRole("link", { name: /criar meu orcid/i })).toHaveAttribute(
+      "href",
+      ORCID_REGISTER_URL,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: /passo a passo/i }));
+    expect(screen.getByRole("link", { name: /criar meu orcid/i })).toHaveAttribute(
+      "href",
+      ORCID_REGISTER_URL,
+    );
+  });
+
+  it("marca a aba do ORCID como gratuita", () => {
+    render(<ScienceAtlas />);
+    const tab = screen.getByRole("tab", { name: /orcid/i });
+    expect(tab.textContent).toMatch(/grátis/i);
+  });
+
   it("lista as fontes oficiais com link real", () => {
     render(<ScienceAtlas />);
     fireEvent.click(screen.getByRole("tab", { name: /fontes oficiais/i }));

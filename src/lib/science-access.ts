@@ -257,6 +257,10 @@ export type DirectAnswerPoint = {
   source: string;
   /** URL da fonte. */
   url: string;
+  /** Ação imediata, para a dúvida que se resolve com um clique (ex.: criar ORCID). */
+  cta?: { label: string; url: string };
+  /** Merece destaque: é o primeiro passo concreto de quem não tem vínculo. */
+  featured?: boolean;
 };
 
 export const DIRECT_ANSWER_POINTS: DirectAnswerPoint[] = [
@@ -283,6 +287,8 @@ export const DIRECT_ANSWER_POINTS: DirectAnswerPoint[] = [
       "O ORCID é um identificador único, persistente e gratuito para pesquisadores. Você mesmo cria, de graça, em minutos (orcid.org/register) — sem instituição. O número tem o formato 0000-0000-0000-0000, é permanente e distingue você de homônimos. É aceito por revistas e universidades.",
     source: "ORCID",
     url: "https://info.orcid.org/what-is-orcid/",
+    cta: { label: "Criar meu ORCID (grátis)", url: ORCID_REGISTER_URL },
+    featured: true,
   },
   {
     question: "Dá para tornar o trabalho público antes da revista?",

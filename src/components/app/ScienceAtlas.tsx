@@ -111,11 +111,32 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+/** Atalho discreto para criar o ORCID — repetido onde a dúvida aparece. */
+function OrcidChip({
+  label = "Criar meu ORCID (grátis)",
+  href = ORCID_REGISTER_URL,
+}: {
+  label?: string;
+  href?: string;
+}) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="ciencia-orcid-chip">
+      <IdCard className="size-3.5 shrink-0" aria-hidden />
+      {label}
+      <ExternalLink className="size-3 opacity-60" aria-hidden />
+    </a>
+  );
+}
+
 /** Prova recolhida: dúvida à vista, resposta curta e fonte sob demanda. */
 function Proof({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) {
   const [open, setOpen] = useState(false);
   return (
-    <li className="ciencia-proof px-3.5 py-3" data-open={open}>
+    <li
+      className="ciencia-proof px-3.5 py-3"
+      data-open={open}
+      data-featured={point.featured ? "true" : undefined}
+    >
       <span className="ciencia-proof__bar" aria-hidden />
       <button
         type="button"
@@ -132,6 +153,11 @@ function Proof({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) {
         </span>
         <ChevronDown className="ciencia-proof__chev mt-0.5 size-4 shrink-0 text-[var(--ci-soft)]" />
       </button>
+      {point.cta && (
+        <div className="pl-6">
+          <OrcidChip label={point.cta.label} href={point.cta.url} />
+        </div>
+      )}
       <div className="ciencia-acc" data-open={open}>
         <div className="ciencia-acc__inner">
           <p className="pt-2 text-[0.8rem] leading-relaxed text-[var(--ci-soft)]">{point.proof}</p>
@@ -219,6 +245,7 @@ function TopicCaminho() {
               <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-[var(--ci-accent)]" />
               {bite.whatFor}
             </p>
+            {bite.n === 3 && <OrcidChip />}
           </li>
         ))}
       </ol>
@@ -267,12 +294,7 @@ function TopicOrcid() {
           Leva uns três minutos, só com nome e e-mail.
         </li>
       </ul>
-      <Button asChild size="lg" className="mt-4 w-full gap-1.5 sm:w-auto">
-        <a href={ORCID_REGISTER_URL} target="_blank" rel="noreferrer">
-          <IdCard className="size-4" />
-          Criar meu ORCID (grátis)
-        </a>
-      </Button>
+      <OrcidChip />
     </div>
   );
 }
@@ -386,6 +408,10 @@ function TopicCarta() {
         Preencha os campos entre [ ]. A afiliação já vem como “Pesquisador(a) independente”, que é
         legítima.
       </p>
+      <div className="mt-2 text-[0.78rem] text-[var(--ci-soft)]">
+        <p>A carta pede o ORCID no rodapé. É o mesmo identificador gratuito, criado em minutos:</p>
+        <OrcidChip />
+      </div>
       <div className="mt-3 rounded-2xl border border-[var(--ci-rule)] bg-[var(--ci-surface-2)] p-3.5">
         <pre className="ciencia-letter max-h-80 overflow-auto whitespace-pre-wrap break-words text-[0.78rem] leading-relaxed">
           {COVER_LETTER_TEMPLATE}
@@ -475,6 +501,11 @@ export function ScienceAtlas({ initial = "posso" }: { initial?: TopicId }) {
             >
               <Icon className="size-4 shrink-0" />
               {label}
+              {id === "orcid" && (
+                <span className="atlas-nav__flag" aria-hidden>
+                  grátis
+                </span>
+              )}
             </button>
           ))}
         </nav>
