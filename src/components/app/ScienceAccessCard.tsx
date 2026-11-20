@@ -122,10 +122,9 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
             Não é exigido
           </p>
           <ul>
-            {NOT_REQUIRED.slice(0, 3).map((item) => (
+            {NOT_REQUIRED.map((item) => (
               <li key={item}>{item}</li>
             ))}
-            <li className="cracha-list__more">e mais {NOT_REQUIRED.length - 3}…</li>
           </ul>
         </div>
         <div className="cracha-list cracha-list--yes">
@@ -133,10 +132,9 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
             <Check className="size-3.5" aria-hidden />O que conta de verdade
           </p>
           <ul>
-            {WHAT_COUNTS.slice(0, 3).map((item) => (
+            {WHAT_COUNTS.map((item) => (
               <li key={item}>{item}</li>
             ))}
-            <li className="cracha-list__more">e mais {WHAT_COUNTS.length - 3}…</li>
           </ul>
         </div>
       </div>
@@ -144,18 +142,17 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
         {NOT_REQUIRED_CAVEAT}
       </p>
 
-      {/* O caminho com o fundamento de cada etapa. Os títulos ficam visíveis
-          (a pessoa vê o percurso inteiro de relance) e o corpo abre sob demanda:
-          o que fazer, por que se sustenta e a FONTE oficial que sustenta. Sem a
-          fonte, o card seria opinião — e quem publica sem vínculo precisa poder
-          conferir cada afirmação. */}
+      {/* O caminho com o fundamento de cada etapa. Todas as etapas aparecem na
+          lista; o corpo abre sob demanda com o que fazer, por que se sustenta e
+          a FONTE oficial. Sem a fonte, o card seria opinião — e quem publica sem
+          vínculo precisa poder conferir cada afirmação. */}
       <div className="cracha-steps mt-3">
         <p className="cracha-steps__title">
           <BookOpenCheck className="size-4" aria-hidden />O caminho, e por que cada etapa se
           sustenta
         </p>
         <ol className="mt-1.5 grid gap-1">
-          {SCIENCE_STEPS.slice(0, 4).map((step) => (
+          {SCIENCE_STEPS.map((step) => (
             <li key={step.n}>
               <details className="cracha-step">
                 <summary>
@@ -187,52 +184,13 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
             </li>
           ))}
         </ol>
-        <details className="cracha-more mt-2">
-          <summary className="cracha-list__more inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
-            Ver as {SCIENCE_STEPS.length} etapas, com as fontes
-            <ChevronDown className="cracha-more__chev size-3" aria-hidden />
-          </summary>
-          <ol className="mt-1.5 grid gap-1">
-            {SCIENCE_STEPS.slice(4).map((step) => (
-              <li key={step.n}>
-                <details className="cracha-step">
-                  <summary>
-                    <span className="cracha-step__n" aria-hidden>
-                      {step.n}
-                    </span>
-                    <span className="cracha-step__title">{step.title}</span>
-                    {step.region && (
-                      <span className="cracha-step__tag">{REGION_LABEL[step.region]}</span>
-                    )}
-                    <ChevronDown className="cracha-step__chevron" aria-hidden />
-                  </summary>
-                  <div className="cracha-step__body">
-                    <p className="cracha-step__do">{step.do}</p>
-                    <p className="cracha-step__why">{step.why}</p>
-                    {step.source && (
-                      <a
-                        href={step.source.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="cracha-step__source"
-                      >
-                        Fonte: {step.source.label}
-                        <ExternalLink className="size-3 shrink-0" aria-hidden />
-                      </a>
-                    )}
-                  </div>
-                </details>
-              </li>
-            ))}
-          </ol>
-          <Link
-            to="/ciencia"
-            className="cracha-list__more mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            Guia completo, assunto por assunto
-            <ArrowRight className="size-3" aria-hidden />
-          </Link>
-        </details>
+        <Link
+          to="/ciencia"
+          className="cracha-list__more mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          Guia completo, assunto por assunto
+          <ArrowRight className="size-3" aria-hidden />
+        </Link>
       </div>
 
       {/* Fechado por padrão: o card precisa caber numa tela. Quem quer o

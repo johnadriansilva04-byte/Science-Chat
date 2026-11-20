@@ -38,3 +38,6 @@ dist-ssr
 
 # Vercel
 .vercel/
+
+# Memória do agente (local, nunca versionar)
+.openhands/

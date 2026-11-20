@@ -526,26 +526,6 @@
   display: grid;
   gap: 0.3rem;
 }
-/* Linha de resumo do passo: sem acordeão, só número + título. O detalhe
-   completo (o que fazer, por quê, para que serve) fica no guia /ciencia. */
-.cracha-step--brief {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.35rem;
-  padding: 0.35rem 0.6rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-.cracha-step--more {
-  border-style: dashed;
-  color: var(--ci-soft);
-  font-weight: 500;
-}
-.cracha-step--more .cracha-step__n {
-  border-style: dashed;
-  color: var(--ci-soft);
-}
 .cracha-step {
   border-radius: var(--radius-md);
   border: 1px solid var(--ci-rule);
@@ -647,23 +627,6 @@
 .cracha-step__source:hover {
   text-decoration: underline;
 }
-/* "Ver as 11 etapas": recolhido, para o card continuar cabendo numa tela.
-   Alvo de toque de 44px: abaixo disso o dedo erra o botão no celular. */
-.cracha-more > summary {
-  list-style: none;
-  min-height: 2.75rem;
-  align-items: center;
-}
-.cracha-more > summary::-webkit-details-marker {
-  display: none;
-}
-.cracha-more__chev {
-  transition: transform 0.22s ease;
-}
-.cracha-more[open] .cracha-more__chev {
-  transform: rotate(180deg);
-}
-
 /* Abas por país e as fontes oficiais de cada uma. */
 /* Fontes recolhidas: resumo visível, conteúdo sob demanda. O card da home
    precisa caber numa tela — as fontes completas ficam no guia /ciencia. */

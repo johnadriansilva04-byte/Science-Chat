@@ -285,8 +285,6 @@ export const NOT_REQUIRED: string[] = [
   "Vínculo com universidade ou laboratório",
   "Diploma de doutorado ou mestrado",
   "Orientador ou coautor acadêmico",
-  "Financiamento de agência de fomento",
-  "Crachá, matrícula ou carteirinha institucional",
 ];
 
 /** O que realmente conta — o que a revista e os pares avaliam. */
@@ -294,8 +292,6 @@ export const WHAT_COUNTS: string[] = [
   "Uma pergunta clara e um método explícito",
   "Evidência verificável e honestidade sobre os limites",
   "Aderência ao escopo e às normas da revista",
-  "Referências reais (nunca inventadas)",
-  "Responsabilidade sobre tudo o que está publicado",
 ];
 
 /**

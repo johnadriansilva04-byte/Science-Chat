@@ -81,12 +81,12 @@ describe("ciência sem crachá", () => {
   it("lista o que NÃO é exigido para submeter", () => {
     expect(NOT_REQUIRED.join(" ")).toMatch(/Vínculo/i);
     expect(NOT_REQUIRED.join(" ")).toMatch(/Diploma/i);
-    expect(NOT_REQUIRED.length).toBeGreaterThanOrEqual(4);
+    expect(NOT_REQUIRED.length).toBe(3);
   });
 
   it("lista o que realmente conta", () => {
     expect(WHAT_COUNTS.join(" ")).toMatch(/método/i);
-    expect(WHAT_COUNTS.length).toBeGreaterThanOrEqual(4);
+    expect(WHAT_COUNTS.length).toBe(3);
   });
 
   it("oferece caminhos para Brasil, Uruguai e os demais países da região", () => {
