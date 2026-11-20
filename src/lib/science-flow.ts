@@ -43,7 +43,7 @@ export const SCIENCE_BITES: ScienceBite[] = [
     n: 2,
     title: "O que te qualifica é o método",
     what: "Tenha uma pergunta clara, evidência de verdade e diga também o que o seu estudo NÃO prova.",
-    why: "A revisão por pares é cega ao seu currículo: ela lê o texto e pergunta se a conclusão se sustenta nos dados que você mostrou.",
+    why: "O parecer avalia o manuscrito: se a conclusão se sustenta nos dados que você mostrou. É nisso que a decisão se apoia.",
     whatFor:
       "Serve para o seu artigo passar no que reprova de verdade — argumento sem prova — em vez de travar por um diploma que ninguém vai conferir.",
   },

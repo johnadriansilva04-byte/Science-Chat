@@ -23,6 +23,7 @@ import {
   COUNTRY_PATHS,
   DIRECT_ANSWER_POINTS,
   NOT_REQUIRED,
+  NOT_REQUIRED_CAVEAT,
   ORCID_REGISTER_URL,
   SCIENCE_REFERENCES,
   SCIENCE_STEPS,
@@ -38,7 +39,7 @@ const TOPICS: { id: TopicId; label: string; hint: string; icon: typeof HelpCircl
   {
     id: "posso",
     label: "Posso publicar sem vínculo?",
-    hint: "A resposta curta, com as provas e a fonte de cada uma.",
+    hint: "As dúvidas mais comuns — com prova e fonte em cada uma.",
     icon: HelpCircle,
   },
   {
@@ -110,7 +111,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-/** Prova recolhida: afirmação à vista, fundamento e fonte sob demanda. */
+/** Prova recolhida: dúvida à vista, resposta curta e fonte sob demanda. */
 function Proof({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) {
   const [open, setOpen] = useState(false);
   return (
@@ -120,11 +121,16 @@ function Proof({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 text-left"
+        className="flex min-h-11 w-full cursor-pointer items-start gap-2.5 text-left"
       >
-        <BadgeCheck className="size-4 shrink-0 text-[var(--ci-accent)]" />
-        <span className="flex-1 text-[0.85rem] font-semibold leading-snug">{point.claim}</span>
-        <ChevronDown className="ciencia-proof__chev size-4 shrink-0 text-[var(--ci-soft)]" />
+        <HelpCircle className="mt-0.5 size-4 shrink-0 text-[var(--ci-accent)]" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[0.85rem] font-semibold leading-snug">{point.question}</span>
+          <span className="mt-0.5 block text-[0.8rem] leading-snug text-[var(--ci-soft)]">
+            {point.answer}
+          </span>
+        </span>
+        <ChevronDown className="ciencia-proof__chev mt-0.5 size-4 shrink-0 text-[var(--ci-soft)]" />
       </button>
       <div className="ciencia-acc" data-open={open}>
         <div className="ciencia-acc__inner">
@@ -148,12 +154,12 @@ function TopicPosso() {
   return (
     <div>
       <p className="ciencia-lede">
-        Sim. O critério de autoria é o que você <strong>fez e assinou</strong> — não a instituição
-        em que trabalha.
+        Não há crachá de entrada. O critério de autoria é o que você <strong>fez e assinou</strong>{" "}
+        — não a instituição em que trabalha. Abaixo, cada dúvida com a prova e a fonte.
       </p>
       <ul className="mt-4 space-y-2.5">
         {DIRECT_ANSWER_POINTS.map((p) => (
-          <Proof key={p.claim} point={p} />
+          <Proof key={p.question} point={p} />
         ))}
       </ul>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -169,6 +175,9 @@ function TopicPosso() {
               </li>
             ))}
           </ul>
+          <p className="mt-2 border-t border-destructive/25 pt-2 text-[0.72rem] leading-snug text-foreground/70">
+            {NOT_REQUIRED_CAVEAT}
+          </p>
         </div>
         <div className="rounded-2xl border border-success/35 bg-success/8 p-3.5">
           <p className="flex items-center gap-1.5 text-[0.82rem] font-semibold text-success">

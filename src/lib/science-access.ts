@@ -185,7 +185,7 @@ export const SCIENCE_STEPS: ScienceStep[] = [
     n: 6,
     title: "Preencha a afiliação como puder",
     do: "Se não tiver vínculo, escreva “Pesquisador(a) independente” — é legítimo.",
-    why: "Muitas revistas pedem a afiliação, mas ela é descritiva, não um requisito de elegibilidade. A revisão por pares é cega ao seu crachá: julga o texto.",
+    why: "Muitas revistas pedem a afiliação, mas ela é descritiva, não um requisito de elegibilidade. O parecer recai sobre o manuscrito — e o editor decide pelo que o texto demonstra.",
   },
   {
     n: 7,
@@ -240,12 +240,17 @@ export const WHAT_COUNTS: string[] = [
 ];
 
 /**
- * A resposta direta à pergunta "dá para publicar sem ser de instituição?".
- * Cada afirmação aponta para uma prova verificável (`proof` + fonte oficial).
+ * As dúvidas reais de quem publica sem vínculo, cada uma com resposta curta e
+ * prova verificável (`proof` + fonte oficial).
+ *
+ * A ordem é a das perguntas que aparecem primeiro na vida do pesquisador: "quem
+ * pode assinar?", "a revista olha minha instituição?", "e a revisão, quem faz?".
  */
 export type DirectAnswerPoint = {
-  /** Afirmação, em uma frase. */
-  claim: string;
+  /** A dúvida, na forma em que a pessoa pergunta. */
+  question: string;
+  /** A resposta curta, em uma frase — sem repetir "sim" em todas. */
+  answer: string;
   /** A prova concreta (o que a fonte diz). */
   proof: string;
   /** Fonte oficial da prova. */
@@ -256,41 +261,53 @@ export type DirectAnswerPoint = {
 
 export const DIRECT_ANSWER_POINTS: DirectAnswerPoint[] = [
   {
-    claim: "Sim: o critério de AUTORIA não menciona instituição.",
+    question: "Preciso de universidade para assinar um artigo?",
+    answer: "Não. Autoria se define pelo que você fez e assinou, não pelo lugar onde trabalha.",
     proof:
       "O ICMJE define autoria por 4 critérios: contribuição substancial; escrever ou revisar criticamente; aprovar a versão final; e responsabilizar-se pelo trabalho. Nenhum deles é vínculo institucional, diploma ou cargo.",
-    source: "ICMJE",
+    source: "ICMJE — Recommendations",
     url: "https://www.icmje.org/recommendations/",
   },
   {
-    claim: "Sim: as revistas avaliam o TEXTO, não o seu crachá.",
+    question: "A revista avalia a minha instituição ou o meu texto?",
+    answer: "O texto. A afiliação é um dado de identificação, não um critério de aceite.",
     proof:
-      "Os critérios de publicação do PLOS ONE são: pesquisa original, análise de alto padrão, conclusões sustentadas pelos dados, ética e aderência às normas. A instituição do autor não aparece na lista.",
+      "Os critérios de publicação do PLOS ONE são: pesquisa original, análise de alto padrão, conclusões sustentadas pelos dados, ética e aderência às normas. A instituição do autor não aparece na lista. O campo de afiliação serve para identificar o autor — e “Pesquisador(a) independente” é uma resposta legítima.",
     source: "PLOS ONE — Criteria for Publication",
     url: "https://journals.plos.org/plosone/s/criteria-for-publication",
   },
   {
-    claim: "Sim: você tem identidade de pesquisador sem vínculo.",
+    question: "Existe identidade de pesquisador sem vínculo?",
+    answer: "Existe: o ORCID, gratuito, pessoal e permanente.",
     proof:
       "O ORCID é um identificador único, persistente e gratuito para pesquisadores. Você mesmo cria, de graça, em minutos (orcid.org/register) — sem instituição. O número tem o formato 0000-0000-0000-0000, é permanente e distingue você de homônimos. É aceito por revistas e universidades.",
     source: "ORCID",
     url: "https://info.orcid.org/what-is-orcid/",
   },
   {
-    claim: "Sim: dá para publicar antes da revista, sem vínculo.",
+    question: "Dá para tornar o trabalho público antes da revista?",
+    answer: "Dá: preprint público, com autoria e data, sem pedir vínculo.",
     proof:
       "No SciELO Preprints e no arXiv você torna público um manuscrito antes da revista — o arXiv pede endosso de um pesquisador já ativo, não vínculo institucional — e garante autoria e data.",
     source: "SciELO Preprints / arXiv",
     url: "https://preprints.scielo.org/",
   },
   {
-    claim: "Sim: a revisão por pares é da revista, não sua.",
+    question: "Quem conduz a revisão por pares: eu ou a revista?",
+    answer: "A revista. Você escreve e responde aos pareceres; ela seleciona quem avalia e decide.",
     proof:
-      "É a REVISTA que conduz a avaliação por pares; ela julga o mérito do trabalho. Por isso a origem do autor é irrelevante para o veredito.",
-    source: "DOAJ — Guide to applying",
-    url: "https://doaj.org/apply/guide/",
+      "O ICMJE trata a revisão por pares como responsabilidade da revista: ela garante que existam sistemas para escolher pareceristas adequados, que eles tenham acesso a todo o material e que o processo seja descrito de forma transparente. Ao autor cabe responder às solicitações.",
+    source: "ICMJE — Submissão e revisão por pares",
+    url: "https://www.icmje.org/recommendations/browse/roles-and-responsibilities/responsibilities-in-the-submission-and-peer-peview-process.html",
   },
 ];
+
+/**
+ * Ressalva honesta das listas "não é exigido": são a regra geral das revistas,
+ * não uma garantia. Chamadas específicas e editais podem pedir vínculo.
+ */
+export const NOT_REQUIRED_CAVEAT =
+  "Regra geral das revistas. Confira as instruções aos autores: chamadas específicas e editais de fomento podem pedir vínculo.";
 
 /** Países cobertos, com o nome do que orientar em cada um. */
 export type CountryPath = {

@@ -16,6 +16,7 @@ import {
 import {
   COUNTRY_PATHS,
   NOT_REQUIRED,
+  NOT_REQUIRED_CAVEAT,
   ORCID_REGISTER_URL,
   SCIENCE_STEPS,
   WHAT_COUNTS,
@@ -129,6 +130,9 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
           </ul>
         </div>
       </div>
+      <p className="mt-2 text-[0.72rem] leading-snug text-muted-foreground">
+        {NOT_REQUIRED_CAVEAT}
+      </p>
 
       {/* O passo a passo completo (11 etapas, com o "por quê" e o "para que
           serve" de cada uma) vive em /ciencia. Aqui fica o resumo: o card da

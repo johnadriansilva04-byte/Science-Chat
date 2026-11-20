@@ -15,7 +15,8 @@ describe("ScienceAtlas", () => {
     render(<ScienceAtlas />);
     expect(screen.getAllByText(/posso publicar sem vínculo\?/i).length).toBeGreaterThan(0);
     for (const point of DIRECT_ANSWER_POINTS) {
-      expect(screen.getByText(point.claim)).toBeInTheDocument();
+      expect(screen.getByText(point.question)).toBeInTheDocument();
+      expect(screen.getByText(point.answer)).toBeInTheDocument();
     }
   });
 
@@ -29,7 +30,7 @@ describe("ScienceAtlas", () => {
     render(<ScienceAtlas />);
     fireEvent.click(screen.getByRole("tab", { name: /passo a passo/i }));
     expect(screen.getByText(SCIENCE_BITES[0]!.title)).toBeInTheDocument();
-    expect(screen.queryByText(DIRECT_ANSWER_POINTS[0]!.claim)).not.toBeInTheDocument();
+    expect(screen.queryByText(DIRECT_ANSWER_POINTS[0]!.question)).not.toBeInTheDocument();
   });
 
   it("mostra o ORCID com link gratuito em assunto próprio", () => {

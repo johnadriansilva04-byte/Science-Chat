@@ -114,14 +114,30 @@ describe("SCIENCE_REFERENCES", () => {
 });
 
 describe("DIRECT_ANSWER_POINTS", () => {
-  it("responde 'sim' com prova e fonte oficial em cada ponto", () => {
+  it("cada dúvida tem resposta curta, prova e fonte oficial", () => {
     expect(DIRECT_ANSWER_POINTS.length).toBeGreaterThanOrEqual(4);
     for (const p of DIRECT_ANSWER_POINTS) {
-      expect(p.claim).toMatch(/^Sim/);
+      expect(p.question.trim().endsWith("?")).toBe(true);
+      expect(p.answer.length).toBeGreaterThan(10);
       expect(p.proof.length).toBeGreaterThan(40);
       expect(p.source.length).toBeGreaterThan(2);
       expect(p.url.startsWith("https://")).toBe(true);
     }
+  });
+
+  // O bloco "Posso publicar sem vínculo?" chegou a abrir cinco itens seguidos
+  // com "Sim:" — virou eco, não resposta. Cada item é uma dúvida própria.
+  it("não repete o mesmo começo em todas as respostas", () => {
+    const openers = DIRECT_ANSWER_POINTS.map((p) => p.answer.slice(0, 3).toLowerCase());
+    expect(new Set(openers).size).toBe(DIRECT_ANSWER_POINTS.length);
+    expect(
+      DIRECT_ANSWER_POINTS.filter((p) => /^Sim[: ]/i.test(p.answer)).length,
+    ).toBeLessThanOrEqual(1);
+  });
+
+  it("não repete a mesma pergunta", () => {
+    const questions = DIRECT_ANSWER_POINTS.map((p) => p.question.toLowerCase());
+    expect(new Set(questions).size).toBe(questions.length);
   });
 
   it("cobre ICMJE, PLOS e ORCID como provas", () => {
@@ -129,6 +145,14 @@ describe("DIRECT_ANSWER_POINTS", () => {
     expect(urls).toMatch(/icmje\.org/);
     expect(urls).toMatch(/plos\.org/);
     expect(urls).toMatch(/orcid\.org/);
+  });
+
+  // A prova da revisão por pares citava o guia do DOAJ, que não fala de quem
+  // conduz a revisão. A fonte correta é o próprio ICMJE.
+  it("fundamenta a revisão por pares no ICMJE, não no DOAJ", () => {
+    const review = DIRECT_ANSWER_POINTS.find((p) => /revisão por pares/i.test(p.question));
+    expect(review?.url).toMatch(/icmje\.org/);
+    expect(review?.proof).toMatch(/pareceristas|revisores|peer/i);
   });
 
   it("a prova do ICMJE cita os 4 critérios de autoria", () => {

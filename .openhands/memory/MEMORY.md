@@ -205,3 +205,9 @@ resolve assíncrono e quebra o `render`).
 - **Slug ao republicar (CORRIGIDO):** `publication.functions.ts` regerava o slug a cada "Atualizar dados" → link mudava para `...-2`. Agora preserva `current.slug`.
 - **Publicação é em 2 passos:** "Preparar publicação" (draft) → "Publicar no mural" → depois "Atualizar dados". Exportar fica desabilitado sem páginas aprovadas.
 - **Overflow mobile (CORRIGIDO):** header de `publicacoes/$slug.tsx` não quebrava linha (472px em 390px). Agora `flex-wrap`.
+
+## Guia /ciencia (2026-11-20)
+- `DIRECT_ANSWER_POINTS` = `{ question, answer, proof, source, url }`. Nunca abrir todos os itens
+  com a mesma palavra ("Sim:") — teste trava isso.
+- Prova da revisão por pares vem do ICMJE (seção "Submission and Peer-Review"), não do DOAJ.
+- `NOT_REQUIRED_CAVEAT` ressalva as listas "não é exigido": chamada específica/edital pode pedir vínculo.
