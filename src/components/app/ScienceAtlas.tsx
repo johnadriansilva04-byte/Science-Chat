@@ -153,12 +153,9 @@ function Proof({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) {
         </span>
         <ChevronDown className="ciencia-proof__chev mt-0.5 size-4 shrink-0 text-[var(--ci-soft)]" />
       </button>
-      {point.cta && (
-        <div className="pl-6">
-          <OrcidChip label={point.cta.label} href={point.cta.url} />
-        </div>
-      )}
-      <div className="ciencia-acc" data-open={open}>
+      {/* Fechado o cartão, o conteúdo continua no DOM para a animação de altura,
+          então `inert` tira do tabulador e do leitor de tela o que está clipado. */}
+      <div className="ciencia-acc" data-open={open} inert={!open}>
         <div className="ciencia-acc__inner">
           <p className="pt-2 text-[0.8rem] leading-relaxed text-[var(--ci-soft)]">{point.proof}</p>
           <a
@@ -170,6 +167,11 @@ function Proof({ point }: { point: (typeof DIRECT_ANSWER_POINTS)[number] }) {
             Fonte: {point.source}
             <ExternalLink className="size-3" />
           </a>
+          {open && point.cta && (
+            <div className="pt-2.5">
+              <OrcidChip label={point.cta.label} href={point.cta.url} />
+            </div>
+          )}
         </div>
       </div>
     </li>

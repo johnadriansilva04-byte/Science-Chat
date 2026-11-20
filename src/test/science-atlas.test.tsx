@@ -40,15 +40,30 @@ describe("ScienceAtlas", () => {
     expect(link).toHaveAttribute("href", ORCID_REGISTER_URL);
   });
 
-  // O ORCID é o primeiro passo concreto de quem não tem vínculo: o atalho
-  // acompanha a dúvida em três lugares, não só na aba própria.
-  it("repete o atalho do ORCID onde a dúvida aparece", () => {
+  // O atalho do ORCID fica fechado junto com a resposta: só aparece depois de
+  // abrir a dúvida, para a lista de perguntas continuar limpa.
+  it("só oferece o atalho do ORCID depois de abrir a dúvida", () => {
     render(<ScienceAtlas />);
+    const question = screen.getByRole("button", {
+      name: /existe identidade de pesquisador sem vínculo/i,
+    });
+    expect(question).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: /criar meu orcid/i })).not.toBeInTheDocument();
+
+    fireEvent.click(question);
+
+    expect(question).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("link", { name: /criar meu orcid/i })).toHaveAttribute(
       "href",
       ORCID_REGISTER_URL,
     );
 
+    fireEvent.click(question);
+    expect(screen.queryByRole("link", { name: /criar meu orcid/i })).not.toBeInTheDocument();
+  });
+
+  it("repete o atalho do ORCID no passo a passo", () => {
+    render(<ScienceAtlas />);
     fireEvent.click(screen.getByRole("tab", { name: /passo a passo/i }));
     expect(screen.getByRole("link", { name: /criar meu orcid/i })).toHaveAttribute(
       "href",
