@@ -521,6 +521,22 @@
   text-transform: uppercase;
   color: var(--ci-accent);
 }
+/* O caminho inteiro recolhido: a home mostra o resumo, não o manual. */
+.cracha-steps--fold {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ci-rule);
+  background: var(--ci-surface-2);
+  padding: 0.55rem 0.7rem;
+}
+.cracha-steps--fold > summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 0;
+  min-height: 2.75rem;
+}
+.cracha-steps--fold > summary::-webkit-details-marker {
+  display: none;
+}
 .cracha-steps ol {
   margin-top: 0.45rem;
   display: grid;
@@ -652,11 +668,6 @@
 }
 .cracha-sources--fold[open] .cracha-sources__chev {
   transform: rotate(180deg);
-}
-.cracha-list__more {
-  color: var(--ci-soft);
-  font-style: italic;
-  opacity: 0.85;
 }
 .cracha-tabs {
   display: flex;

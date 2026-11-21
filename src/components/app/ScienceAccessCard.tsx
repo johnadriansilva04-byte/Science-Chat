@@ -109,9 +109,8 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
           Ciência sem crachá
         </h2>
         <p className="mt-1.5 text-sm text-foreground/85">
-          Publicar artigo <strong className="font-semibold">não exige</strong> universidade, diploma
-          ou orientador. O que a revista avalia é o trabalho — e o critério de autoria (ICMJE) não
-          menciona instituição.
+          Publicar artigo <strong className="font-semibold">não exige</strong> vínculo
+          institucional. O que a revista avalia é o trabalho.
         </p>
       </header>
 
@@ -142,15 +141,17 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
         {NOT_REQUIRED_CAVEAT}
       </p>
 
-      {/* O caminho com o fundamento de cada etapa. Todas as etapas aparecem na
-          lista; o corpo abre sob demanda com o que fazer, por que se sustenta e
-          a FONTE oficial. Sem a fonte, o card seria opinião — e quem publica sem
-          vínculo precisa poder conferir cada afirmação. */}
-      <div className="cracha-steps mt-3">
-        <p className="cracha-steps__title">
-          <BookOpenCheck className="size-4" aria-hidden />O caminho, e por que cada etapa se
-          sustenta
-        </p>
+      {/* O caminho com o fundamento de cada etapa. Recolhido por padrão: aberto,
+          as 12 etapas empurravam a coletânea para fora da primeira rolagem e o
+          card virava um manual na home. O corpo de cada etapa traz o que fazer,
+          por que se sustenta e a FONTE oficial — sem a fonte o card seria
+          opinião, e quem publica sem vínculo precisa conferir cada afirmação. */}
+      <details className="cracha-steps cracha-steps--fold mt-3">
+        <summary className="cracha-steps__title">
+          <BookOpenCheck className="size-4 shrink-0" aria-hidden />
+          {`O caminho em ${SCIENCE_STEPS.length} etapas, com a fonte de cada uma`}
+          <ChevronDown className="cracha-sources__chev size-4 shrink-0" aria-hidden />
+        </summary>
         <ol className="mt-1.5 grid gap-1">
           {SCIENCE_STEPS.map((step) => (
             <li key={step.n}>
@@ -184,14 +185,7 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
             </li>
           ))}
         </ol>
-        <Link
-          to="/ciencia"
-          className="cracha-list__more mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-        >
-          Guia completo, assunto por assunto
-          <ArrowRight className="size-3" aria-hidden />
-        </Link>
-      </div>
+      </details>
 
       {/* Fechado por padrão: o card precisa caber numa tela. Quem quer o
           caminho por país abre — e as fontes completas ficam no guia. */}

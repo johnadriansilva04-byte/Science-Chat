@@ -86,6 +86,27 @@ describe("ScienceAccessCard", () => {
     expect(card).toContain('to="/ciencia"');
   });
 
+  // Regressão (visto na home real): as 12 etapas ficavam todas abertas e o card
+  // virava um manual, empurrando a coletânea para fora da primeira rolagem. O
+  // caminho recolhe por padrão — o guia aberto é o /ciencia.
+  it("o caminho das etapas recolhe por padrão na home", async () => {
+    const { readFileSync } = await import("node:fs");
+    const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
+    expect(card).toContain("cracha-steps--fold");
+    expect(card).toMatch(/<details[^>]*cracha-steps cracha-steps--fold/);
+    expect(card).not.toMatch(/<details[^>]*cracha-steps--fold[^>]*\sopen/);
+  });
+
+  // Havia DOIS links para o guia no rodapé da variante completa ("assunto por
+  // assunto" e "com fontes"). Um destino, uma porta por variante.
+  it("cada variante do card tem uma única porta para o guia", async () => {
+    const { readFileSync } = await import("node:fs");
+    const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
+    expect(card).not.toContain("assunto por assunto");
+    // Uma na variante compacta (só a porta) e uma no rodapé da completa.
+    expect(card.match(/to="\/ciencia"/g) ?? []).toHaveLength(2);
+  });
+
   it("o card traz fontes oficiais por país, com Brasil e Uruguai", async () => {
     const { readFileSync } = await import("node:fs");
     const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
