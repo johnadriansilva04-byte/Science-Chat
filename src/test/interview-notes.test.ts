@@ -241,4 +241,44 @@ describe("sectionForQuestion", () => {
     expect(sectionForQuestion("O que você já tem de resultado concreto?")).toBe("Resultados");
     expect(sectionForQuestion("Quais foram os resultados do seu experimento?")).toBe("Resultados");
   });
+
+  // Regressão (visto no chat real em 18/11): a pergunta "quais são as principais
+  // CONCLUSÕES desses ESTUDOS?" fala da literatura, não da conclusão do artigo.
+  // Caía em Conclusão e o cabeçalho anunciava "Etapa: Conclusão 2/2" no segundo
+  // turno — a entrevista parecia terminada antes de começar.
+  it("pergunta sobre a conclusão da literatura não vira a Conclusão do artigo", () => {
+    expect(
+      sectionForQuestion(
+        "Quais são as principais conclusões desses estudos sobre o uso de tela antes de dormir?",
+      ),
+    ).not.toBe("Conclusão");
+    expect(sectionForQuestion("O que as considerações dos autores sugerem?")).not.toBe("Conclusão");
+    expect(sectionForQuestion("Quais são os achados dos trabalhos que você leu?")).not.toBe(
+      "Resultados",
+    );
+  });
+
+  it("a conclusão do próprio artigo continua sendo Conclusão", () => {
+    expect(sectionForQuestion("Qual é a conclusão do meu artigo?")).toBe("Conclusão");
+    expect(sectionForQuestion("Quais são as considerações finais do seu estudo?")).toBe(
+      "Conclusão",
+    );
+  });
+});
+
+describe("sectionForQuestion — perguntas do guard", () => {
+  // Regressão (chat real, 18/11): a pergunta de metodologia do guard, quando o
+  // modelo a encurta para "Como você vai demonstrar isso?", caía em "Outras
+  // informações" e a resposta de método ia para a seção errada da folha.
+  it("reconhece a pergunta de metodologia sem a lista de procedimentos", () => {
+    expect(sectionForQuestion("Como você vai demonstrar isso?")).toBe("Metodologia");
+  });
+
+  it("reconhece a versão completa da mesma pergunta", () => {
+    expect(
+      sectionForQuestion(
+        "Como você vai demonstrar isso: quais materiais, procedimentos ou critérios de análise vai usar?",
+      ),
+    ).toBe("Metodologia");
+  });
 });

@@ -58,7 +58,10 @@ describe("interviewProgress", () => {
     expect(progress.asked).toBe(2);
     expect(progress.answered).toBe(1);
     expect(progress.skipped).toBe(1);
-    expect(progress.ratio).toBe(1);
+    // A razão é das SEÇÕES do artigo (1 de 6), não das mensagens: contar
+    // "respostas/perguntas" dava 100% logo na segunda pergunta e o trilho
+    // anunciava a entrevista concluída com Metodologia a Conclusão em aberto.
+    expect(progress.ratio).toBeCloseTo(1 / 6);
     expect(progress.stage).toBe("Entrevista");
   });
 
@@ -76,6 +79,38 @@ describe("interviewProgress", () => {
     expect(progress.ratio).toBe(0);
   });
 
+  // Regressão (chat real, 18/11): com duas perguntas respondidas a razão
+  // chegava a 1,0 e o trilho da jornada marcava a entrevista inteira concluída
+  // (o "Ignição 100%") com Metodologia a Conclusão ainda sem resposta.
+  it("não chega a 100% com apenas duas perguntas respondidas", () => {
+    const progress = interviewProgress([
+      assistant("Qual é a pergunta central que o artigo quer responder?"),
+      user("Saber se dá para publicar sem vínculo."),
+      assistant("Quais autores sustentam essa ideia?"),
+      user("Bourdieu e Latour."),
+    ]);
+    expect(progress.ratio).toBeLessThan(0.5);
+    expect(progress.ratio).toBeCloseTo(2 / 6);
+  });
+
+  it("só chega a 100% quando as seis seções foram preenchidas ou puladas", () => {
+    const progress = interviewProgress([
+      assistant("Qual é a pergunta central que o artigo quer responder?"),
+      user("Publicar sem vínculo."),
+      assistant("Quais autores sustentam essa ideia?"),
+      user("Bourdieu."),
+      assistant("Como você vai demonstrar isso?"),
+      user("Análise documental."),
+      assistant("O que você já tem de resultado?"),
+      user("Dois casos."),
+      assistant("O que muda na área se a sua tese estiver certa?"),
+      user("Abre caminho para independentes."),
+      assistant("Fechando: qual é a conclusão?"),
+      user("Que o método basta."),
+    ]);
+    expect(progress.ratio).toBe(1);
+  });
+
   it("nunca conta mais respostas do que perguntas (evita '5/4')", () => {
     const progress = interviewProgress([
       assistant("Qual é o tema?\n_Etapa: Entrevista_"),
@@ -86,7 +121,8 @@ describe("interviewProgress", () => {
     expect(progress.asked).toBe(1);
     expect(progress.answered).toBe(1);
     expect(progress.answered).toBeLessThanOrEqual(progress.asked);
-    expect(progress.ratio).toBe(1);
+    // Uma seção preenchida de seis — e não 1,0 por "1 resposta / 1 pergunta".
+    expect(progress.ratio).toBeCloseTo(1 / 6);
   });
 });
 

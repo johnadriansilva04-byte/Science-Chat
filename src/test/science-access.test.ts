@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AFFILIATION_CAVEAT,
   COUNTRY_PATHS,
+  ETHICS_CAVEAT,
   COVER_LETTER_TEMPLATE,
   DIRECT_ANSWER_POINTS,
   NOT_REQUIRED,
@@ -240,5 +241,27 @@ describe("COVER_LETTER_TEMPLATE", () => {
 
   it("pede o ORCID do autor", () => {
     expect(COVER_LETTER_TEMPLATE).toMatch(/ORCID/);
+  });
+});
+
+describe("ética — a única etapa que pode exigir instituição", () => {
+  it("o aviso cobre Brasil e Uruguai, não só o CEP brasileiro", () => {
+    expect(ETHICS_CAVEAT).toMatch(/CEP/);
+    expect(ETHICS_CAVEAT).toMatch(/Uruguai/);
+    expect(ETHICS_CAVEAT).toMatch(/158\/019/);
+  });
+
+  it("as fontes de ética existem nas referências de cada país", () => {
+    const uruguai = referencesByRegion("uruguai");
+    const brasil = referencesByRegion("brasil");
+    expect(uruguai.some((r) => r.url.includes("158-2019"))).toBe(true);
+    expect(brasil.some((r) => /CONEP/.test(r.label))).toBe(true);
+  });
+
+  // Regressão: o Decreto 379/008 foi derrogado pelo art. 7º do Decreto 158/019.
+  // Citar o antigo mandaria o pesquisador seguir uma norma que não vale mais.
+  it("nenhuma fonte aponta para a norma uruguaia derrogada", () => {
+    const all = SCIENCE_REFERENCES.map((r) => r.label + r.url + r.note).join(" ");
+    expect(all).not.toMatch(/379-2008|379\/008/);
   });
 });

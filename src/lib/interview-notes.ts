@@ -100,6 +100,11 @@ const SECTION_RULES: { section: string; words: string[] }[] = [
       "entrevista",
       "questionário",
       "questionario",
+      // "Como você vai DEMONSTRAR isso?" é a pergunta de metodologia do guard.
+      // Sem esta palavra, a versão encurtada (o modelo parafraseia e derruba o
+      // "quais materiais, procedimentos…") caía em "Outras informações" e a
+      // resposta de método ia para a seção errada da folha.
+      "demonstr",
     ],
   },
   {
@@ -141,13 +146,20 @@ const SECTION_RULES: { section: string; words: string[] }[] = [
  * isso antes de classificar, a pergunta que apenas apresenta a busca caía na
  * seção "Resultados" e a entrevista pulava Introdução e Metodologia — o
  * cabeçalho anunciava "Etapa: Resultados" no primeiro turno.
+ *
+ * O mesmo vale para o que a IA pergunta SOBRE a literatura: "quais são as
+ * principais CONCLUSÕES desses ESTUDOS?" é uma pergunta de Fundamentação
+ * teórica, mas caía na Conclusão do artigo e o cabeçalho anunciava "Etapa:
+ * Conclusão" no segundo turno. O substantivo que segue precisa ser de fora do
+ * artigo (estudos, autores, artigos) — "conclusão do meu artigo" continua
+ * sendo a Conclusão.
  */
-const TOOL_RESULT_PHRASE =
-  /\b(?:resultados?|achados?)\s+d[aeo]s?\s+(?:buscas?|bases?|pesquisas?|literatura|openalex|crossref|plataformas?)\b/gi;
+const LITERATURE_PHRASE =
+  /\b(?:resultados?|achados?|conclusõ(?:es|ão)|consideraçõ(?:es|ão))\s+(?:(?:de|do|da|dos|das|deste|desse|destes|desses|destas|dessas|daquele|daquela|daqueles|daquelas|neste|nesse|nestes|nesses)\s+)?(?:buscas?|bases?|pesquisas?|literatura|openalex|crossref|plataformas?|estudos?|autores?|autoras?|artigos?|trabalhos?|pesquisador(?:es|a|as)?)\b/gi;
 
 /** Seção do artigo à qual uma pergunta da entrevista pertence. */
 export function sectionForQuestion(question: string): string {
-  const q = question.toLowerCase().replace(TOOL_RESULT_PHRASE, " ");
+  const q = question.toLowerCase().replace(LITERATURE_PHRASE, " ");
   for (const rule of SECTION_RULES) {
     if (rule.words.some((w) => q.includes(w))) return rule.section;
   }

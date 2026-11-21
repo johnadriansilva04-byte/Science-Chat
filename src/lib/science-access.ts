@@ -115,6 +115,24 @@ export const SCIENCE_REFERENCES: ScienceReference[] = [
     region: "brasil",
   },
   {
+    label: "CONEP — Comissão Nacional de Ética em Pesquisa (Brasil)",
+    url: "https://conselho.saude.gov.br/comissoes-cns/conep/",
+    note: "Instância que credencia os CEPs e edita a Resolução CNS nº 466/2012: pesquisa com seres humanos precisa de aprovação de CEP ANTES da coleta. Sem vínculo, você submete pelo CEP de uma instituição que aceite ser proponente — o comitê avalia o projeto, não o seu diploma.",
+    region: "brasil",
+  },
+  {
+    label: "Plataforma Brasil",
+    url: "https://plataformabrasil.saude.gov.br/",
+    note: "Sistema oficial de submissão de projetos aos CEPs e à CONEP. É por aqui que o parecer do comitê é emitido e fica registrado.",
+    region: "brasil",
+  },
+  {
+    label: "Uruguai — Decreto nº 158/019 (IMPO)",
+    url: "https://www.impo.com.uy/bases/decretos/158-2019",
+    note: "Norma vigente sobre pesquisa em seres humanos no Uruguai. O art. 3º exige aprovação prévia de um Comitê de Ética em Investigação Institucional acreditado pelo Ministério de Salud Pública.",
+    region: "uruguai",
+  },
+  {
     label: "Portal de Periódicos da CAPES",
     url: "https://www.periodicos.capes.gov.br/",
     note: "Bases científicas assinadas pelo governo brasileiro. O acesso é liberado pelo reconhecimento de IP ou pela conta CAFe de uma instituição participante — por isso nem sempre está aberto a quem não tem vínculo. Publicar não depende dele: os artigos abertos do SciELO e os preprints cobrem boa parte do que você precisa ler.",
@@ -193,13 +211,13 @@ export const SCIENCE_STEPS: ScienceStep[] = [
   {
     n: 3,
     title: "Resolva a ética — o único ponto que pode exigir instituição",
-    do: "Se a pesquisa envolve seres humanos, submeta o projeto a um Comitê de Ética em Pesquisa (CEP) ANTES de coletar dados.",
-    why: "No Brasil, a Resolução CNS nº 466/2012 exige aprovação por CEP para pesquisa com seres humanos, e o CEP é um colegiado criado por uma instituição. Sem vínculo, você submete pelo CEP de uma instituição que aceite ser a proponente do projeto. Não é um crachá seu: é o comitê avaliando o projeto e o consentimento — e a exigência vale igual para quem tem vínculo. Pesquisa teórica, bibliográfica ou com dados públicos não passa por CEP.",
+    do: "Se a pesquisa envolve seres humanos, submeta o projeto a um comitê de ética ANTES de coletar dados.",
+    why: "No Brasil, a Resolução CNS nº 466/2012 exige aprovação por CEP; no Uruguai, o Decreto nº 158/019 (art. 3º) exige aprovação de um Comitê de Ética em Investigação Institucional acreditado pelo Ministério de Salud Pública. Nos dois casos o comitê é criado por uma instituição: sem vínculo, você submete pelo comitê de uma instituição que aceite ser a proponente do projeto. Não é um crachá seu — é o comitê avaliando o projeto e o consentimento, e a exigência vale igual para quem tem vínculo. Pesquisa teórica, bibliográfica ou com dados públicos não passa por comitê.",
     whatFor:
-      "Serve para você não descobrir isso depois de já ter entrevistado alguém: sem parecer do CEP, a revista recusa o artigo e os dados não podem ser usados.",
+      "Serve para você não descobrir isso depois de já ter entrevistado alguém: sem o parecer do comitê, a revista recusa o artigo e os dados não podem ser usados.",
     source: {
-      label: "CONEP — Comissão Nacional de Ética em Pesquisa (CNS)",
-      url: "https://conselho.saude.gov.br/comissoes-cns/conep/",
+      label: "Uruguai — Decreto nº 158/019 (IMPO)",
+      url: "https://www.impo.com.uy/bases/decretos/158-2019",
     },
   },
   {
@@ -321,16 +339,7 @@ export const AFFILIATION_CAVEAT =
  * diploma. Mas é uma dependência institucional real e o card precisa dizê-la.
  */
 export const ETHICS_CAVEAT =
-  "Pesquisa com seres humanos (entrevistas, questionários, dados de pacientes) precisa de aprovação de um Comitê de Ética em Pesquisa (CEP) antes de começar. O CEP é criado por uma instituição — então, nesse caso, você submete pelo CEP de uma instituição que aceite ser a proponente do seu projeto. É a única etapa em que a instituição aparece de fato; e ela vale igual para quem tem crachá: o que o comitê avalia é o projeto e o consentimento, não o seu diploma. Pesquisa teórica, bibliográfica ou com dados públicos não passa por CEP.";
-
-/** Fontes oficiais do requisito de ética (Brasil). */
-export const ETHICS_SOURCES: { label: string; url: string }[] = [
-  {
-    label: "CONEP — Comissão Nacional de Ética em Pesquisa (CNS)",
-    url: "https://conselho.saude.gov.br/comissoes-cns/conep/",
-  },
-  { label: "Plataforma Brasil — submissão a CEP", url: "https://plataformabrasil.saude.gov.br/" },
-];
+  "Pesquisa com seres humanos (entrevistas, questionários, dados de pacientes) precisa de aprovação de um comitê de ética ANTES de começar. No Brasil, é o CEP (Resolução CNS nº 466/2012); no Uruguai, o Comitê de Ética em Investigação Institucional acreditado pelo Ministério de Salud Pública (Decreto nº 158/019, art. 3º). Nos dois países o comitê é criado por uma instituição — então, sem vínculo, você submete pelo comitê de uma instituição que aceite ser a proponente do seu projeto. É a única etapa em que a instituição aparece de fato; e ela vale igual para quem tem crachá: o que o comitê avalia é o projeto e o consentimento, não o seu diploma. Pesquisa teórica, bibliográfica ou com dados públicos não passa por comitê.";
 
 /**
  * As dúvidas reais de quem publica sem vínculo, cada uma com resposta curta e

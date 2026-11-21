@@ -9,6 +9,7 @@ import {
 import { startResponses, generateFinalText, interviewModelId } from "@/lib/ai/gateway.server";
 import { collectInterviewNotes } from "@/lib/interview-notes";
 import { interviewQuestionTransform } from "@/lib/ai/interview-guard";
+import { emptyReplyGuard } from "@/lib/ai/empty-reply-guard";
 import {
   INTERVIEW_INSTRUCTIONS,
   PAGE_INSTRUCTIONS,
@@ -373,9 +374,13 @@ async function handle(request: Request) {
       // Lê o histórico INTEIRO (`sanitized`), não a janela: em entrevistas longas
       // a janela descarta as primeiras respostas, o guard as via como lacunas
       // abertas e repetia a mesma pergunta a cada turno.
+      // A entrevista já tem a sua rede (pergunta da próxima lacuna). A ESCRITA
+      // não tinha nenhuma: quando o modelo gastava os passos em ferramentas e
+      // terminava sem texto, o pesquisador recebia uma bolha vazia — o "chat não
+      // responde nada". O guard só age se o turno terminar em branco.
       article.phase === "interview"
         ? [() => interviewQuestionTransform(collectInterviewNotes(sanitized))]
-        : undefined,
+        : [() => emptyReplyGuard()],
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

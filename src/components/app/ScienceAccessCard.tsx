@@ -140,6 +140,13 @@ export function ScienceAccessCard({ className = "", variant = "full" }: ScienceA
       <p className="mt-2 text-[0.72rem] leading-snug text-muted-foreground">
         {NOT_REQUIRED_CAVEAT}
       </p>
+      {/* Uma linha só: o detalhe vive na etapa 3, não repetido aqui. Quem lê
+          "não é exigido vínculo" precisa saber da exceção sem abrir nada. */}
+      <p className="cracha-ethics mt-2 rounded-lg border border-amber-500/35 bg-amber-500/8 px-2.5 py-2 text-[0.72rem] leading-snug text-foreground/80">
+        <strong className="font-semibold">Exceção honesta:</strong> pesquisa com seres humanos exige
+        comitê de ética antes de coletar (CEP no Brasil, comitê acreditado pelo MSP no Uruguai) —
+        detalhe na etapa 3.
+      </p>
 
       {/* O caminho com o fundamento de cada etapa. Recolhido por padrão: aberto,
           as 12 etapas empurravam a coletânea para fora da primeira rolagem e o

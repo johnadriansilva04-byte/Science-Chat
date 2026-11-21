@@ -98,8 +98,15 @@ export function interviewProgress(messages: MessageLike[]): InterviewProgress {
   // "5/4" — respostas acima do número de perguntas feitas.
   const cappedSkipped = Math.min(skipped, asked);
   const cappedAnswered = Math.min(answered, Math.max(asked - cappedSkipped, 0));
-  const denominator = Math.max(asked, 1);
-  const ratio = asked === 0 ? 0 : Math.min(1, (cappedAnswered + cappedSkipped) / denominator);
+  // O progresso é das SEÇÕES do artigo, não das mensagens. Com "respostas /
+  // perguntas" ele chegava a 100% na segunda pergunta (2/2) e o trilho anunciava
+  // a entrevista concluída antes de Metodologia, Resultados, Discussão e
+  // Conclusão — o pesquisador via "Ignição 100%" e achava que tinha pulado
+  // etapas. Uma seção conta quando recebeu resposta ou foi pulada.
+  const filled = interviewMap(messages).filter(
+    (item) => item.state === "answered" || item.state === "skipped",
+  ).length;
+  const ratio = filled / INTERVIEW_SECTIONS.length;
   return { asked, answered: cappedAnswered, skipped: cappedSkipped, ratio, stage };
 }
 
@@ -159,6 +166,11 @@ export function interviewMap(messages: MessageLike[]): { section: string; state:
   const answered = new Set<string>();
   const skipped = new Set<string>();
   for (const note of collectInterviewNotes(messages)) {
+    // Turno em que o pesquisador PERGUNTOU não preenche nem pula a seção: a
+    // lacuna segue aberta. Antes ele vinha com `skipped` (o mesmo marcador de
+    // "Pular") e a faixa anunciava a seção como resolvida — inflando o
+    // progresso com perguntas em vez de respostas.
+    if (isQuestionToAssistant(note.answer)) continue;
     const section = note.section ?? sectionForQuestion(note.question);
     if (note.skipped) skipped.add(section);
     else answered.add(section);
