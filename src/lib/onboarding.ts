@@ -66,23 +66,40 @@ export function faqSeed(question: string): string {
 
 const PENDING_KEY = "sc:onboarding-question";
 
-/** Guarda a pergunta escolhida no cadastro para o chat respondê-la ao entrar. */
-export function setPendingQuestion(question: string): void {
+/** O que ficou guardado: o texto e se ele veio do FAQ (resposta pronta). */
+export type PendingQuestion = { text: string; fromFaq: boolean };
+
+/**
+ * Guarda a pergunta escolhida no cadastro para o chat respondê-la ao entrar.
+ *
+ * `fromFaq` separa as duas origens que caem no mesmo slot: a pergunta pronta do
+ * Pracinha (que pede uma explicação didática) e a inquietação que a pessoa
+ * digitou na home (que já é o problema da pesquisa e não deve ganhar instrução
+ * colada — era isso que virava título e semente com um texto a mais).
+ */
+export function setPendingQuestion(question: string, fromFaq = false): void {
   if (typeof sessionStorage === "undefined") return;
   try {
-    sessionStorage.setItem(PENDING_KEY, question);
+    sessionStorage.setItem(PENDING_KEY, JSON.stringify({ text: question, fromFaq }));
   } catch {
     /* armazenamento indisponível — segue sem a pergunta pendente */
   }
 }
 
 /** Recupera (e limpa) a pergunta pendente, uma única vez. */
-export function takePendingQuestion(): string | null {
+export function takePendingQuestion(): PendingQuestion | null {
   if (typeof sessionStorage === "undefined") return null;
   try {
     const value = sessionStorage.getItem(PENDING_KEY);
-    if (value) sessionStorage.removeItem(PENDING_KEY);
-    return value;
+    if (!value) return null;
+    sessionStorage.removeItem(PENDING_KEY);
+    // Compatibilidade com o formato antigo (só a string).
+    if (!value.startsWith("{")) return { text: value, fromFaq: false };
+    const parsed: unknown = JSON.parse(value);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const { text, fromFaq } = parsed as Partial<PendingQuestion>;
+    if (typeof text !== "string" || !text.trim()) return null;
+    return { text, fromFaq: fromFaq === true };
   } catch {
     return null;
   }

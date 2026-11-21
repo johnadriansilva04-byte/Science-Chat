@@ -180,7 +180,8 @@ function AuthPage() {
       void createArticle(navigate, faqSeed(question), question);
       return;
     }
-    setPendingQuestion(question);
+    // Pergunta do Pracinha: marcada como FAQ para o chat responder na entrada.
+    setPendingQuestion(question, true);
     if (mode === "in") setMode("up");
     toast.info("Crie sua conta e o Pracinha responde essa pergunta pra você.");
   }

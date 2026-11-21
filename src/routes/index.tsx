@@ -51,13 +51,16 @@ function Index() {
 
   // Pergunta escolhida no cadastro ("Perguntar ao Pracinha"): ao entrar, ela vira
   // um artigo novo com a pergunta como semente — o chat já responde de cara.
+  // `takePendingQuestion` devolve o texto E a origem: só a pergunta do FAQ leva
+  // a instrução de resposta pronta; a inquietação digitada na home vai crua.
   const consumedQuestion = useRef(false);
   useEffect(() => {
     if (loading || !user || consumedQuestion.current) return;
-    const question = takePendingQuestion();
-    if (!question) return;
+    const pending = takePendingQuestion();
+    if (!pending) return;
     consumedQuestion.current = true;
-    void createArticle(navigate, faqSeed(question), question);
+    const seed = pending.fromFaq ? faqSeed(pending.text) : pending.text;
+    void createArticle(navigate, seed, pending.text);
   }, [loading, user, navigate]);
 
   // O brilho acompanha o ponteiro — dá vida ao fundo sem custo de render.
@@ -105,7 +108,8 @@ function Index() {
 
   /** Visitante: as ações que gravam exigem conta, então levamos ao cadastro. */
   function requireAccount(seed?: string) {
-    if (seed?.trim()) setPendingQuestion(seed.trim());
+    // Inquietação digitada na home: vai crua, sem a instrução do FAQ.
+    if (seed?.trim()) setPendingQuestion(seed.trim(), false);
     navigate({ to: "/auth" });
   }
 
