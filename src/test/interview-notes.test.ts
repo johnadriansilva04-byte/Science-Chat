@@ -220,4 +220,25 @@ describe("sectionForQuestion", () => {
       "Conclusão",
     );
   });
+
+  // Regressão (visto no chat real): o turno que apenas apresenta o retorno da
+  // busca ("O que o resultado da busca diz sobre…?") era classificado como
+  // Resultados. A entrevista pulava Introdução e Metodologia e o cabeçalho
+  // anunciava "Etapa: Resultados" no primeiro turno.
+  it("retorno da busca não vira a seção Resultados", () => {
+    expect(sectionForQuestion("O que o resultado da busca diz sobre o efeito da luz azul?")).toBe(
+      "Outras informações",
+    );
+    expect(sectionForQuestion("O que os resultados das bases públicas sugerem?")).toBe(
+      "Outras informações",
+    );
+    expect(sectionForQuestion("O que os achados da literatura mostram?")).toBe(
+      "Outras informações",
+    );
+  });
+
+  it("continua classificando resultados do estudo como Resultados", () => {
+    expect(sectionForQuestion("O que você já tem de resultado concreto?")).toBe("Resultados");
+    expect(sectionForQuestion("Quais foram os resultados do seu experimento?")).toBe("Resultados");
+  });
 });

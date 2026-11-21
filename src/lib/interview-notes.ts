@@ -135,9 +135,19 @@ const SECTION_RULES: { section: string; words: string[] }[] = [
   },
 ];
 
+/**
+ * Fala do RETORNO da ferramenta de literatura ("resultado da busca",
+ * "resultados das bases públicas"), não dos resultados do estudo. Sem tirar
+ * isso antes de classificar, a pergunta que apenas apresenta a busca caía na
+ * seção "Resultados" e a entrevista pulava Introdução e Metodologia — o
+ * cabeçalho anunciava "Etapa: Resultados" no primeiro turno.
+ */
+const TOOL_RESULT_PHRASE =
+  /\b(?:resultados?|achados?)\s+d[aeo]s?\s+(?:buscas?|bases?|pesquisas?|literatura|openalex|crossref|plataformas?)\b/gi;
+
 /** Seção do artigo à qual uma pergunta da entrevista pertence. */
 export function sectionForQuestion(question: string): string {
-  const q = question.toLowerCase();
+  const q = question.toLowerCase().replace(TOOL_RESULT_PHRASE, " ");
   for (const rule of SECTION_RULES) {
     if (rule.words.some((w) => q.includes(w))) return rule.section;
   }

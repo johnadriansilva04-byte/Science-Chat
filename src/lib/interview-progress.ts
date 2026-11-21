@@ -121,7 +121,12 @@ export function interviewStage(messages: MessageLike[]): string | null {
     // nula, deixando o cabeçalho em "assistente da ScienceChat".
     const question = lastQuestion(stripStage(messageText(message)));
     if (!question) continue;
-    return sectionForQuestion(question);
+    const section = sectionForQuestion(question);
+    // Turno que só apresenta o retorno da busca não é uma etapa do artigo:
+    // seguir para a pergunta anterior mantém o cabeçalho na seção real, em vez
+    // de anunciar "Etapa: Outras informações".
+    if (section === "Outras informações") continue;
+    return section;
   }
   return null;
 }
