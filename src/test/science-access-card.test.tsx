@@ -53,7 +53,6 @@ describe("ScienceAccessCard", () => {
     const auth = readFileSync("src/routes/auth.tsx", "utf8");
     const uses = auth.match(/<ScienceAccessCard/g) ?? [];
     expect(uses).toHaveLength(1);
-    expect(auth).toContain('variant="compact"');
   });
 
   it("o guia fica na navegação principal", async () => {
@@ -70,52 +69,44 @@ describe("ScienceAccessCard", () => {
     expect(home).toContain("<GameCard");
   });
 
-  // O card da home ensina o essencial; o detalhe de cada etapa fica em /ciencia,
-  // para o card não voltar a medir mais de uma tela.
-  it("o card resume os passos com o fundamento e aponta para o guia completo", async () => {
+  // O card já foi um boletim: duas listas, dois acordeões e doze etapas, mais
+  // de uma tela da home. A home mostra o convite e a resposta curta; o manual
+  // vive no guia. Este teste falha se o boletim voltar.
+  it("o card é UM cartão: sem listas, acordeões ou passo a passo", async () => {
     const { readFileSync } = await import("node:fs");
     const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
-    // Cada etapa vem com o PORQUÊ — o que o pesquisador quer saber antes de
-    // submeter sem vínculo — e não só o título do passo.
-    expect(card).toContain("SCIENCE_STEPS");
-    expect(card).toContain("step.why");
-    // Cada etapa é um acordeão: o título fica visível e o porquê abre ao toque.
-    expect(card).toContain("cracha-step__body");
-    expect(card).toContain("NOT_REQUIRED");
-    expect(card).toContain("WHAT_COUNTS");
-    expect(card).toContain('to="/ciencia"');
+    expect(card).not.toContain("SCIENCE_STEPS");
+    expect(card).not.toContain("NOT_REQUIRED");
+    expect(card).not.toContain("WHAT_COUNTS");
+    expect(card).not.toContain("referencesByRegion");
+    expect(card).not.toContain("<details");
+    expect(card).not.toContain('role="tab"');
+    // Uma única porta para o guia, e o texto dela diz o que há lá dentro.
+    expect(card.match(/to="\/ciencia"/g) ?? []).toHaveLength(1);
   });
 
-  // Regressão (visto na home real): as 12 etapas ficavam todas abertas e o card
-  // virava um manual, empurrando a coletânea para fora da primeira rolagem. O
-  // caminho recolhe por padrão — o guia aberto é o /ciencia.
-  it("o caminho das etapas recolhe por padrão na home", async () => {
+  // O card responde a dúvida em uma frase e avisa da única exceção real
+  // (pesquisa com seres humanos), sem despejar o guia na home.
+  it("o card dá a resposta curta e a exceção da ética", async () => {
     const { readFileSync } = await import("node:fs");
     const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
-    expect(card).toContain("cracha-steps--fold");
-    expect(card).toMatch(/<details[^>]*cracha-steps cracha-steps--fold/);
-    expect(card).not.toMatch(/<details[^>]*cracha-steps--fold[^>]*\sopen/);
+    expect(card).toMatch(/não exige/);
+    expect(card).toMatch(/vínculo\s+institucional/);
+    expect(card).toMatch(/seres humanos/);
+    expect(card).toMatch(/comitê de ética/);
   });
 
-  // Havia DOIS links para o guia no rodapé da variante completa ("assunto por
-  // assunto" e "com fontes"). Um destino, uma porta por variante.
-  it("cada variante do card tem uma única porta para o guia", async () => {
-    const { readFileSync } = await import("node:fs");
-    const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
-    expect(card).not.toContain("assunto por assunto");
-    // Uma na variante compacta (só a porta) e uma no rodapé da completa.
-    expect(card.match(/to="\/ciencia"/g) ?? []).toHaveLength(2);
-  });
-
-  it("o card traz fontes oficiais por país, com Brasil e Uruguai", async () => {
-    const { readFileSync } = await import("node:fs");
-    const card = readFileSync("src/components/app/ScienceAccessCard.tsx", "utf8");
-    expect(card).toContain("referencesByRegion");
-    expect(card).toContain('target="_blank"');
+  // As fontes por país saíram do card junto com o boletim: quem quiser o link
+  // oficial abre o guia. O que continua travado é que elas existam e cubram
+  // Brasil e Uruguai.
+  it("as fontes oficiais por país existem para Brasil e Uruguai", () => {
     const brasil = referencesByRegion("brasil");
     const uruguai = referencesByRegion("uruguai");
     expect(brasil.length).toBeGreaterThan(0);
     expect(uruguai.length).toBeGreaterThan(0);
+    for (const ref of [...brasil, ...uruguai]) {
+      expect(ref.url).toMatch(/^https:\/\//);
+    }
   });
 
   it("os dados do guia cobrem Brasil e Uruguai (Udelar)", () => {

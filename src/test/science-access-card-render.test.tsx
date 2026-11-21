@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -13,52 +13,32 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 const { ScienceAccessCard } = await import("@/components/app/ScienceAccessCard");
-const { referencesByRegion } = await import("@/lib/science-access");
-
-const panel = () => screen.getByRole("tabpanel");
 
 describe("ScienceAccessCard (render)", () => {
-  it("troca de região ao clicar nas abas", () => {
+  it("é um cartão com título, resposta curta e uma porta para o guia", () => {
     render(<ScienceAccessCard />);
 
-    expect(within(panel()).getByText("Plataforma Lattes (CNPq)")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Uruguai (Udelar)" }));
-    expect(within(panel()).getByText("SciELO Uruguay")).toBeInTheDocument();
-    expect(within(panel()).queryByText("Plataforma Lattes (CNPq)")).not.toBeInTheDocument();
-    for (const ref of referencesByRegion("uruguai")) {
-      expect(within(panel()).getByText(ref.label)).toBeInTheDocument();
-    }
-  });
-
-  it("navega entre as abas com as setas do teclado", () => {
-    render(<ScienceAccessCard />);
-    const brasil = screen.getByRole("tab", { name: "Brasil" });
-    expect(brasil).toHaveAttribute("aria-selected", "true");
-    expect(brasil).toHaveAttribute("tabindex", "0");
-
-    fireEvent.keyDown(brasil, { key: "ArrowRight" });
-    const uruguai = screen.getByRole("tab", { name: "Uruguai (Udelar)" });
-    expect(uruguai).toHaveAttribute("aria-selected", "true");
-    expect(brasil).toHaveAttribute("tabindex", "-1");
-
-    fireEvent.keyDown(uruguai, { key: "ArrowLeft" });
-    expect(screen.getByRole("tab", { name: "Brasil" })).toHaveAttribute("aria-selected", "true");
-  });
-
-  it("liga cada aba ao painel por aria-controls/aria-labelledby", () => {
-    render(<ScienceAccessCard />);
-    const brasil = screen.getByRole("tab", { name: "Brasil" });
-    expect(brasil).toHaveAttribute("aria-controls", panel().id);
-    expect(panel()).toHaveAttribute("aria-labelledby", brasil.id);
-  });
-
-  it("a variante compacta é só a porta para o guia", () => {
-    render(<ScienceAccessCard variant="compact" />);
-    expect(screen.getByRole("link", { name: /Ciência sem crachá/ })).toHaveAttribute(
+    expect(screen.getByRole("heading", { name: "Ciência sem crachá" })).toBeInTheDocument();
+    expect(screen.getByText(/não exige/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /abrir o guia ciência sem crachá/i })).toHaveAttribute(
       "href",
       "/ciencia",
     );
+  });
+
+  // A ética é a única exceção ao "sem crachá" e precisa estar à vista: quem lê
+  // a promessa tem de saber que pesquisa com seres humanos passa por comitê.
+  it("mostra a exceção da ética sem abrir nada", () => {
+    render(<ScienceAccessCard />);
+    expect(screen.getByText(/pesquisa com seres humanos exige/i)).toBeInTheDocument();
+  });
+
+  // O boletim (listas, acordeões de etapas, abas por país) vive no guia. Se
+  // voltar para o card, ele ocupa mais de uma tela da home outra vez.
+  it("não despeja o guia na home: sem abas nem acordeões", () => {
+    render(<ScienceAccessCard />);
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(document.querySelector("details")).toBeNull();
   });
 });

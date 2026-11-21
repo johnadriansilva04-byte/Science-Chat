@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   AFFILIATION_CAVEAT,
+  ETHICS_CAVEAT,
   COVER_LETTER_TEMPLATE,
   COUNTRY_PATHS,
   DIRECT_ANSWER_POINTS,
@@ -223,6 +224,9 @@ function TopicPosso() {
       </div>
       <p className="mt-4 rounded-xl border border-[var(--ci-rule)] bg-[var(--ci-surface-2)] p-3 text-[0.78rem] leading-relaxed text-[var(--ci-soft)]">
         {AFFILIATION_CAVEAT}
+      </p>
+      <p className="mt-3 rounded-xl border border-amber-500/35 bg-amber-500/8 p-3 text-[0.78rem] leading-relaxed text-foreground/85">
+        {ETHICS_CAVEAT}
       </p>
     </div>
   );

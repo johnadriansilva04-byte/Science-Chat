@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 /**
  * CSS fora de `@layer` vence qualquer utilitário do Tailwind, não importa a
- * ordem. Era o que acontecia com `.cracha-compact { display: flex }`: ele
+ * ordem. Era o que acontecia com o card compacto (`display: flex`): ele
  * anulava o `lg:hidden` e a `/auth` mostrava dois cards iguais no desktop.
  *
  * O teste lê a folha de estilo como texto porque o defeito só existe na
@@ -34,7 +34,7 @@ describe("cascata do CSS", () => {
   it("mantém os cards dentro de @layer components", () => {
     // Se voltarem para fora da camada, os utilitários (`lg:hidden`, `hidden`)
     // param de funcionar e os cards se multiplicam nas telas.
-    for (const selector of [".cracha-compact {", ".cracha-card {", ".game-card {"]) {
+    for (const selector of [".cracha-card {", ".cracha-cta {", ".game-card {"]) {
       expect(css).toContain(selector);
       expect(layer).toContain(selector);
     }

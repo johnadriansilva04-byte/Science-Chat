@@ -324,7 +324,7 @@ function AuthPage() {
 
         {/* Porta única para o guia nesta tela: aqui chega quem ainda duvida se
             pode publicar, e /auth não tem cabeçalho com navegação. */}
-        <ScienceAccessCard variant="compact" />
+        <ScienceAccessCard />
 
         {/* Boas-vindas do Pracinha (some no celular para não empurrar o formulário) */}
         <PracinhaIntro onAsk={ask} />

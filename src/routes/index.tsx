@@ -245,10 +245,10 @@ function Index() {
               ))}
             </ol>
 
-            {/* O card de ensino vem no INÍCIO da home, na coluna principal: é a
-                primeira coisa que quem chega sem vínculo precisa ler — e antes
-                ele ficava depois da coletânea, fora da primeira rolagem. */}
-            <ScienceAccessCard className="mt-6" />
+            {/* O card de ensino abre a coluna da esquerda, logo abaixo do
+                formulário: é a primeira coisa que quem chega sem vínculo precisa
+                ler, e ele é um cartão — não o guia inteiro. */}
+            <ScienceAccessCard className="mt-5" />
           </section>
 
           {/* Coluna direita: a coletânea e o Stop. */}
