@@ -42,10 +42,10 @@ describe("GameCard", () => {
     vi.stubEnv("VITE_GAME_URL", "");
     render(<GameCard />);
 
-    for (const category of STOP_CATEGORIES.slice(0, 3)) {
+    for (const category of STOP_CATEGORIES) {
       expect(screen.getByText(category)).toBeInTheDocument();
     }
-    expect(screen.getByText(`+${STOP_CATEGORIES.length - 3}`)).toBeInTheDocument();
+    expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
   });
 
   it("opens the embedded game in a dialog when the URL is set", () => {

@@ -1422,10 +1422,6 @@
   border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
   color: color-mix(in oklab, var(--foreground) 82%, transparent);
 }
-.game-card__chip--more {
-  font-variant-numeric: tabular-nums;
-  opacity: 0.75;
-}
 .game-card__cta {
   display: inline-flex;
   flex: none;

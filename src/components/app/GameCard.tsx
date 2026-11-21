@@ -44,12 +44,11 @@ export function GameCard({ className }: { className?: string }) {
             <span className="text-[0.7rem] font-normal text-muted-foreground">— de bobeira?</span>
           </p>
           <ul className="mt-1.5 flex flex-wrap gap-1">
-            {STOP_CATEGORIES.slice(0, 3).map((category) => (
+            {STOP_CATEGORIES.map((category) => (
               <li key={category} className="game-card__chip">
                 {category}
               </li>
             ))}
-            <li className="game-card__chip game-card__chip--more">+{STOP_CATEGORIES.length - 3}</li>
           </ul>
         </div>
         <button
