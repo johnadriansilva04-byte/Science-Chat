@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  cleanInterviewReply,
   METHODOLOGY_SPEC_SECTIONS,
   methodologyLinkError,
   methodologyProtocolCode,
@@ -172,5 +173,33 @@ describe("migration 0007_methodologies.sql", () => {
     expect(sql).toMatch(
       /methodology_id\s+text\s+not\s+null\s+references\s+methodologies\(id\)\s+on\s+delete\s+cascade/i,
     );
+  });
+});
+
+describe("cleanInterviewReply", () => {
+  it("corta a resposta quando o modelo passa a inventar falas do pesquisador", () => {
+    const raw = [
+      "Antes de tudo: separar fonte primária de secundária muda o que conta como prova.",
+      "",
+      "PESQUISADOR: (comprada) Isso pode incluir como as pessoas se sentem.",
+      "PESQUISADOR: E também como denunciam as práticas.",
+    ].join("\n");
+    const out = cleanInterviewReply(raw);
+    expect(out).toContain("separar fonte primária de secundária");
+    expect(out).not.toContain("PESQUISADOR");
+  });
+
+  it("remove o rótulo do assistente no começo da fala", () => {
+    expect(cleanInterviewReply("SCIENCECHAT: Qual é o corpus?")).toBe("Qual é o corpus?");
+    expect(cleanInterviewReply("[2] assistente: Qual é o corpus?")).toBe("Qual é o corpus?");
+  });
+
+  it("mantém intacta uma fala normal e limita o tamanho", () => {
+    const normal = "Boa. O corpus já tem cinco fontes primárias. Quais delas provam a data do ato?";
+    expect(cleanInterviewReply(normal)).toBe(normal);
+
+    const long = `${"frase de teste. ".repeat(200)}`;
+    const out = cleanInterviewReply(long, 200);
+    expect(out.length).toBeLessThanOrEqual(201);
   });
 });

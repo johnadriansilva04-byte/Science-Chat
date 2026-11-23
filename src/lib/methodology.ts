@@ -139,3 +139,30 @@ export function methodologyTitleFromSeed(seed?: string): string {
   if (!clean) return "Metodologia sem título";
   return clean.slice(0, 120);
 }
+
+/**
+ * O modelo leve às vezes continua a transcrição em vez de responder: emenda
+ * "PESQUISADOR: …" e passa a inventar falas do pesquisador. Cortamos a resposta
+ * no primeiro rótulo de fala que apareça depois do começo e no excesso de
+ * tamanho — o turno é uma fala curta, não um diálogo.
+ */
+const SPEAKER_LABEL =
+  /^\s*(?:\*\*)?(?:\[\d+\]\s*)?(pesquisador|sciencechat|assistente|pracinha)(?:\*\*)?\s*[:(]/i;
+
+export function cleanInterviewReply(raw: string, maxChars = 1200): string {
+  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+  const kept: string[] = [];
+  for (const line of lines) {
+    if (SPEAKER_LABEL.test(line) && kept.some((l) => l.trim() !== "")) break;
+    kept.push(line);
+  }
+  let text = kept.join("\n").trim();
+  text = text.replace(SPEAKER_LABEL, "").trim();
+  text = text.replace(/^\*\*(.*?)\*\*\s*[:(]\s*/s, "").trim();
+  if (text.length > maxChars) {
+    const cut = text.slice(0, maxChars);
+    const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("? "), cut.lastIndexOf("! "));
+    text = end > maxChars * 0.5 ? cut.slice(0, end + 1) : cut.trimEnd() + "…";
+  }
+  return text.trim();
+}

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { base64ToBytes } from "@/lib/base64";
-import { methodologyLinkError, METHODOLOGY_STATUS } from "@/lib/methodology";
+import { cleanInterviewReply, methodologyLinkError, METHODOLOGY_STATUS } from "@/lib/methodology";
 import * as repo from "@/lib/cf/repo.server";
 
 type Part = { type: string; text?: string };
@@ -48,10 +48,10 @@ async function loadTranscript(userId: string, methodologyId: string): Promise<st
   const msgs = await repo.listMethodologyMessages(userId, methodologyId);
   return msgs
     .map(
-      (m) =>
-        `${m.role === "user" ? "PESQUISADOR" : "SCIENCECHAT"}: ${partsText(parseParts(m.parts))}`,
+      (m, i) =>
+        `[${i + 1}] ${m.role === "user" ? "pesquisador" : "assistente"}: ${partsText(parseParts(m.parts))}`,
     )
-    .join("\n\n");
+    .join("\n");
 }
 
 /**
@@ -179,12 +179,14 @@ export const sendMethodologyMessage = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const reply = await generateFinalText(
+    const raw = await generateFinalText(
       prompt,
       METHODOLOGY_INTERVIEW_INSTRUCTIONS,
-      900,
+      700,
       interviewModelId(),
     );
+    const reply = cleanInterviewReply(raw);
+    if (!reply) throw new Error("A IA não retornou texto. Tente novamente.");
     await repo.addMethodologyMessage(context.user.id, data.methodologyId, "assistant", [
       { type: "text", text: reply },
     ]);
