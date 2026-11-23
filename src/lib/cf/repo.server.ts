@@ -1311,3 +1311,62 @@ export async function listArticlesByMethodology(
     .all<Article>();
   return results;
 }
+
+/* ------------------------------------------------------------------ *
+ * Stop científico (campanha)
+ * ------------------------------------------------------------------ */
+
+export type StopProgressRow = {
+  user_id: string;
+  level_id: string;
+  stars: number;
+  best_score: number;
+  attempts: number;
+  updated_at: string;
+};
+
+const STOP_PROGRESS_COLUMNS = "user_id, level_id, stars, best_score, attempts, updated_at";
+
+export async function listStopProgress(userId: string): Promise<StopProgressRow[]> {
+  const { results } = await requireDb()
+    .prepare(`select ${STOP_PROGRESS_COLUMNS} from stop_progress where user_id = ?`)
+    .bind(userId)
+    .all<StopProgressRow>();
+  return results;
+}
+
+/**
+ * Grava o resultado de uma rodada sem nunca piorar o recorde: estrelas e
+ * pontuação só sobem, e cada tentativa é contada.
+ */
+export async function saveStopResult(
+  userId: string,
+  levelId: string,
+  score: number,
+  stars: number,
+): Promise<StopProgressRow> {
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      `insert into stop_progress (user_id, level_id, stars, best_score, attempts, updated_at)
+       values (?, ?, ?, ?, 1, ?)
+       on conflict(user_id, level_id) do update set
+         stars = max(stop_progress.stars, excluded.stars),
+         best_score = max(stop_progress.best_score, excluded.best_score),
+         attempts = stop_progress.attempts + 1,
+         updated_at = excluded.updated_at`,
+    )
+    .bind(userId, levelId, stars, score, ts)
+    .run();
+
+  const row = await requireDb()
+    .prepare(`select ${STOP_PROGRESS_COLUMNS} from stop_progress where user_id = ? and level_id = ?`)
+    .bind(userId, levelId)
+    .first<StopProgressRow>();
+  if (!row) throw new Error("Não foi possível salvar o progresso do Stop.");
+  return row;
+}
+
+export async function resetStopProgress(userId: string): Promise<void> {
+  await requireDb().prepare("delete from stop_progress where user_id = ?").bind(userId).run();
+}

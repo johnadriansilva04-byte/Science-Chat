@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CienciaRouteImport } from './routes/ciencia'
 import { Route as MuseuRouteImport } from './routes/museu'
+import { Route as StopRouteImport } from './routes/stop'
 import { Route as AArticleIdRouteImport } from './routes/a/$articleId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as MetodologiaIdRouteImport } from './routes/metodologia/$id'
@@ -37,6 +38,11 @@ const CienciaRoute = CienciaRouteImport.update({
 const MuseuRoute = MuseuRouteImport.update({
   id: '/museu',
   path: '/museu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StopRoute = StopRouteImport.update({
+  id: '/stop',
+  path: '/stop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AArticleIdRoute = AArticleIdRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
+  '/stop': typeof StopRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
   '/metodologia/$id': typeof MetodologiaIdRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
+  '/stop': typeof StopRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
   '/metodologia/$id': typeof MetodologiaIdRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
+  '/stop': typeof StopRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
   '/metodologia/$id': typeof MetodologiaIdRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/ciencia'
     | '/museu'
+    | '/stop'
     | '/a/$articleId'
     | '/api/chat'
     | '/metodologia/$id'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/ciencia'
     | '/museu'
+    | '/stop'
     | '/a/$articleId'
     | '/api/chat'
     | '/metodologia/$id'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/ciencia'
     | '/museu'
+    | '/stop'
     | '/a/$articleId'
     | '/api/chat'
     | '/metodologia/$id'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CienciaRoute: typeof CienciaRoute
   MuseuRoute: typeof MuseuRoute
+  StopRoute: typeof StopRoute
   AArticleIdRoute: typeof AArticleIdRoute
   ApiChatRoute: typeof ApiChatRoute
   MetodologiaIdRoute: typeof MetodologiaIdRoute
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/museu'
       fullPath: '/museu'
       preLoaderRoute: typeof MuseuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stop': {
+      id: '/stop'
+      path: '/stop'
+      fullPath: '/stop'
+      preLoaderRoute: typeof StopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/a/$articleId': {
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CienciaRoute: CienciaRoute,
   MuseuRoute: MuseuRoute,
+  StopRoute: StopRoute,
   AArticleIdRoute: AArticleIdRoute,
   ApiChatRoute: ApiChatRoute,
   MetodologiaIdRoute: MetodologiaIdRoute,
