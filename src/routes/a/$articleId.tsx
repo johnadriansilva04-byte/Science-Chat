@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookUp, FileText, MessageSquare, Pencil } from "lucide-react";
+import { BookUp, FileText, FlaskConical, MessageSquare, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,8 +21,10 @@ import {
   type WorkspaceArticle,
   type WorkspaceDocument,
   type WorkspaceMessage,
+  type WorkspaceMethodology,
   type WorkspacePage,
 } from "@/lib/article.functions";
+import { linkMethodologyToArticle, listMyMethodologies } from "@/lib/methodology.functions";
 import type { UIMessage } from "ai";
 
 export const Route = createFileRoute("/a/$articleId")({
@@ -61,6 +63,12 @@ function ArticleWorkspace() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [publishOpen, setPublishOpen] = useState(false);
+  // Metodologias aprovadas do pesquisador (opções do seletor) e a que está
+  // acoplada — mesmo que ela tenha voltado a rascunho depois do vínculo.
+  const [methodologies, setMethodologies] = useState<
+    { id: string; title: string; status: string }[]
+  >([]);
+  const [linkedMethodology, setLinkedMethodology] = useState<WorkspaceMethodology | null>(null);
   const isMobile = useIsMobile();
   // No celular o chat e o documento ocupam a tela inteira, alternáveis por abas.
   const [mobileTab, setMobileTab] = useState<"doc" | "chat">("chat");
@@ -87,6 +95,7 @@ function ArticleWorkspace() {
       setMessages(data.messages);
       setPages(data.pages);
       setDocuments(data.documents);
+      setLinkedMethodology(data.methodology);
       setLoadError(null);
       return data;
     } catch (e) {
@@ -109,6 +118,7 @@ function ArticleWorkspace() {
         setMessages(data.messages);
         setPages(data.pages);
         setDocuments(data.documents);
+        setLinkedMethodology(data.methodology);
       })
       .catch((e) => {
         if (!active) return;
@@ -121,6 +131,33 @@ function ArticleWorkspace() {
       active = false;
     };
   }, [articleId, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    listMyMethodologies()
+      .then((rows) => {
+        if (active) setMethodologies(rows.filter((r) => r.status === "approved"));
+      })
+      .catch(() => {
+        if (active) setMethodologies([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  async function changeMethodology(value: string) {
+    try {
+      await linkMethodologyToArticle({
+        data: { articleId, methodologyId: value || null },
+      });
+      await reload();
+      toast.success(value ? "Metodologia vinculada ao artigo" : "Metodologia desvinculada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível vincular a metodologia");
+    }
+  }
 
   const approvedPages = useMemo(
     () =>
@@ -222,7 +259,7 @@ function ArticleWorkspace() {
     liveMessages.length >= initialMessages.length ? liveMessages : initialMessages;
 
   return (
-    <div className="flex h-[100dvh] flex-col">
+    <div className="flex h-[100dvh] flex-col print:block print:h-auto">
       <header className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-2 print:hidden">
         <ArticlesMenu activeId={articleId} />
         {editingTitle ? (
@@ -258,6 +295,35 @@ function ArticleWorkspace() {
           interviewRatio={interviewRatio}
           className="order-last w-full sm:order-none sm:w-auto"
         />
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <FlaskConical className="size-3.5" />
+          <span className="hidden sm:inline">Metodologia</span>
+          <select
+            value={article.methodology_id ?? ""}
+            onChange={(e) => void changeMethodology(e.target.value)}
+            aria-label="Metodologia vinculada ao artigo"
+            className="h-8 max-w-[12rem] rounded-md border border-input bg-background px-2 text-xs outline-none focus:border-primary"
+          >
+            <option value="">Sem metodologia</option>
+            {methodologies.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
+            ))}
+            {linkedMethodology && !methodologies.some((m) => m.id === linkedMethodology.id) && (
+              <option value={linkedMethodology.id}>{linkedMethodology.title} (rascunho)</option>
+            )}
+          </select>
+          {article.methodology_id && (
+            <Link
+              to="/metodologia/$id"
+              params={{ id: article.methodology_id }}
+              className="text-primary hover:underline"
+            >
+              abrir
+            </Link>
+          )}
+        </label>
         <Button
           size="sm"
           variant="outline"
@@ -270,7 +336,7 @@ function ArticleWorkspace() {
       </header>
 
       <main
-        className={`min-h-0 flex-1 ${isMobile && mobileTab !== "doc" ? "hidden" : ""} ${
+        className={`a4-print-area min-h-0 flex-1 ${isMobile && mobileTab !== "doc" ? "hidden" : ""} ${
           isMobile ? "pb-14" : ""
         }`}
       >
@@ -326,7 +392,7 @@ function ArticleWorkspace() {
       </div>
 
       {isMobile && (
-        <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t bg-card pb-[env(safe-area-inset-bottom)]">
+        <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t bg-card pb-[env(safe-area-inset-bottom)] print:hidden">
           <button
             type="button"
             onClick={() => setMobileTab("chat")}

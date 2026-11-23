@@ -429,8 +429,8 @@ export function DocumentCanvas({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/40">
-      <div className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-1.5 text-xs">
+    <div className="flex h-full min-h-0 flex-col bg-muted/40 print:block print:h-auto print:bg-white">
+      <div className="flex flex-wrap items-center gap-2 border-b bg-card px-3 py-1.5 text-xs print:hidden">
         <span className="font-medium text-muted-foreground">
           {sheets.length} {sheets.length === 1 ? "folha A4" : "folhas A4"}
         </span>
@@ -622,9 +622,9 @@ export function DocumentCanvas({
           })}
         </nav>
 
-        <div ref={scroller} className="min-h-0 flex-1 overflow-auto p-4 md:p-8">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-auto p-4 md:p-8 print:overflow-visible print:p-0">
           <div
-            className="mx-auto flex w-fit flex-col items-center gap-6"
+            className="a4-stage mx-auto flex w-fit flex-col items-center gap-6"
             style={{ zoom: editing ? 1 : zoom }}
           >
             {sheets.map((sheet, i) => (

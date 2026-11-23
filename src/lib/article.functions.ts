@@ -1,7 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
-import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@/lib/article-page";
+import {
+  buildPagePrompt,
+  countWords,
+  MIN_PAGE_WORDS,
+  normalizePageText,
+  pickLongerText,
+} from "@/lib/article-page";
+import { methodologySpecBlock } from "@/lib/methodology";
 import { base64ToBytes } from "@/lib/base64";
 import * as repo from "@/lib/cf/repo.server";
 
@@ -20,6 +27,15 @@ export type WorkspaceArticle = {
   title: string;
   phase: string;
   plan: string | null;
+  methodology_id: string | null;
+  updated_at: string;
+};
+
+/** Metodologia acoplada, resumida para o cabeçalho do artigo. */
+export type WorkspaceMethodology = {
+  id: string;
+  title: string;
+  status: string;
   updated_at: string;
 };
 
@@ -101,6 +117,9 @@ export const getWorkspace = createServerFn({ method: "POST" })
     if (!article) throw new Error("Artigo não encontrado");
     const messages = await repo.listMessages(context.user.id, data.articleId);
     const pages = await repo.listPages(context.user.id, data.articleId);
+    const methodology = article.methodology_id
+      ? await repo.getMethodology(context.user.id, article.methodology_id)
+      : null;
 
     return {
       article: {
@@ -108,8 +127,17 @@ export const getWorkspace = createServerFn({ method: "POST" })
         title: article.title,
         phase: article.phase,
         plan: article.plan,
+        methodology_id: article.methodology_id,
         updated_at: article.updated_at,
       } as WorkspaceArticle,
+      methodology: methodology
+        ? ({
+            id: methodology.id,
+            title: methodology.title,
+            status: methodology.status,
+            updated_at: methodology.updated_at,
+          } as WorkspaceMethodology)
+        : null,
       messages: messages.map((m) => ({
         id: m.id,
         role: m.role,
@@ -321,20 +349,22 @@ export const generatePage = createServerFn({ method: "POST" })
           )
           .join("\n")}\nQuando fizer sentido, cite os anexos no texto como [Anexo N].`
       : "";
-    const prompt = [
-      `PLANO APROVADO:\n${article.plan}`,
-      `ENTREVISTA:\n${transcript}`,
+    // Metodologia acoplada: só entra no prompt se estiver APROVADA (e com
+    // conteúdo). Sem isso, a página continua sendo escrita como antes.
+    const methodology = article.methodology_id
+      ? await repo.getMethodology(userId, article.methodology_id)
+      : null;
+    const prompt = buildPagePrompt({
+      plan: article.plan,
+      transcript,
       anexos,
-      prev ? `PÁGINA ANTERIOR (${prev.page_number}), APROVADA:\n${prev.content}` : "",
-      nextApproved
-        ? `PRÓXIMA PÁGINA JÁ APROVADA (${nextApproved.page_number}) — mantenha continuidade com ela:\n${nextApproved.content}`
-        : "",
-      current && data.feedback
-        ? `VERSÃO ATUAL DA PÁGINA ${number}:\n${current.content}\n\nCORREÇÃO PEDIDA PELO PESQUISADOR: ${data.feedback}\n\nReescreva a página ${number} aplicando a correção.`
-        : `Escreva agora a PÁGINA ${number}.`,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+      number,
+      prev,
+      nextApproved,
+      current,
+      feedback: data.feedback ?? null,
+      methodologySpec: methodologySpecBlock(methodology),
+    });
 
     const content = normalizePageText(await generateFinalText(prompt, PAGE_INSTRUCTIONS));
     // A página precisa preencher uma folha A4; uma resposta curta demais indica corte

@@ -300,17 +300,26 @@ export function startResponses(
   return { result };
 }
 
-/** Gera e aguarda o texto final (para o plano e as páginas). */
+/**
+ * Gera e aguarda o texto final (plano, páginas e spec de metodologia).
+ * `modelId` permite usar o modelo leve em tarefas de diálogo (entrevista de
+ * método) sem mudar o modelo da escrita do documento.
+ */
 export async function generateFinalText(
   prompt: string,
   instructions: string,
   maxOutputTokens?: number,
+  modelId?: string,
 ) {
   const { result } = startResponses(
     undefined,
     [{ role: "user", content: prompt }],
     instructions,
     maxOutputTokens,
+    undefined,
+    null,
+    undefined,
+    modelId,
   );
   const text = await result.text;
   if (!text.trim()) throw new Error("A IA não retornou texto. Tente novamente.");

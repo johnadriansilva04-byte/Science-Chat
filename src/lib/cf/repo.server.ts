@@ -11,6 +11,8 @@ export type Article = {
   title: string;
   phase: string;
   plan: string | null;
+  /** Metodologia acoplada (opcional). Só pode apontar para uma `approved`. */
+  methodology_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -41,7 +43,7 @@ function nowIso() {
 export async function listArticles(userId: string): Promise<Article[]> {
   const { results } = await requireDb()
     .prepare(
-      "select id, user_id, title, phase, plan, created_at, updated_at from articles where user_id = ? order by updated_at desc",
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where user_id = ? order by updated_at desc",
     )
     .bind(userId)
     .all<Article>();
@@ -51,7 +53,7 @@ export async function listArticles(userId: string): Promise<Article[]> {
 export async function getArticle(userId: string, articleId: string): Promise<Article | null> {
   return requireDb()
     .prepare(
-      "select id, user_id, title, phase, plan, created_at, updated_at from articles where id = ? and user_id = ?",
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where id = ? and user_id = ?",
     )
     .bind(articleId, userId)
     .first<Article>();
@@ -73,6 +75,7 @@ export async function createArticle(userId: string, title?: string): Promise<Art
     title: cleanTitle,
     phase: "interview",
     plan: null,
+    methodology_id: null,
     created_at: ts,
     updated_at: ts,
   };
@@ -81,7 +84,12 @@ export async function createArticle(userId: string, title?: string): Promise<Art
 export async function updateArticle(
   userId: string,
   articleId: string,
-  patch: { title?: string; phase?: string; plan?: string | null },
+  patch: {
+    title?: string;
+    phase?: string;
+    plan?: string | null;
+    methodology_id?: string | null;
+  },
 ): Promise<void> {
   const sets: string[] = [];
   const values: unknown[] = [];
@@ -96,6 +104,10 @@ export async function updateArticle(
   if (patch.plan !== undefined) {
     sets.push("plan = ?");
     values.push(patch.plan);
+  }
+  if (patch.methodology_id !== undefined) {
+    sets.push("methodology_id = ?");
+    values.push(patch.methodology_id);
   }
   sets.push("updated_at = ?");
   values.push(nowIso());
@@ -1029,4 +1041,273 @@ export async function upsertEditorialConfig(
     created_at: ts,
     updated_at: ts,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Metodologia — entidade própria, separada do artigo.
+ * ------------------------------------------------------------------ */
+
+export type Methodology = {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MethodologyMessage = {
+  id: string;
+  methodology_id: string;
+  user_id: string;
+  role: string;
+  parts: string;
+  created_at: string;
+};
+
+export type MethodologyDocumentRow = {
+  id: string;
+  methodology_id: string;
+  user_id: string;
+  seq: number;
+  filename: string;
+  mime: string;
+  size: number;
+  text_content: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type MethodologyDocumentWithContent = MethodologyDocumentRow & {
+  content: string | null;
+  storage_key: string | null;
+};
+
+const METHODOLOGY_COLUMNS = "id, user_id, title, content, status, created_at, updated_at";
+
+export async function listMethodologies(userId: string): Promise<Methodology[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${METHODOLOGY_COLUMNS} from methodologies where user_id = ? order by updated_at desc`,
+    )
+    .bind(userId)
+    .all<Methodology>();
+  return results;
+}
+
+export async function getMethodology(userId: string, id: string): Promise<Methodology | null> {
+  return requireDb()
+    .prepare(`select ${METHODOLOGY_COLUMNS} from methodologies where id = ? and user_id = ?`)
+    .bind(id, userId)
+    .first<Methodology>();
+}
+
+export async function createMethodology(userId: string, title?: string): Promise<Methodology> {
+  const id = newId();
+  const ts = nowIso();
+  const cleanTitle = title?.trim().slice(0, 200) || "Metodologia sem título";
+  await requireDb()
+    .prepare(
+      "insert into methodologies (id, user_id, title, status, created_at, updated_at) values (?, ?, ?, 'draft', ?, ?)",
+    )
+    .bind(id, userId, cleanTitle, ts, ts)
+    .run();
+  return {
+    id,
+    user_id: userId,
+    title: cleanTitle,
+    content: null,
+    status: "draft",
+    created_at: ts,
+    updated_at: ts,
+  };
+}
+
+export async function updateMethodology(
+  userId: string,
+  id: string,
+  patch: { title?: string; content?: string | null; status?: string },
+): Promise<void> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  if (patch.title !== undefined) {
+    sets.push("title = ?");
+    values.push(patch.title);
+  }
+  if (patch.content !== undefined) {
+    sets.push("content = ?");
+    values.push(patch.content);
+  }
+  if (patch.status !== undefined) {
+    sets.push("status = ?");
+    values.push(patch.status);
+  }
+  sets.push("updated_at = ?");
+  values.push(nowIso());
+  values.push(id, userId);
+  await requireDb()
+    .prepare(`update methodologies set ${sets.join(", ")} where id = ? and user_id = ?`)
+    .bind(...values)
+    .run();
+}
+
+export async function setMethodologyStatus(
+  userId: string,
+  id: string,
+  status: string,
+): Promise<void> {
+  await updateMethodology(userId, id, { status });
+}
+
+export async function deleteMethodology(userId: string, id: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from methodologies where id = ? and user_id = ?")
+    .bind(id, userId)
+    .run();
+}
+
+export async function listMethodologyMessages(
+  userId: string,
+  methodologyId: string,
+): Promise<MethodologyMessage[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, methodology_id, user_id, role, parts, created_at from methodology_messages where methodology_id = ? and user_id = ? order by created_at",
+    )
+    .bind(methodologyId, userId)
+    .all<MethodologyMessage>();
+  return results;
+}
+
+export async function addMethodologyMessage(
+  userId: string,
+  methodologyId: string,
+  role: string,
+  parts: unknown,
+): Promise<void> {
+  await requireDb()
+    .prepare(
+      "insert into methodology_messages (id, methodology_id, user_id, role, parts, created_at) values (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(newId(), methodologyId, userId, role, JSON.stringify(parts), nowIso())
+    .run();
+}
+
+export async function listMethodologyDocuments(
+  userId: string,
+  methodologyId: string,
+): Promise<MethodologyDocumentRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, methodology_id, user_id, seq, filename, mime, size, text_content, note, created_at from methodology_documents where methodology_id = ? and user_id = ? order by seq",
+    )
+    .bind(methodologyId, userId)
+    .all<MethodologyDocumentRow>();
+  return results;
+}
+
+export async function getMethodologyDocument(
+  userId: string,
+  methodologyId: string,
+  id: string,
+): Promise<MethodologyDocumentWithContent | null> {
+  return requireDb()
+    .prepare(
+      "select id, methodology_id, user_id, seq, filename, mime, size, content, storage_key, text_content, note, created_at from methodology_documents where id = ? and methodology_id = ? and user_id = ?",
+    )
+    .bind(id, methodologyId, userId)
+    .first<MethodologyDocumentWithContent>();
+}
+
+export async function addMethodologyDocument(
+  userId: string,
+  methodologyId: string,
+  doc: {
+    id?: string;
+    filename: string;
+    mime: string;
+    size: number;
+    content: string | null;
+    storageKey: string | null;
+    textContent: string | null;
+    note: string | null;
+  },
+): Promise<MethodologyDocumentRow> {
+  const db = requireDb();
+  const next = await db
+    .prepare(
+      "select coalesce(max(seq), 0) + 1 as seq from methodology_documents where methodology_id = ? and user_id = ?",
+    )
+    .bind(methodologyId, userId)
+    .first<{ seq: number }>();
+  const seq = next?.seq ?? 1;
+  const id = doc.id ?? newId();
+  const ts = nowIso();
+  await db
+    .prepare(
+      "insert into methodology_documents (id, methodology_id, user_id, seq, filename, mime, size, content, storage_key, text_content, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(
+      id,
+      methodologyId,
+      userId,
+      seq,
+      doc.filename,
+      doc.mime,
+      doc.size,
+      doc.content,
+      doc.storageKey,
+      doc.textContent,
+      doc.note,
+      ts,
+    )
+    .run();
+  return {
+    id,
+    methodology_id: methodologyId,
+    user_id: userId,
+    seq,
+    filename: doc.filename,
+    mime: doc.mime,
+    size: doc.size,
+    text_content: doc.textContent,
+    note: doc.note,
+    created_at: ts,
+  };
+}
+
+export async function deleteMethodologyDocument(
+  userId: string,
+  methodologyId: string,
+  id: string,
+): Promise<void> {
+  await requireDb()
+    .prepare(
+      "delete from methodology_documents where id = ? and methodology_id = ? and user_id = ?",
+    )
+    .bind(id, methodologyId, userId)
+    .run();
+}
+
+/** Acopla (ou desacopla, com `null`) uma metodologia a um artigo. */
+export async function setArticleMethodology(
+  userId: string,
+  articleId: string,
+  methodologyId: string | null,
+): Promise<void> {
+  await updateArticle(userId, articleId, { methodology_id: methodologyId });
+}
+
+export async function listArticlesByMethodology(
+  userId: string,
+  methodologyId: string,
+): Promise<Article[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where methodology_id = ? and user_id = ? order by updated_at desc",
+    )
+    .bind(methodologyId, userId)
+    .all<Article>();
+  return results;
 }
