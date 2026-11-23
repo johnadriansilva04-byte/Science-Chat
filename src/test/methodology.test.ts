@@ -8,6 +8,8 @@ import {
   methodologyProtocolCode,
   methodologySpecBlock,
   methodologyTitleFromSeed,
+  matchMethodologyReference,
+  parseMethodologyCommand,
   specCoverageRatio,
   specSectionCoverage,
   type MethodologyLike,
@@ -201,5 +203,90 @@ describe("cleanInterviewReply", () => {
     const long = `${"frase de teste. ".repeat(200)}`;
     const out = cleanInterviewReply(long, 200);
     expect(out.length).toBeLessThanOrEqual(201);
+  });
+});
+
+describe("matchMethodologyReference", () => {
+  const eugenia = {
+    id: "9ad5c41d-0e66-49ac-baec-b9d471a48f29",
+    title: "Estudo de caso instrumental sobre eugenia burocrática",
+    status: "approved",
+  };
+  const documental = {
+    id: "1f0b2c33-4d55-4e66-8f77-99aa0bb11cc2",
+    title: "Análise documental do ANPP",
+    status: "draft",
+  };
+  const conteudo = {
+    id: "2c1d3e44-5f66-4777-9a88-0bb1c22dd33e",
+    title: "Análise de conteúdo dos autos",
+    status: "approved",
+  };
+  const rows = [eugenia, documental, conteudo];
+
+  it("casa por trecho do título, sem acento e sem caixa", () => {
+    expect(matchMethodologyReference(rows, "a metodologia de eugenia burocratica").match?.id).toBe(
+      eugenia.id,
+    );
+  });
+
+  it("casa pelo código do protocolo que a tela mostra", () => {
+    const code = methodologyProtocolCode(eugenia.id);
+    expect(matchMethodologyReference(rows, `use a ${code}`).match?.id).toBe(eugenia.id);
+  });
+
+  it("não escolhe sozinho quando o trecho é ambíguo", () => {
+    const ambiguous = matchMethodologyReference(rows, "analise");
+    expect(ambiguous.match).toBeNull();
+    expect(ambiguous.candidates.map((c) => c.id)).toEqual([documental.id, conteudo.id]);
+  });
+
+  it("devolve vazio quando não existe nada parecido", () => {
+    expect(matchMethodologyReference(rows, "etnografia multissituada")).toEqual({
+      match: null,
+      candidates: [],
+    });
+  });
+});
+
+describe("comando no chat do artigo", () => {
+  const tools = readFileSync(join(process.cwd(), "src/lib/ai/tools.server.ts"), "utf8");
+  const prompt = readFileSync(join(process.cwd(), "src/lib/ai/prompts.ts"), "utf8");
+
+  it("expõe as ferramentas de metodologia ao chat", () => {
+    expect(tools).toContain("usar_metodologia: tool({");
+    expect(tools).toContain("listar_metodologias: tool({");
+    expect(tools).toContain("setArticleMethodology");
+  });
+
+  it("só acopla metodologia aprovada", () => {
+    expect(tools).toContain('match.status !== "approved"');
+  });
+
+  it("ensina o comando no prompt", () => {
+    expect(prompt).toContain("METODOLOGIA REUTILIZÁVEL");
+    expect(prompt).toContain("usar_metodologia");
+  });
+});
+
+describe("parseMethodologyCommand", () => {
+  it("lê o nome depois de 'use a metodologia'", () => {
+    expect(parseMethodologyCommand("use a metodologia de eugenia burocrática")).toBe(
+      "eugenia burocrática",
+    );
+    expect(parseMethodologyCommand("aplica a metodologia Método Pracinha neste artigo")).toBe(
+      "Método Pracinha neste artigo",
+    );
+  });
+
+  it("aceita variações de verbo e caixa", () => {
+    expect(parseMethodologyCommand("Acople a metodologia: análise documental")).toBe(
+      "análise documental",
+    );
+  });
+
+  it("ignora conversa que só menciona metodologia", () => {
+    expect(parseMethodologyCommand("minha metodologia é qualitativa, e agora?")).toBeNull();
+    expect(parseMethodologyCommand("use a metodologia")).toBeNull();
   });
 });

@@ -23,6 +23,7 @@ import { errorTextStream } from "@/lib/ai/error-stream";
 import { cleanAssistantText, collectAssistantSentences } from "@/lib/ai/anti-repeat";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { windowHistory } from "@/lib/ai/history-window";
+import { matchMethodologyReference, parseMethodologyCommand } from "@/lib/methodology";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
 import {
   parsePageCommand,
@@ -120,6 +121,68 @@ function runTitleCommand(userId: string, articleId: string, titulo: string) {
       await repo.updateArticle(userId, articleId, {});
     },
     onError: () => "Não foi possível mudar o título. Tente novamente.",
+  });
+}
+
+/**
+ * "use a metodologia X" no chat: resolve, acopla e confirma sem passar pelo
+ * modelo. O 8B da entrevista narrava a ferramenta em vez de chamá-la (e às vezes
+ * dizia que a metodologia não existia, contradizendo o resultado da ferramenta).
+ */
+function runMethodologyCommand(userId: string, articleId: string, reference: string) {
+  const toolCallId = `methodcmd-${generateId()}`;
+  return createUIMessageStream({
+    execute: async ({ writer }) => {
+      const rows = await repo.listMethodologies(userId);
+      const { match, candidates } = matchMethodologyReference(rows, reference);
+      let failed = false;
+      let result: string;
+
+      if (match && match.status === "approved") {
+        try {
+          await repo.setArticleMethodology(userId, articleId, match.id);
+          result = `Metodologia "${match.title}" acoplada a este artigo. As próximas páginas já saem nessa lente.`;
+        } catch (error) {
+          failed = true;
+          result =
+            error instanceof Error ? error.message : "Não foi possível acoplar a metodologia.";
+        }
+      } else if (match) {
+        result = `A metodologia "${match.title}" ainda está em rascunho. Aprove a spec no caderno de método para poder acoplar.`;
+      } else if (candidates.length) {
+        result = `Mais de uma metodologia casa com "${reference}": ${candidates
+          .map((c) => c.title)
+          .join("; ")}. Diga qual delas.`;
+      } else if (rows.length) {
+        result = `Não encontrei "${reference}". Suas metodologias: ${rows
+          .map((r) => `${r.title}${r.status === "approved" ? "" : " (rascunho)"}`)
+          .join("; ")}.`;
+      } else {
+        result =
+          "Você ainda não tem metodologia própria. Crie uma na home, em “Criar metodologia”, e ela passa a valer para qualquer artigo.";
+      }
+
+      writer.write({
+        type: "tool-input-available",
+        toolCallId,
+        toolName: "usar_metodologia",
+        input: { metodologia: reference },
+      });
+      writer.write(
+        failed
+          ? { type: "tool-output-error", toolCallId, errorText: result }
+          : { type: "tool-output-available", toolCallId, output: result },
+      );
+
+      const textId = generateId();
+      writer.write({ type: "text-start", id: textId });
+      writer.write({ type: "text-delta", id: textId, delta: result });
+      writer.write({ type: "text-end", id: textId });
+
+      await repo.addMessage(userId, articleId, "assistant", [{ type: "text", text: result }]);
+      await repo.updateArticle(userId, articleId, {});
+    },
+    onError: () => "Não foi possível aplicar a metodologia. Tente novamente.",
   });
 }
 
@@ -312,6 +375,13 @@ async function handle(request: Request) {
       stream: runTitleCommand(user.id, article.id, titleCommand),
     });
 
+  // "use a metodologia X": acopla direto, sem depender do tool call do modelo.
+  const methodologyRef = parseMethodologyCommand(lastUserText ?? "");
+  if (methodologyRef)
+    return createUIMessageStreamResponse({
+      stream: runMethodologyCommand(user.id, article.id, methodologyRef),
+    });
+
   // Caminho determinístico: quando o pedido traz um conteúdo LITERAL inequívoco
   // ("página 1, com a palavra exata: X"), aplicamos a edição direto no banco. Isso
   // contorna a falha do llama-3.3, que narra a chamada em vez de emitir o tool call
@@ -347,6 +417,8 @@ async function handle(request: Request) {
     "ler_todos_anexos",
     "listar_anexos",
     "definir_orcid",
+    "listar_metodologias",
+    "usar_metodologia",
   ]);
   const forcedTool =
     article.phase === "interview" ? (forced && interviewTools.has(forced) ? forced : null) : forced;

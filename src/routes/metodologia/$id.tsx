@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { AppHeader } from "@/components/app/AppHeader";
 import { useAuth } from "@/hooks/useAuth";
+import { listArticles } from "@/lib/article.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { fileToBase64, formatSize } from "@/lib/file-upload";
 import {
@@ -69,6 +70,7 @@ const SCANNING = [
 ];
 
 type LinkedArticle = { id: string; title: string; phase: string; updated_at: string };
+type ArticleOption = { id: string; title: string };
 
 function entryText(m: MethodologyMessageView): string {
   return m.parts
@@ -90,6 +92,9 @@ function MethodologyWorkspace() {
   const [messages, setMessages] = useState<MethodologyMessageView[]>([]);
   const [documents, setDocuments] = useState<MethodologyDocumentView[]>([]);
   const [articles, setArticles] = useState<LinkedArticle[]>([]);
+  const [myArticles, setMyArticles] = useState<ArticleOption[]>([]);
+  const [pickArticleId, setPickArticleId] = useState("");
+  const [linking, setLinking] = useState(false);
   const [spec, setSpec] = useState("");
   const [savedSpec, setSavedSpec] = useState("");
   const [specMode, setSpecMode] = useState<"leitura" | "editor">("leitura");
@@ -105,6 +110,11 @@ function MethodologyWorkspace() {
   const [uploading, setUploading] = useState(false);
   const [mobilePane, setMobilePane] = useState<"caderno" | "spec">("caderno");
   const [scanIndex, setScanIndex] = useState(0);
+
+  const availableArticles = useMemo(
+    () => myArticles.filter((a) => !articles.some((linked) => linked.id === a.id)),
+    [myArticles, articles],
+  );
 
   const seeded = useRef(false);
   const localSeq = useRef(0);
@@ -128,6 +138,21 @@ function MethodologyWorkspace() {
     setSavedSpec(data.methodology.content ?? "");
     return data;
   }, [id]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    listArticles()
+      .then((rows) => {
+        if (active) setMyArticles(rows.map((r) => ({ id: r.id, title: r.title })));
+      })
+      .catch(() => {
+        if (active) setMyArticles([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -313,6 +338,21 @@ function MethodologyWorkspace() {
       toast.success("Artigo desacoplado");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível desacoplar");
+    }
+  }
+
+  async function linkTo(articleId: string) {
+    if (!articleId) return;
+    setLinking(true);
+    try {
+      await linkMethodologyToArticle({ data: { articleId, methodologyId: id } });
+      await load();
+      setPickArticleId("");
+      toast.success("Metodologia acoplada ao artigo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível acoplar");
+    } finally {
+      setLinking(false);
     }
   }
 
@@ -761,10 +801,47 @@ function MethodologyWorkspace() {
                 Aprove a spec para poder acoplar a um artigo.
               </p>
             )}
+            {approved && (
+              <div className="mb-2.5 flex flex-col gap-1.5 sm:flex-row">
+                <select
+                  value={pickArticleId}
+                  onChange={(e) => setPickArticleId(e.target.value)}
+                  aria-label="Artigo para acoplar esta metodologia"
+                  className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background/70 px-2 text-xs outline-none focus:border-primary"
+                  disabled={availableArticles.length === 0}
+                >
+                  {availableArticles.length === 0 ? (
+                    <option value="">
+                      {myArticles.length === 0
+                        ? "Você ainda não tem artigos"
+                        : "Todos os seus artigos já usam esta metodologia"}
+                    </option>
+                  ) : (
+                    <>
+                      <option value="">Escolha um artigo…</option>
+                      {availableArticles.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.title}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+                <Button
+                  size="sm"
+                  className="h-9 shrink-0 gap-1.5 rounded-lg"
+                  disabled={!pickArticleId || linking}
+                  onClick={() => void linkTo(pickArticleId)}
+                >
+                  {linking ? <Loader2 className="animate-spin" /> : <Link2 />}
+                  Acoplar
+                </Button>
+              </div>
+            )}
             {articles.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                Nenhum artigo usa esta metodologia. Abra um artigo e escolha esta metodologia no
-                seletor do cabeçalho.
+                Nenhum artigo usa esta metodologia ainda. Uma mesma metodologia serve para vários
+                artigos: acople aqui ou peça no chat do artigo ("use a metodologia …").
               </p>
             ) : (
               <ul className="space-y-1.5">

@@ -236,6 +236,8 @@ const COMMAND_PATTERNS = [
   /\b(?:arrume|arruma|consert\w*|corrij\w*|corrig\w*|mude|muda|troque|troca|altere|alter\w*|atualiz\w*|renomeie|defina)\b[^.!?]{0,60}\bt[íi]tulo\b/,
   /\b(?:reescrev\w*|refa[çz]\w*|melhore|melhorar|revise|revisar|encurt\w*|apague|remova|exclua)\b[^.!?]{0,60}\b(?:p[áa]gina|se[çc][ãa]o|trecho|par[áa]grafo)\b/,
   /\b(?:publique|publicar|exporte|exportar|gere o pdf|baixe)\b\s*(?:o\s+artigo|agora|j[áa])?\s*$/,
+  // "use a metodologia X": pedido sobre o acoplamento, não material do artigo.
+  /^(?:use|usa|usar|aplica|aplique|aplicar|acople|acopla|acoplar|vincule|vincula|vincular|adote|adota|adotar)\s+(?:a\s+|o\s+)?metodologia\b/,
 ];
 
 /** O texto é um comando sobre o documento (e não material para ele)? */

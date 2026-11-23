@@ -166,3 +166,117 @@ export function cleanInterviewReply(raw: string, maxChars = 1200): string {
   }
   return text.trim();
 }
+
+function normalizeReference(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+const REFERENCE_STOPWORDS = new Set([
+  "a",
+  "o",
+  "as",
+  "os",
+  "de",
+  "da",
+  "do",
+  "das",
+  "dos",
+  "e",
+  "em",
+  "para",
+  "por",
+  "um",
+  "uma",
+  "metodologia",
+  "metodo",
+  "use",
+  "usar",
+  "usa",
+  "aplicar",
+  "aplica",
+  "neste",
+  "neste",
+  "artigo",
+  "essa",
+  "esse",
+  "esta",
+  "este",
+]);
+
+/** Palavras que carregam significado no nome da metodologia. */
+function referenceTokens(value: string): string[] {
+  return normalizeReference(value)
+    .split(" ")
+    .filter((t) => t.length > 2 && !REFERENCE_STOPWORDS.has(t));
+}
+
+/**
+ * Resolve "use a metodologia X" para uma das metodologias do pesquisador.
+ * Aceita o código do protocolo, o título exato ou o nome por partes ("a de
+ * eugenia burocrática"). Quando mais de uma casa com o pedido, devolve
+ * candidatos em vez de escolher sozinho.
+ */
+export function matchMethodologyReference<T extends { id: string; title: string; status: string }>(
+  rows: T[],
+  reference: string,
+): { match: T | null; candidates: T[] } {
+  const trimmed = reference.trim();
+  const flat = normalizeReference(trimmed);
+  if (!flat) return { match: null, candidates: [] };
+
+  const byId = rows.find((r) => r.id.toLowerCase() === trimmed.toLowerCase());
+  if (byId) return { match: byId, candidates: [] };
+
+  const entries = rows.map((row) => ({
+    row,
+    title: normalizeReference(row.title),
+    code: normalizeReference(methodologyProtocolCode(row.id)),
+    titleTokens: new Set(referenceTokens(row.title)),
+  }));
+
+  const byCode = entries.find((e) => flat.includes(e.code));
+  if (byCode) return { match: byCode.row, candidates: [] };
+
+  const exact = entries.find((e) => e.title === flat);
+  if (exact) return { match: exact.row, candidates: [] };
+
+  const refTokens = referenceTokens(trimmed);
+  const scored = entries
+    .map((e) => ({
+      row: e.row,
+      score: refTokens.length
+        ? refTokens.filter((t) => e.titleTokens.has(t)).length / refTokens.length
+        : 0,
+    }))
+    .filter((e) => e.score >= 0.6)
+    .sort((a, b) => b.score - a.score);
+
+  const best = scored[0];
+  const second = scored[1];
+  if (best && (!second || best.score > second.score)) return { match: best.row, candidates: [] };
+  return { match: null, candidates: scored.slice(0, 4).map((e) => e.row) };
+}
+
+const METHODOLOGY_COMMAND =
+  /(?:^|\b)(?:use|usar|usa|aplica|aplicar|acopla|acoplar|acople|vincula|vincular|vincule|adota|adotar)\b[^.!?\n]{0,40}?\bmetodologia\b\s*(?:de|do|da|dos|das|:)?\s*([^.!?\n]{3,120})/i;
+
+/**
+ * Lê o comando "use a metodologia X" no chat do artigo. Aplicado no servidor,
+ * sem depender de o modelo emitir o tool call (o modelo leve narra a ação em vez
+ * de chamar a ferramenta).
+ */
+export function parseMethodologyCommand(text: string): string | null {
+  const match = METHODOLOGY_COMMAND.exec(text.trim());
+  if (!match) return null;
+  const ref = (match[1] ?? "")
+    .replace(/^(?:a|o|as|os)\s+/i, "")
+    .replace(/["“”'«»]/g, "")
+    .replace(/[.,;:!?]+$/, "")
+    .trim();
+  return referenceTokens(ref).length > 0 ? ref : null;
+}

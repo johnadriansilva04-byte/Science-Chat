@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpenText,
-  Check,
   FilePlus2,
   FlaskConical,
   Loader2,
@@ -322,9 +321,13 @@ function Index() {
                 </li>
               ))}
             </ol>
+          </section>
 
-            {/* Segunda entrada: a metodologia é uma peça separada do artigo. */}
-            <div className="mt-5 max-w-xl rounded-2xl border border-accent-2/30 bg-card/60 p-3.5 backdrop-blur">
+          {/* Coluna direita: as duas portas de entrada, a coletânea e o Stop. */}
+          <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
+            {/* Segunda entrada: a metodologia é uma peça separada do artigo e
+                abre a coluna da direita, junto das demais portas de entrada. */}
+            <div className="rounded-2xl border border-accent-2/30 bg-card/60 p-3.5 backdrop-blur">
               <div className="flex items-center gap-2">
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-2/15 text-accent-2">
                   <FlaskConical className="size-4" />
@@ -364,36 +367,64 @@ function Index() {
                 </Button>
               </form>
 
-              {methodologies.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Suas metodologias
-                  </span>
-                  {methodologies.slice(0, 4).map((m) => (
-                    <Link
-                      key={m.id}
-                      to="/metodologia/$id"
-                      params={{ id: m.id }}
-                      className="inline-flex max-w-[14rem] items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      <span className="truncate">{m.title}</span>
-                      {m.status === "approved" && (
-                        <Check className="size-3 shrink-0 text-success" />
-                      )}
-                    </Link>
-                  ))}
+              {/* A lista fica ao lado da semente: quem já tem metodologia reabre
+                  o caderno em um clique, sem passar pelo menu do topo. */}
+              {user && (
+                <div className="mt-3 border-t border-border/60 pt-2.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Suas metodologias
+                    </span>
+                    {methodologies.length > 0 && (
+                      <span className="text-[10px] tabular-nums text-muted-foreground">
+                        {methodologies.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {methodologies.length === 0 ? (
+                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                      Nenhuma ainda. Escreva a semente acima para abrir o primeiro caderno.
+                    </p>
+                  ) : (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {methodologies.map((m) => (
+                        <li key={m.id}>
+                          <Link
+                            to="/metodologia/$id"
+                            params={{ id: m.id }}
+                            className="group flex items-center gap-2 rounded-lg border border-transparent px-1.5 py-1 transition-colors hover:border-border hover:bg-card/80"
+                          >
+                            <FlaskConical
+                              className="size-3.5 shrink-0 text-accent-2/70"
+                              aria-hidden
+                            />
+                            <span className="min-w-0 flex-1 truncate text-xs text-foreground/85 group-hover:text-foreground">
+                              {m.title}
+                            </span>
+                            <span
+                              className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
+                                m.status === "approved"
+                                  ? "border-success/40 text-success"
+                                  : "border-border text-muted-foreground"
+                              }`}
+                            >
+                              {m.status === "approved" ? "aprovada" : "rascunho"}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* O card de ensino abre a coluna da esquerda, logo abaixo do
-                formulário: é a primeira coisa que quem chega sem vínculo precisa
-                ler, e ele é um cartão — não o guia inteiro. */}
-            <ScienceAccessCard className="mt-5" />
-          </section>
+            {/* O card de ensino fica na coluna da direita, ao lado da promessa:
+                é a primeira coisa que quem chega sem vínculo precisa ler, e ele
+                é um cartão — não o guia inteiro. */}
+            <ScienceAccessCard />
 
-          {/* Coluna direita: a coletânea e o Stop. */}
-          <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
             <div className="landing-shelf-card card-accent--shelf rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="landing-shelf-card__accent size-4" />
