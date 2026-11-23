@@ -321,13 +321,10 @@ function Index() {
                 </li>
               ))}
             </ol>
-          </section>
 
-          {/* Coluna direita: as duas portas de entrada, a coletânea e o Stop. */}
-          <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
-            {/* Segunda entrada: a metodologia é uma peça separada do artigo e
-                abre a coluna da direita, junto das demais portas de entrada. */}
-            <div className="rounded-2xl border border-accent-2/30 bg-card/60 p-3.5 backdrop-blur">
+            {/* Segunda porta de entrada, logo abaixo do artigo: a metodologia é
+                uma peça separada, com caderno próprio, e pode ser acoplada depois. */}
+            <div className="mt-4 rounded-2xl border border-accent-2/30 bg-card/60 p-3.5 backdrop-blur lg:mt-5">
               <div className="flex items-center gap-2">
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-2/15 text-accent-2">
                   <FlaskConical className="size-4" />
@@ -419,7 +416,10 @@ function Index() {
                 </div>
               )}
             </div>
+          </section>
 
+          {/* Coluna direita: as duas portas de entrada, a coletânea e o Stop. */}
+          <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
             {/* O card de ensino fica na coluna da direita, ao lado da promessa:
                 é a primeira coisa que quem chega sem vínculo precisa ler, e ele
                 é um cartão — não o guia inteiro. */}
