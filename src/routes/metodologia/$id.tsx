@@ -111,6 +111,25 @@ function Fold({
   );
 }
 
+function ObsText({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 420;
+  return (
+    <>
+      <p className={`whitespace-pre-wrap ${long && !open ? "line-clamp-5" : ""}`}>{text}</p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="mt-1 text-[11px] text-primary/80 hover:text-primary"
+        >
+          {open ? "recolher" : `ver tudo (${text.length} caracteres)`}
+        </button>
+      )}
+    </>
+  );
+}
+
 function entryText(m: MethodologyMessageView): string {
   return m.parts
     .map((p) => p.text ?? "")
@@ -575,15 +594,13 @@ function MethodologyWorkspace() {
                       data-role={m.role}
                     >
                       <div className="method-entry__head">
-                        <span className="method-entry__tag">{isUser ? "OBS" : "PROT"}</span>
-                        <span>{String(i + 1).padStart(2, "0")}</span>
                         <span className="normal-case tracking-normal">
                           {isUser ? "você" : "pracinha"}
                         </span>
                       </div>
                       <div className="method-entry__body">
                         {isUser ? (
-                          <p className="whitespace-pre-wrap">{text}</p>
+                          <ObsText text={text} />
                         ) : (
                           (() => {
                             const { context, question } = splitMethodReply(text);
@@ -659,7 +676,7 @@ function MethodologyWorkspace() {
                 className="max-h-40 w-full resize-none bg-transparent px-1 py-1 text-sm outline-none placeholder:text-muted-foreground/70"
               />
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {["Não sei ainda", "Pular esta pergunta"].map((hint) => (
+                {["Não sei ainda", "Podemos avançar", "Me dá um exemplo"].map((hint) => (
                   <button
                     key={hint}
                     type="button"

@@ -2791,25 +2791,9 @@
 }
 
 .method-log {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  padding-left: 1.55rem;
-}
-.method-log::before {
-  content: "";
-  position: absolute;
-  left: 0.4rem;
-  top: 0.4rem;
-  bottom: 0.4rem;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    color-mix(in oklab, var(--color-primary) 45%, transparent),
-    transparent
-  );
+  gap: 0.7rem;
 }
 .method-entry {
   position: relative;
@@ -2825,25 +2809,12 @@
     transform: translateY(0);
   }
 }
-.method-entry::before {
-  content: "";
-  position: absolute;
-  left: -1.32rem;
-  top: 0.5rem;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  border: 1.5px solid color-mix(in oklab, var(--color-foreground) 30%, transparent);
-  background: var(--color-background);
+.method-entry[data-role="user"] {
+  align-self: flex-end;
+  max-width: 88%;
 }
-.method-entry[data-role="assistant"]::before {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  box-shadow: 0 0 10px var(--glow);
-}
-.method-entry[data-role="user"]::before {
-  background: var(--color-star-amber);
-  border-color: var(--color-star-amber);
+.method-entry[data-role="user"] .method-entry__head {
+  justify-content: flex-end;
 }
 .method-entry__head {
   display: flex;
@@ -2876,11 +2847,10 @@
   line-height: 1.65;
 }
 .method-entry--obs .method-entry__body {
-  border-left: 2px solid color-mix(in oklab, var(--color-star-amber) 60%, transparent);
-  background: color-mix(in oklab, var(--color-star-amber) 7%, transparent);
-  border-radius: 0.2rem 0.6rem 0.6rem 0.2rem;
+  border: 1px solid color-mix(in oklab, var(--color-star-amber) 28%, transparent);
+  background: color-mix(in oklab, var(--color-star-amber) 8%, transparent);
+  border-radius: 0.9rem 0.9rem 0.25rem 0.9rem;
   padding: 0.55rem 0.8rem;
-  font-family: var(--font-serif);
 }
 .method-scan {
   position: relative;
@@ -10092,5 +10062,75 @@
   .stop-confetti i {
     animation: stopConfettiFall 2.6s cubic-bezier(0.35, 0.1, 0.5, 1) forwards;
     animation-delay: calc(var(--i) * 55ms);
+  }
+}
+
+/* Palco único da home: os cards se revezam no mesmo lugar e tamanho. */
+.landing-rotator {
+  position: relative;
+}
+.landing-rotator__stage {
+  position: relative;
+  min-height: 19rem;
+}
+.landing-rotator__slide {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+  pointer-events: none;
+}
+.landing-rotator__slide[data-active="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+/* todos os cards ocupam a mesma caixa: mesma altura, conteúdo ancorado no topo */
+.landing-rotator__slide > * {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.landing-rotator__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  padding-top: 0.7rem;
+}
+.landing-rotator__dots button {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-foreground) 22%, transparent);
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+.landing-rotator__dots button[data-active="true"] {
+  width: 1.15rem;
+  background: var(--color-primary);
+}
+@media (max-width: 1023px) {
+  .landing-rotator__stage {
+    min-height: 0;
+  }
+  .landing-rotator__slide {
+    position: static;
+    display: none;
+    transform: none;
+    overflow: visible;
+  }
+  .landing-rotator__slide[data-active="true"] {
+    display: block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-rotator__slide {
+    transition: none;
   }
 }

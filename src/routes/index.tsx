@@ -48,6 +48,59 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+/**
+ * Palco único da coluna direita: os cards ocupam o mesmo lugar, do mesmo
+ * tamanho, e se revezam. Pausa ao passar o mouse ou focar — quem está lendo ou
+ * jogando não perde o card embaixo do dedo.
+ */
+function Rotator({ slides }: { slides: { key: string; label: string; node: React.ReactNode }[] }) {
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused || slides.length < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => setIndex((i) => (i + 1) % slides.length), 7000);
+    return () => window.clearInterval(timer);
+  }, [paused, slides.length]);
+
+  return (
+    <div
+      className="landing-rotator"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
+      <div className="landing-rotator__stage">
+        {slides.map((slide, i) => (
+          <div
+            key={slide.key}
+            className="landing-rotator__slide"
+            data-active={i === index ? "true" : "false"}
+            aria-hidden={i !== index}
+          >
+            {slide.node}
+          </div>
+        ))}
+      </div>
+      <div className="landing-rotator__dots" role="tablist" aria-label="Cards da home">
+        {slides.map((slide, i) => (
+          <button
+            key={slide.key}
+            type="button"
+            role="tab"
+            aria-selected={i === index}
+            aria-label={slide.label}
+            data-active={i === index ? "true" : "false"}
+            onClick={() => setIndex(i)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Index() {
   const { user, loading, error: authError } = useAuth();
   const navigate = useNavigate();
@@ -56,6 +109,7 @@ function Index() {
   // Segunda entrada da home: a metodologia tem semente própria e nasce como
   // entidade separada (chat + spec), não como aba do artigo.
   const [methodSeed, setMethodSeed] = useState("");
+  const [methodOpen, setMethodOpen] = useState(false);
   const [creatingMethod, setCreatingMethod] = useState(false);
   const [methodologies, setMethodologies] = useState<
     { id: string; title: string; status: string }[]
@@ -321,125 +375,149 @@ function Index() {
               ))}
             </ol>
 
-            {/* Segunda porta de entrada, logo abaixo do artigo: a metodologia é
-                uma peça separada, com caderno próprio, e pode ser acoplada depois. */}
-            <div className="mt-4 rounded-2xl border border-accent-2/30 bg-card/60 p-3.5 backdrop-blur lg:mt-5">
-              <div className="flex items-center gap-2">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-2/15 text-accent-2">
-                  <FlaskConical className="size-4" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="font-serif text-sm font-semibold leading-tight">
-                    Ou comece pelo método
-                  </h2>
+            {/* Segunda porta de entrada: discreta por padrão — a home é do
+                artigo. O caderno de método abre em uma linha, sem competir. */}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setMethodOpen((v) => !v)}
+                aria-expanded={methodOpen}
+                className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-xs font-medium text-accent-2 transition-colors hover:text-accent-2/80"
+              >
+                <FlaskConical className="size-3.5" />
+                {methodOpen ? "Fechar o caderno de método" : "Ou comece pelo método"}
+                {user && methodologies.length > 0 && (
+                  <span className="ml-1 rounded-full border border-accent-2/30 px-1.5 text-[10px] text-muted-foreground">
+                    {methodologies.length}
+                  </span>
+                )}
+              </button>
+
+              {methodOpen && (
+                <div className="mt-2 rounded-2xl border border-accent-2/30 bg-card/60 p-3 backdrop-blur">
                   <p className="text-[11px] text-muted-foreground">
                     Peça separada do artigo — acople depois, se quiser.
                   </p>
-                </div>
-              </div>
-
-              <form
-                className="mt-2.5 flex flex-col gap-2 sm:flex-row"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void startMethodology(methodSeed);
-                }}
-              >
-                <input
-                  value={methodSeed}
-                  onChange={(e) => setMethodSeed(e.target.value)}
-                  placeholder="Que método você quer usar?"
-                  aria-label="Que método você quer usar?"
-                  className="h-10 flex-1 rounded-xl border border-input bg-background/60 px-3 text-sm outline-none transition focus:border-accent-2 focus:ring-2 focus:ring-accent-2/25"
-                />
-                <Button
-                  type="submit"
-                  variant="outline"
-                  disabled={creatingMethod || methodSeed.trim().length < 6}
-                  className="h-10 gap-1.5 rounded-xl border-accent-2/40 text-accent-2 hover:bg-accent-2/10 hover:text-accent-2"
-                >
-                  {creatingMethod ? <Loader2 className="animate-spin" /> : <FlaskConical />}
-                  Criar metodologia
-                </Button>
-              </form>
-
-              {/* A lista fica ao lado da semente: quem já tem metodologia reabre
-                  o caderno em um clique, sem passar pelo menu do topo. */}
-              {user && (
-                <div className="mt-3 border-t border-border/60 pt-2.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Suas metodologias
-                    </span>
-                    {methodologies.length > 0 && (
-                      <span className="text-[10px] tabular-nums text-muted-foreground">
-                        {methodologies.length}
-                      </span>
-                    )}
-                  </div>
-
-                  {methodologies.length === 0 ? (
-                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                      Nenhuma ainda. Escreva a semente acima para abrir o primeiro caderno.
-                    </p>
-                  ) : (
-                    <ul className="mt-1.5 space-y-0.5">
-                      {methodologies.map((m) => (
-                        <li key={m.id}>
-                          <Link
-                            to="/metodologia/$id"
-                            params={{ id: m.id }}
-                            className="group flex items-center gap-2 rounded-lg border border-transparent px-1.5 py-1 transition-colors hover:border-border hover:bg-card/80"
-                          >
-                            <FlaskConical
-                              className="size-3.5 shrink-0 text-accent-2/70"
-                              aria-hidden
-                            />
-                            <span className="min-w-0 flex-1 truncate text-xs text-foreground/85 group-hover:text-foreground">
-                              {m.title}
-                            </span>
-                            <span
-                              className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
-                                m.status === "approved"
-                                  ? "border-success/40 text-success"
-                                  : "border-border text-muted-foreground"
-                              }`}
-                            >
-                              {m.status === "approved" ? "aprovada" : "rascunho"}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <form
+                    className="mt-2 flex flex-col gap-2 sm:flex-row"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void startMethodology(methodSeed);
+                    }}
+                  >
+                    <input
+                      value={methodSeed}
+                      onChange={(e) => setMethodSeed(e.target.value)}
+                      placeholder="Que método você quer usar?"
+                      aria-label="Que método você quer usar?"
+                      className="h-10 flex-1 rounded-xl border border-input bg-background/60 px-3 text-sm outline-none transition focus:border-accent-2 focus:ring-2 focus:ring-accent-2/25"
+                    />
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      disabled={creatingMethod || methodSeed.trim().length < 6}
+                      className="h-10 gap-1.5 rounded-xl border-accent-2/40 text-accent-2 hover:bg-accent-2/10 hover:text-accent-2"
+                    >
+                      {creatingMethod ? <Loader2 className="animate-spin" /> : <FlaskConical />}
+                      Criar metodologia
+                    </Button>
+                  </form>
                 </div>
               )}
             </div>
           </section>
 
-          {/* Coluna direita: as duas portas de entrada, a coletânea e o Stop. */}
-          <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
-            {/* O card de ensino fica na coluna da direita, ao lado da promessa:
-                é a primeira coisa que quem chega sem vínculo precisa ler, e ele
-                é um cartão — não o guia inteiro. */}
-            <ScienceAccessCard />
-
-            <div className="landing-shelf-card card-accent--shelf rounded-2xl border bg-card/60 p-4 backdrop-blur">
-              <div className="mb-3 flex items-baseline gap-2">
-                <BookOpenText className="landing-shelf-card__accent size-4" />
-                <h2 className="landing-shelf-card__accent font-serif text-base font-semibold">
-                  Coletânea de artigos
-                </h2>
-                <Link
-                  to="/publicacoes"
-                  className="landing-shelf-card__accent ml-auto inline-flex min-h-11 shrink-0 items-center text-xs font-medium hover:underline"
-                >
-                  Ver tudo →
-                </Link>
-              </div>
-              <PublishedShelf compact />
-            </div>
-            <GameCard className="card-accent--stop" />
+          {/* Coluna direita: um palco só. Os cards se revezam no mesmo lugar,
+              no mesmo tamanho — menos poluição, mesma informação. */}
+          <section className="order-3 flex min-h-0 flex-col lg:order-2">
+            <Rotator
+              slides={[
+                {
+                  key: "acesso",
+                  label: "Ciência sem crachá",
+                  node: <ScienceAccessCard className="h-full" />,
+                },
+                {
+                  key: "coletanea",
+                  label: "Coletânea de artigos",
+                  node: (
+                    <div className="landing-shelf-card card-accent--shelf h-full rounded-2xl border bg-card/60 p-4 backdrop-blur">
+                      <div className="mb-3 flex items-baseline gap-2">
+                        <BookOpenText className="landing-shelf-card__accent size-4" />
+                        <h2 className="landing-shelf-card__accent font-serif text-base font-semibold">
+                          Coletânea de artigos
+                        </h2>
+                        <Link
+                          to="/publicacoes"
+                          className="landing-shelf-card__accent ml-auto inline-flex min-h-11 shrink-0 items-center text-xs font-medium hover:underline"
+                        >
+                          Ver tudo →
+                        </Link>
+                      </div>
+                      <PublishedShelf compact />
+                    </div>
+                  ),
+                },
+                {
+                  key: "stop",
+                  label: "Stop científico",
+                  node: <GameCard className="card-accent--stop h-full" />,
+                },
+                ...(user
+                  ? [
+                      {
+                        key: "metodos",
+                        label: "Suas metodologias",
+                        node: (
+                          <div className="h-full rounded-2xl border border-accent-2/30 bg-card/60 p-4 backdrop-blur">
+                            <div className="mb-2 flex items-center gap-2">
+                              <FlaskConical className="size-4 text-accent-2" />
+                              <h2 className="font-serif text-base font-semibold">
+                                Suas metodologias
+                              </h2>
+                              <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
+                                {methodologies.length}
+                              </span>
+                            </div>
+                            {methodologies.length === 0 ? (
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                Nenhuma ainda. Use “Ou comece pelo método”, ao lado, para abrir o
+                                primeiro caderno.
+                              </p>
+                            ) : (
+                              <ul className="space-y-1">
+                                {methodologies.map((m) => (
+                                  <li key={m.id}>
+                                    <Link
+                                      to="/metodologia/$id"
+                                      params={{ id: m.id }}
+                                      className="group flex items-center gap-2 rounded-lg border border-transparent px-1.5 py-1.5 transition-colors hover:border-border hover:bg-card/80"
+                                    >
+                                      <FlaskConical className="size-3.5 shrink-0 text-accent-2/70" />
+                                      <span className="min-w-0 flex-1 truncate text-xs text-foreground/85 group-hover:text-foreground">
+                                        {m.title}
+                                      </span>
+                                      <span
+                                        className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
+                                          m.status === "approved"
+                                            ? "border-success/40 text-success"
+                                            : "border-border text-muted-foreground"
+                                        }`}
+                                      >
+                                        {m.status === "approved" ? "aprovada" : "rascunho"}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
           </section>
         </main>
 

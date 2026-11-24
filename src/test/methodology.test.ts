@@ -366,6 +366,14 @@ describe("cleanMethodologyReply", () => {
     ).toBe(true);
   });
 
+  it('preserva exemplos socráticos que começam com "Você tem"', () => {
+    const raw =
+      "Se o corpus for só de certidões, cada certidão vira um caso. Você tem duas opções: tratar a certidão ou a pessoa como unidade. Qual delas descreve o que você quer provar?";
+    const clean = cleanMethodologyReply(raw);
+    expect(clean).toContain("Se o corpus for só de certidões");
+    expect(clean).toContain("Você tem duas opções");
+  });
+
   it("nunca devolve texto vazio", () => {
     expect(cleanMethodologyReply("Entendi.")).toBe("Entendi.");
   });

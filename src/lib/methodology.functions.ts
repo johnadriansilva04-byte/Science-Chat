@@ -6,6 +6,7 @@ import {
   methodologyLinkError,
   methodologySectionText,
   METHODOLOGY_STATUS,
+  specSectionCoverage,
 } from "@/lib/methodology";
 import * as repo from "@/lib/cf/repo.server";
 
@@ -175,11 +176,15 @@ export const sendMethodologyMessage = createServerFn({ method: "POST" })
       loadTranscript(context.user.id, data.methodologyId),
       corpusBlock(context.user.id, data.methodologyId),
     ]);
+    const coverage = specSectionCoverage(methodology.content ?? "")
+      .map((section) => `- ${section.section}: ${section.present ? "já escrito" : "em aberto"}`)
+      .join("\n");
     const prompt = [
       `METODOLOGIA EM CONSTRUÇÃO: ${methodology.title}`,
       corpus,
+      `ESTADO DA SPEC (não repergunte o que já está escrito):\n${coverage}`,
       `ENTREVISTA DE MÉTODO:\n${transcript}`,
-      "Responda ao pesquisador e faça a próxima pergunta de método.",
+      "Responda como numa conversa: se ele perguntou algo, responda primeiro; depois dê UM exemplo curto e faça UMA pergunta. Não avance de assunto enquanto houver dúvida aberta.",
     ]
       .filter(Boolean)
       .join("\n\n");
