@@ -302,7 +302,7 @@ const META_ANYWHERE =
   /^(?:isso me faz pensar|pelo que entendi|ao que parece|parece que voc|ou seja|resumindo|isso indica que|em outras palavras|nesse sentido, voc)/i;
 
 const ECHO_SENTENCE =
-  /^(?:entendi|perfeito|ótimo|otimo|certo|compreendi|excelente|interessante|beleza|ok\b|bom\b|isso me faz pensar|pelo que entendi|ao que parece|parece que|ou seja|resumindo|voc[eê]\s+(?:está|esta|estava|quer|pretende|vai|busca)(?:\s|$))/i;
+  /^(?:entendi|perfeito|ótimo|otimo|certo|compreendi|excelente|interessante|beleza|claro\b|com certeza|vamos lá|vou dar um exemplo|ok\b|bom\b|isso me faz pensar|pelo que entendi|ao que parece|parece que|ou seja|resumindo|voc[eê]\s+(?:está|esta|estava|quer|pretende|vai|busca)(?:\s|$))/i;
 
 /**
  * O modelo leve abre todo turno com "Entendi que você…", devolve a fala do

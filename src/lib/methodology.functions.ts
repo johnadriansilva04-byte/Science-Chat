@@ -170,7 +170,7 @@ export const sendMethodologyMessage = createServerFn({ method: "POST" })
       { type: "text", text },
     ]);
 
-    const { generateFinalText, interviewModelId } = await import("@/lib/ai/gateway.server");
+    const { generateFinalText } = await import("@/lib/ai/gateway.server");
     const { METHODOLOGY_INTERVIEW_INSTRUCTIONS } = await import("@/lib/ai/prompts");
     const [transcript, corpus] = await Promise.all([
       loadTranscript(context.user.id, data.methodologyId),
@@ -189,12 +189,9 @@ export const sendMethodologyMessage = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const raw = await generateFinalText(
-      prompt,
-      METHODOLOGY_INTERVIEW_INSTRUCTIONS,
-      700,
-      interviewModelId(),
-    );
+    // Diálogo socrático exige seguir formato (exemplo + uma pergunta): o modelo
+    // leve ignora isso e devolve paráfrase. Aqui vale o modelo padrão.
+    const raw = await generateFinalText(prompt, METHODOLOGY_INTERVIEW_INSTRUCTIONS, 700);
     const reply = cleanMethodologyReply(raw);
     if (!reply) throw new Error("A IA não retornou texto. Tente novamente.");
     await repo.addMethodologyMessage(context.user.id, data.methodologyId, "assistant", [
