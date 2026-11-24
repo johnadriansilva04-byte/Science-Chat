@@ -10071,7 +10071,7 @@
 }
 .landing-rotator__stage {
   position: relative;
-  min-height: 19rem;
+  min-height: 20rem;
 }
 .landing-rotator__slide {
   position: absolute;
@@ -10129,5 +10129,243 @@
 @media (prefers-reduced-motion: reduce) {
   .landing-rotator__slide {
     transition: none;
+  }
+}
+
+/* ===== Card do Stop científico (home): rodada de exemplo, não lista ===== */
+.stop-card {
+  border-color: color-mix(in oklab, var(--color-star-amber) 30%, transparent);
+  background:
+    radial-gradient(
+      120% 120% at 100% 0%,
+      color-mix(in oklab, var(--color-star-amber) 12%, transparent),
+      transparent 58%
+    ),
+    color-mix(in oklab, var(--color-card) 82%, transparent);
+  backdrop-filter: blur(6px);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.stop-card:hover {
+  border-color: color-mix(in oklab, var(--color-star-amber) 55%, transparent);
+  box-shadow: 0 10px 30px -22px color-mix(in oklab, var(--color-star-amber) 70%, transparent);
+}
+.stop-card__glow {
+  position: absolute;
+  inset: -40% -20% auto;
+  height: 70%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--color-primary) 18%, transparent),
+    transparent
+  );
+  filter: blur(20px);
+  opacity: 0.7;
+}
+.stop-card__word {
+  display: flex;
+  text-transform: uppercase;
+  gap: 0.04em;
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+.stop-card__word span {
+  animation: stop-letter-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stop-card__word span[data-i="0"] {
+  color: var(--color-primary);
+}
+.stop-card__word span[data-i="1"] {
+  color: var(--color-star-amber);
+}
+.stop-card__word span[data-i="2"] {
+  color: var(--color-accent-2);
+}
+.stop-card__word span[data-i="3"] {
+  color: var(--color-success);
+}
+.stop-card__word span:nth-child(odd) {
+  transform: translateY(-0.04em) rotate(-2deg);
+}
+@keyframes stop-letter-pop {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.stop-card__sub {
+  margin-top: 0.15rem;
+  font-family: var(--font-serif);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+.stop-card__sub span {
+  letter-spacing: 0;
+  text-transform: none;
+  font-style: italic;
+}
+.stop-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-star-amber) 35%, transparent);
+  padding: 0.15rem 0.45rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-star-amber);
+}
+.stop-card__badge svg {
+  fill: currentColor;
+}
+.stop-card__draw {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  border-radius: 0.9rem;
+  border: 1px dashed color-mix(in oklab, var(--color-foreground) 16%, transparent);
+  padding: 0.5rem 0.6rem;
+  background: color-mix(in oklab, var(--color-background) 45%, transparent);
+}
+.stop-card__letter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.1rem;
+}
+.stop-card__letter span {
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+.stop-card__letter strong {
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-primary);
+  animation: stop-letter-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stop-card__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.stop-card__cats li {
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 14%, transparent);
+  padding: 0.05rem 0.45rem;
+  font-size: 0.64rem;
+  line-height: 1.55;
+  color: color-mix(in oklab, var(--color-foreground) 80%, transparent);
+}
+.stop-card__campaigns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.7rem;
+}
+.stop-card__campaigns li {
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 12%, transparent);
+  padding: 0.08rem 0.45rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+.stop-card__campaigns li[data-active="true"] {
+  border-color: color-mix(in oklab, var(--color-star-amber) 45%, transparent);
+  color: var(--color-star-amber);
+}
+.stop-card__shuffle {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 32%, transparent);
+  color: var(--color-primary);
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease;
+}
+.stop-card__shuffle:hover {
+  transform: rotate(180deg);
+  background: color-mix(in oklab, var(--color-primary) 12%, transparent);
+}
+.stop-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2.4rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--color-star-amber) 42%, transparent);
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-star-amber);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+.stop-card__cta:hover {
+  background: color-mix(in oklab, var(--color-star-amber) 14%, transparent);
+  transform: translateY(-1px);
+}
+
+/* Nota que muda a cada visita do card. */
+.landing-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+  animation: landing-note-in 0.45s ease both;
+}
+.landing-note--bottom {
+  margin-top: auto;
+  padding-top: 0.7rem;
+}
+.landing-note svg {
+  margin-top: 0.15rem;
+  color: var(--color-primary);
+}
+@keyframes landing-note-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stop-card__word span,
+  .stop-card__letter strong,
+  .landing-note {
+    animation: none;
+  }
+  .stop-card__shuffle:hover {
+    transform: none;
   }
 }

@@ -9,6 +9,6 @@ describe("PracinhaRest", () => {
 
     expect(screen.getByText("O Pracinha cansou 😴")).toBeInTheDocument();
     // A espera é o momento certo para o joguinho: ele não aparece na produção do artigo.
-    expect(screen.getByText("Stop científico")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /stop científico/i })).toBeInTheDocument();
   });
 });

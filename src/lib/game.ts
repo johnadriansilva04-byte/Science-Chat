@@ -6,7 +6,7 @@
  * categorias e das fases fica em `src/lib/stop.ts`, para não haver duas listas.
  */
 
-import { STOP_CATEGORY_LIST } from "@/lib/stop";
+import { STOP_CAMPAIGNS, STOP_CATEGORY_LIST } from "@/lib/stop";
 
 export const GAME_NAME = "Stop científico";
 
@@ -18,3 +18,8 @@ export const GAME_PATH = "/stop";
 
 /** Categorias do Stop. Curtas de propósito: cabem na largura de um celular. */
 export const STOP_CATEGORIES = STOP_CATEGORY_LIST.map((category) => category.label);
+
+/** Nomes das campanhas, para o card mostrar o mapa do jogo sem listar 24 campos. */
+export const STOP_CAMPAIGN_TITLES: readonly string[] = STOP_CAMPAIGNS.map(
+  (campaign) => campaign.title,
+);

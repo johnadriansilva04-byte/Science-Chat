@@ -53,15 +53,19 @@ export const Route = createFileRoute("/")({
  * tamanho, e se revezam. Pausa ao passar o mouse ou focar — quem está lendo ou
  * jogando não perde o card embaixo do dedo.
  */
-function Rotator({
-  slides,
-  pause = false,
-}: {
-  slides: { key: string; label: string; node: React.ReactNode }[];
-  pause?: boolean;
-}) {
+type LandingSlide = {
+  key: string;
+  label: string;
+  /** Recebe quantas vezes o card já apareceu: cada visita mostra outra nota. */
+  render: (visit: number) => React.ReactNode;
+};
+
+function Rotator({ slides, pause = false }: { slides: LandingSlide[]; pause?: boolean }) {
   const [index, setIndex] = useState(0);
+  const [visits, setVisits] = useState(0);
   const [paused, setPaused] = useState(false);
+
+  useEffect(() => setVisits((v) => v + 1), [index]);
 
   useEffect(() => {
     if (paused || pause || slides.length < 2) return;
@@ -88,7 +92,7 @@ function Rotator({
             data-active={i === index ? "true" : "false"}
             aria-hidden={i !== index}
           >
-            {slide.node}
+            {slide.render(visits)}
           </div>
         ))}
       </div>
@@ -107,6 +111,36 @@ function Rotator({
       </div>
     </div>
   );
+}
+
+/** Cada card traz uma informação nova a cada visita. */
+const METHOD_NOTES = [
+  "A spec tem 7 seções; a conversa preenche uma por vez, sem pressa.",
+  "Aprovada, a metodologia pode ser acoplada ao artigo e vira a seção Metodologia.",
+  "Anexe as fontes primárias: só o que está no corpus pode ser citado na spec.",
+  "O vínculo com o artigo é reversível — desacoplar não apaga nada.",
+];
+
+const ACCESS_NOTES = [
+  "O que a revista avalia é o trabalho, não o crachá.",
+  "ORCID é gratuito e leva uns 3 minutos: é o seu identificador público.",
+  "Pesquisa com seres humanos exige comitê de ética antes de coletar.",
+];
+
+const SHELF_NOTES = [
+  "32 artigos publicados por quem não tinha vínculo institucional.",
+  "Homenagem: “O gênio sem lousa”, sobre Stephen Hawking (1942–2018).",
+  "Cada artigo da coletânea passou pela mesma entrevista que você vai fazer.",
+];
+
+const STOP_NOTES = [
+  "Cinco campanhas: clássico, Brasil, cultura pop, esportes e bancada.",
+  "A banca de IA julga as respostas — explicar o raciocínio vale ponto.",
+  "Estrelas e XP a cada rodada: o placar é científico, o trocadilho é livre.",
+];
+
+function pickNote(notes: string[], visit: number) {
+  return notes[visit % notes.length];
 }
 
 function Index() {
@@ -392,7 +426,7 @@ function Index() {
                 {
                   key: "metodo",
                   label: "Construir metodologia",
-                  node: (
+                  render: (visit) => (
                     <div className="cracha-card relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 backdrop-blur">
                       <span className="cracha-card__spine" aria-hidden />
                       <div className="flex items-center gap-2">
@@ -438,12 +472,12 @@ function Index() {
                             {methodologies.length} no caderno
                           </p>
                           <ul className="mt-1 space-y-0.5">
-                            {methodologies.slice(0, 4).map((m) => (
+                            {methodologies.slice(0, 2).map((m) => (
                               <li key={m.id}>
                                 <Link
                                   to="/metodologia/$id"
                                   params={{ id: m.id }}
-                                  className="group flex items-center gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-card/80"
+                                  className="group flex items-center gap-2 rounded-lg px-1 py-0.5 transition-colors hover:bg-card/80"
                                 >
                                   <FlaskConical className="size-3 shrink-0 text-accent-2/70" />
                                   <span className="min-w-0 flex-1 truncate text-[11px] text-foreground/85 group-hover:text-foreground">
@@ -464,19 +498,32 @@ function Index() {
                           </ul>
                         </div>
                       )}
+
+                      <p className="landing-note mt-auto">
+                        <Sparkles className="size-3 shrink-0" aria-hidden />
+                        {pickNote(METHOD_NOTES, visit)}
+                      </p>
                     </div>
                   ),
                 },
                 {
                   key: "acesso",
                   label: "Ciência sem crachá",
-                  node: <ScienceAccessCard className="h-full" />,
+                  render: (visit) => (
+                    <div className="relative flex h-full flex-col">
+                      <ScienceAccessCard className="min-h-0 flex-1" />
+                      <p className="landing-note">
+                        <Sparkles className="size-3 shrink-0" aria-hidden />
+                        {pickNote(ACCESS_NOTES, visit)}
+                      </p>
+                    </div>
+                  ),
                 },
                 {
                   key: "coletanea",
                   label: "Coletânea de artigos",
-                  node: (
-                    <div className="landing-shelf-card card-accent--shelf h-full rounded-2xl border bg-card/60 p-4 backdrop-blur">
+                  render: (visit) => (
+                    <div className="landing-shelf-card card-accent--shelf flex h-full flex-col rounded-2xl border bg-card/60 p-4 backdrop-blur">
                       <div className="mb-3 flex items-baseline gap-2">
                         <BookOpenText className="landing-shelf-card__accent size-4" />
                         <h2 className="landing-shelf-card__accent font-serif text-base font-semibold">
@@ -490,13 +537,19 @@ function Index() {
                         </Link>
                       </div>
                       <PublishedShelf compact />
+                      <p className="landing-note mt-auto">
+                        <Sparkles className="size-3 shrink-0" aria-hidden />
+                        {pickNote(SHELF_NOTES, visit)}
+                      </p>
                     </div>
                   ),
                 },
                 {
                   key: "stop",
                   label: "Stop científico",
-                  node: <GameCard className="card-accent--stop h-full" />,
+                  render: (visit) => (
+                    <GameCard className="h-full" visit={visit} note={pickNote(STOP_NOTES, visit)} />
+                  ),
                 },
               ]}
             />
