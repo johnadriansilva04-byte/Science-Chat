@@ -8,6 +8,7 @@ import { CampaignMap } from "@/components/stop/CampaignMap";
 import { StopArena } from "@/components/stop/StopArena";
 import { useAuth } from "@/hooks/useAuth";
 import { getStopCampaign, judgeStopRound, resetStopCampaign } from "@/lib/stop.functions";
+import { STOP_SAGA_STAKE, duelForLevel, squadLabel } from "@/lib/stop-saga";
 import {
   STOP_LEVELS,
   STOP_TOTAL_STARS,
@@ -167,6 +168,7 @@ function CampaignPage() {
   ).length;
   const nextLevel = campaign.nextLevelId ? stopLevel(campaign.nextLevelId) : undefined;
   const hero = nextLevel ?? STOP_LEVELS[0]!;
+  const duel = duelForLevel(hero);
 
   return (
     <div className="stop-page">
@@ -184,7 +186,7 @@ function CampaignPage() {
           <div className="run__intro">
             <span className="run__kicker">
               <Flame size={13} aria-hidden />
-              Campanha de férias
+              Campanha de férias · {duel.act.act}
             </span>
             <h1 className="run__title">
               Expedição <em>Stop</em>
@@ -204,12 +206,20 @@ function CampaignPage() {
 
           <button type="button" className="run__play" onClick={() => setPlaying(hero)}>
             <Play size={17} aria-hidden />
-            <span className="run__play-main">{complete ? "Rejogar" : "Continuar"}</span>
+            <span className="run__play-main">{complete ? "Rejogar" : "Enfrentar"}</span>
             <span className="run__play-sub">
-              {hero.letter} · {hero.title}
+              {hero.letter} · {duel.rival.name} · {squadLabel(duel.squad)}
             </span>
           </button>
         </header>
+
+        <aside className="saga" aria-label="A história do campeonato">
+          <span className="saga__act">
+            {duel.act.act} · {duel.act.title}
+          </span>
+          <p className="saga__hook">{duel.act.hook}</p>
+          <span className="saga__stake">{STOP_SAGA_STAKE} Quem perde é riscado do mapa.</span>
+        </aside>
 
         <CampaignMap state={campaign} onPlay={(level) => setPlaying(level)} />
 

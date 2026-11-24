@@ -34,7 +34,7 @@ function StopCover() {
           <h1 className="cover__title">
             Como você quer <em>jogar</em>?
           </h1>
-          <p className="cover__lead">Duas portas. Escolha uma.</p>
+          <p className="cover__lead">Duas portas. Na campanha, quem perde é riscado do mapa.</p>
         </header>
 
         <div className="cover__doors">

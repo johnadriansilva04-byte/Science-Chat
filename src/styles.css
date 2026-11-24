@@ -9327,3 +9327,200 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ============ STOP — SAGA E DUELOS ============ */
+.saga {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0.95rem 0.75rem 1.05rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, white 8%, transparent);
+  border-left: 2px solid color-mix(in oklab, var(--stop-amber) 55%, transparent);
+  background:
+    radial-gradient(
+      120% 140% at 0% 0%,
+      color-mix(in oklab, var(--stop-violet) 12%, transparent),
+      transparent 62%
+    ),
+    color-mix(in oklab, white 2%, transparent);
+}
+
+.saga__act {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stop-amber);
+}
+
+.saga__hook {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: color-mix(in oklab, white 78%, transparent);
+}
+
+.saga__stake {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.48rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, white 34%, transparent);
+}
+
+.journey__stop-rival {
+  grid-row: 4;
+  max-width: 11rem;
+  font-size: 0.56rem;
+  line-height: 1.35;
+  color: color-mix(in oklab, var(--stop-violet) 70%, white);
+}
+
+.journey__stop.is-locked .journey__stop-rival {
+  color: color-mix(in oklab, white 32%, transparent);
+}
+
+.stop-rival {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0.7rem 0 0.6rem;
+  padding: 0.55rem 0.75rem 0.6rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--stop-violet) 28%, transparent);
+  border-left: 2px solid color-mix(in oklab, var(--stop-violet) 65%, transparent);
+  background: color-mix(in oklab, var(--stop-violet) 8%, transparent);
+}
+
+.stop-rival__versus {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.48rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--stop-violet) 85%, white);
+}
+
+.stop-rival__name {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1rem;
+  color: color-mix(in oklab, white 94%, transparent);
+}
+
+.stop-rival__meta {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, white 40%, transparent);
+}
+
+.stop-rival__quote {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: color-mix(in oklab, white 66%, transparent);
+}
+
+.stop-countdown__rival {
+  margin: 0.55rem auto 0;
+  max-width: 26rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: color-mix(in oklab, white 55%, transparent);
+}
+
+.stop-duel {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  margin: 0.85rem 0;
+  padding: 0.8rem 1rem 0.9rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in oklab, white 10%, transparent);
+  background: color-mix(in oklab, white 2.5%, transparent);
+  text-align: center;
+}
+
+.stop-duel.is-win {
+  border-color: color-mix(in oklab, var(--stop-cyan) 45%, transparent);
+  background: color-mix(in oklab, var(--stop-cyan) 9%, transparent);
+}
+
+.stop-duel.is-loss {
+  border-color: color-mix(in oklab, oklch(0.68 0.17 25) 45%, transparent);
+  background: color-mix(in oklab, oklch(0.68 0.17 25) 8%, transparent);
+}
+
+.stop-duel__tag {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.48rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, white 55%, transparent);
+}
+
+.stop-duel.is-win .stop-duel__tag {
+  color: var(--stop-cyan);
+}
+
+.stop-duel.is-loss .stop-duel__tag {
+  color: oklch(0.78 0.13 25);
+}
+
+.stop-duel__score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.stop-duel__you {
+  color: color-mix(in oklab, white 96%, transparent);
+}
+
+.stop-duel__vs {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  color: color-mix(in oklab, white 38%, transparent);
+}
+
+.stop-duel__them {
+  color: color-mix(in oklab, white 52%, transparent);
+}
+
+.stop-duel__name {
+  margin: 0.15rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: color-mix(in oklab, white 88%, transparent);
+}
+
+.stop-duel__name em {
+  display: block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.46rem;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, white 42%, transparent);
+}
+
+.stop-duel__quote {
+  margin: 0.2rem 0 0;
+  max-width: 30rem;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: color-mix(in oklab, white 62%, transparent);
+}
+
+@media (max-width: 720px) {
+  .journey__stop-rival {
+    grid-area: meta;
+    max-width: none;
+  }
+}

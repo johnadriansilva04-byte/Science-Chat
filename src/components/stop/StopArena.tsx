@@ -12,6 +12,7 @@ import {
   type StopLevel,
   type StopRoundResult,
 } from "@/lib/stop";
+import { duelForLevel, duelWon, squadLabel } from "@/lib/stop-saga";
 
 const JUDGING_PHRASES = [
   "Conferindo se o nome existe…",
@@ -60,6 +61,7 @@ type Phase = "brief" | "countdown" | "playing" | "judging" | "result";
 const COUNTDOWN = ["3", "2", "1", "JÁ!"];
 
 export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props) {
+  const duel = duelForLevel(level);
   const [phase, setPhase] = useState<Phase>("brief");
   const [answers, setAnswers] = useState<string[]>(() => level.categories.map(() => ""));
   const [remaining, setRemaining] = useState(level.seconds);
@@ -254,6 +256,18 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
               Campanha {campaign.numeral} · {campaign.title}
             </span>
             <h3 className="stop-mission__title">{level.title}</h3>
+
+            <div className="stop-rival">
+              <span className="stop-rival__versus" aria-hidden>
+                vs.
+              </span>
+              <span className="stop-rival__name">{duel.rival.name}</span>
+              <span className="stop-rival__meta">
+                {squadLabel(duel.squad)} · alvo {duel.target} pts · {duel.rival.faction}
+              </span>
+              <p className="stop-rival__quote">“{duel.rival.taunt}”</p>
+            </div>
+
             <p className="stop-mission__lead">{level.brief}</p>
           </div>
 
@@ -409,6 +423,9 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
             {countText}
           </p>
           <p className="stop-countdown__hint">Enter pula para o próximo campo</p>
+          <p className="stop-countdown__rival">
+            {squadLabel(duel.squad)} · {duel.rival.name}: “{duel.rival.taunt}”
+          </p>
         </div>
       )}
 
@@ -455,6 +472,28 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
                       : result.stars === 1
                         ? "Fase concluída. Dá para subir a nota repetindo."
                         : "Não foi dessa vez. A meta era " + level.meta + "."}
+                </p>
+              </div>
+
+              <div className={cn("stop-duel", duelWon(result.stars) ? "is-win" : "is-loss")}>
+                <span className="stop-duel__tag">
+                  {duelWon(result.stars) ? "Duelo vencido" : "Duelo perdido"}
+                </span>
+                <div className="stop-duel__score">
+                  <span className="stop-duel__you">{result.score.total}</span>
+                  <span className="stop-duel__vs" aria-hidden>
+                    ×
+                  </span>
+                  <span className="stop-duel__them">{duel.target}</span>
+                </div>
+                <p className="stop-duel__name">
+                  {duel.rival.name}
+                  <em>
+                    {squadLabel(duel.squad)} · {duel.rival.faction}
+                  </em>
+                </p>
+                <p className="stop-duel__quote">
+                  {duelWon(result.stars) ? duel.rival.defeat : duel.rival.gloat}
                 </p>
               </div>
 

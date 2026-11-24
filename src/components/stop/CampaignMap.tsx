@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Lock, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { duelForLevel, squadLabel } from "@/lib/stop-saga";
 import {
   STOP_CAMPAIGNS,
   campaignStars,
@@ -95,12 +96,17 @@ export function CampaignMap({ state, onPlay }: Props) {
       </header>
 
       <ol className="journey__track">
-        {levels.map((level) => {
+        {levels.map((level, index) => {
           const unlocked = state.unlocked.includes(level.id);
           const stars = state.progress[level.id]?.stars ?? 0;
           const current = state.nextLevelId === level.id;
           const done = stars > 0 && !current;
           const thresholds = starThresholds(level);
+          const duel = duelForLevel(level);
+          const previous = index > 0 ? levels[index - 1] : undefined;
+          const lockLabel = previous
+            ? `vença ${duelForLevel(previous).rival.name}`
+            : "esquadrão oculto";
 
           return (
             <li
@@ -137,8 +143,8 @@ export function CampaignMap({ state, onPlay }: Props) {
               {done ? <span className="journey__tag is-done">feita</span> : null}
 
               <strong className="journey__stop-title">{level.title}</strong>
-              <span className="journey__stop-meta">
-                {unlocked ? `${level.seconds}s · ${level.categories.length} campos` : "bloqueada"}
+              <span className="journey__stop-rival">
+                {unlocked ? `${squadLabel(duel.squad)} · ${duel.rival.name}` : lockLabel}
               </span>
               <StarRow stars={stars} />
             </li>
