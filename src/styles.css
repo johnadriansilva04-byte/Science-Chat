@@ -10089,12 +10089,9 @@
   transform: none;
   pointer-events: auto;
 }
-/* todos os cards ocupam a mesma caixa: mesma altura, conteúdo ancorado no topo */
+/* todos os cards ocupam a mesma caixa; o layout interno de cada card é dele */
 .landing-rotator__slide > * {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
 }
 .landing-rotator__dots {
   display: flex;

@@ -53,16 +53,24 @@ export const Route = createFileRoute("/")({
  * tamanho, e se revezam. Pausa ao passar o mouse ou focar — quem está lendo ou
  * jogando não perde o card embaixo do dedo.
  */
-function Rotator({ slides }: { slides: { key: string; label: string; node: React.ReactNode }[] }) {
+function Rotator({
+  slides,
+  pause = false,
+}: {
+  slides: { key: string; label: string; node: React.ReactNode }[];
+  pause?: boolean;
+}) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused || slides.length < 2) return;
+    if (paused || pause || slides.length < 2) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => setIndex((i) => (i + 1) % slides.length), 7000);
-    return () => window.clearInterval(timer);
-  }, [paused, slides.length]);
+    // o primeiro card fica mais tempo: é o convite para construir a metodologia
+    const dwell = index === 0 ? 20000 : 7000;
+    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % slides.length), dwell);
+    return () => window.clearTimeout(timer);
+  }, [index, paused, pause, slides.length]);
 
   return (
     <div
@@ -109,7 +117,6 @@ function Index() {
   // Segunda entrada da home: a metodologia tem semente própria e nasce como
   // entidade separada (chat + spec), não como aba do artigo.
   const [methodSeed, setMethodSeed] = useState("");
-  const [methodOpen, setMethodOpen] = useState(false);
   const [creatingMethod, setCreatingMethod] = useState(false);
   const [methodologies, setMethodologies] = useState<
     { id: string; title: string; status: string }[]
@@ -374,64 +381,92 @@ function Index() {
                 </li>
               ))}
             </ol>
-
-            {/* Segunda porta de entrada: discreta por padrão — a home é do
-                artigo. O caderno de método abre em uma linha, sem competir. */}
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={() => setMethodOpen((v) => !v)}
-                aria-expanded={methodOpen}
-                className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-xs font-medium text-accent-2 transition-colors hover:text-accent-2/80"
-              >
-                <FlaskConical className="size-3.5" />
-                {methodOpen ? "Fechar o caderno de método" : "Ou comece pelo método"}
-                {user && methodologies.length > 0 && (
-                  <span className="ml-1 rounded-full border border-accent-2/30 px-1.5 text-[10px] text-muted-foreground">
-                    {methodologies.length}
-                  </span>
-                )}
-              </button>
-
-              {methodOpen && (
-                <div className="mt-2 rounded-2xl border border-accent-2/30 bg-card/60 p-3 backdrop-blur">
-                  <p className="text-[11px] text-muted-foreground">
-                    Peça separada do artigo — acople depois, se quiser.
-                  </p>
-                  <form
-                    className="mt-2 flex flex-col gap-2 sm:flex-row"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void startMethodology(methodSeed);
-                    }}
-                  >
-                    <input
-                      value={methodSeed}
-                      onChange={(e) => setMethodSeed(e.target.value)}
-                      placeholder="Que método você quer usar?"
-                      aria-label="Que método você quer usar?"
-                      className="h-10 flex-1 rounded-xl border border-input bg-background/60 px-3 text-sm outline-none transition focus:border-accent-2 focus:ring-2 focus:ring-accent-2/25"
-                    />
-                    <Button
-                      type="submit"
-                      variant="outline"
-                      disabled={creatingMethod || methodSeed.trim().length < 6}
-                      className="h-10 gap-1.5 rounded-xl border-accent-2/40 text-accent-2 hover:bg-accent-2/10 hover:text-accent-2"
-                    >
-                      {creatingMethod ? <Loader2 className="animate-spin" /> : <FlaskConical />}
-                      Criar metodologia
-                    </Button>
-                  </form>
-                </div>
-              )}
-            </div>
           </section>
 
           {/* Coluna direita: um palco só. Os cards se revezam no mesmo lugar,
               no mesmo tamanho — menos poluição, mesma informação. */}
           <section className="order-3 flex min-h-0 flex-col lg:order-2">
             <Rotator
+              pause={methodSeed.trim().length > 0}
               slides={[
+                {
+                  key: "metodo",
+                  label: "Construir metodologia",
+                  node: (
+                    <div className="cracha-card relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 backdrop-blur">
+                      <span className="cracha-card__spine" aria-hidden />
+                      <div className="flex items-center gap-2">
+                        <span className="cracha-card__icon" aria-hidden>
+                          <FlaskConical className="size-4" />
+                        </span>
+                        <h2 className="font-serif text-base font-semibold">
+                          Construir metodologia
+                        </h2>
+                      </div>
+                      <p className="mt-1.5 text-xs leading-snug text-foreground/80">
+                        Peça separada do artigo: a conversa define o método e vira uma spec. Aprove
+                        e acople ao artigo depois, se quiser.
+                      </p>
+                      <form
+                        className="mt-3 flex flex-col gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void startMethodology(methodSeed);
+                        }}
+                      >
+                        <input
+                          value={methodSeed}
+                          onChange={(e) => setMethodSeed(e.target.value)}
+                          placeholder="Que método você quer usar?"
+                          aria-label="Que método você quer usar?"
+                          className="h-10 w-full rounded-xl border border-input bg-background/60 px-3 text-sm outline-none transition focus:border-accent-2 focus:ring-2 focus:ring-accent-2/25"
+                        />
+                        <Button
+                          type="submit"
+                          variant="outline"
+                          disabled={creatingMethod || methodSeed.trim().length < 6}
+                          className="h-10 gap-1.5 rounded-xl border-accent-2/40 text-accent-2 hover:bg-accent-2/10 hover:text-accent-2"
+                        >
+                          {creatingMethod ? <Loader2 className="animate-spin" /> : <FlaskConical />}
+                          Criar metodologia
+                        </Button>
+                      </form>
+
+                      {user && methodologies.length > 0 && (
+                        <div className="mt-3 border-t border-border/60 pt-2">
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                            {methodologies.length} no caderno
+                          </p>
+                          <ul className="mt-1 space-y-0.5">
+                            {methodologies.slice(0, 4).map((m) => (
+                              <li key={m.id}>
+                                <Link
+                                  to="/metodologia/$id"
+                                  params={{ id: m.id }}
+                                  className="group flex items-center gap-2 rounded-lg px-1 py-1 transition-colors hover:bg-card/80"
+                                >
+                                  <FlaskConical className="size-3 shrink-0 text-accent-2/70" />
+                                  <span className="min-w-0 flex-1 truncate text-[11px] text-foreground/85 group-hover:text-foreground">
+                                    {m.title}
+                                  </span>
+                                  <span
+                                    className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
+                                      m.status === "approved"
+                                        ? "border-success/40 text-success"
+                                        : "border-border text-muted-foreground"
+                                    }`}
+                                  >
+                                    {m.status === "approved" ? "aprovada" : "rascunho"}
+                                  </span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ),
+                },
                 {
                   key: "acesso",
                   label: "Ciência sem crachá",
@@ -463,59 +498,6 @@ function Index() {
                   label: "Stop científico",
                   node: <GameCard className="card-accent--stop h-full" />,
                 },
-                ...(user
-                  ? [
-                      {
-                        key: "metodos",
-                        label: "Suas metodologias",
-                        node: (
-                          <div className="h-full rounded-2xl border border-accent-2/30 bg-card/60 p-4 backdrop-blur">
-                            <div className="mb-2 flex items-center gap-2">
-                              <FlaskConical className="size-4 text-accent-2" />
-                              <h2 className="font-serif text-base font-semibold">
-                                Suas metodologias
-                              </h2>
-                              <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
-                                {methodologies.length}
-                              </span>
-                            </div>
-                            {methodologies.length === 0 ? (
-                              <p className="text-xs leading-relaxed text-muted-foreground">
-                                Nenhuma ainda. Use “Ou comece pelo método”, ao lado, para abrir o
-                                primeiro caderno.
-                              </p>
-                            ) : (
-                              <ul className="space-y-1">
-                                {methodologies.map((m) => (
-                                  <li key={m.id}>
-                                    <Link
-                                      to="/metodologia/$id"
-                                      params={{ id: m.id }}
-                                      className="group flex items-center gap-2 rounded-lg border border-transparent px-1.5 py-1.5 transition-colors hover:border-border hover:bg-card/80"
-                                    >
-                                      <FlaskConical className="size-3.5 shrink-0 text-accent-2/70" />
-                                      <span className="min-w-0 flex-1 truncate text-xs text-foreground/85 group-hover:text-foreground">
-                                        {m.title}
-                                      </span>
-                                      <span
-                                        className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
-                                          m.status === "approved"
-                                            ? "border-success/40 text-success"
-                                            : "border-border text-muted-foreground"
-                                        }`}
-                                      >
-                                        {m.status === "approved" ? "aprovada" : "rascunho"}
-                                      </span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        ),
-                      },
-                    ]
-                  : []),
               ]}
             />
           </section>
