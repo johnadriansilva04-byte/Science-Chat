@@ -423,6 +423,7 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
             {countText}
           </p>
           <p className="stop-countdown__hint">Enter pula para o próximo campo</p>
+          <span className="stop-countdown__scan" aria-hidden />
           <p className="stop-countdown__rival">
             {squadLabel(duel.squad)} · {duel.rival.name}: “{duel.rival.taunt}”
           </p>
@@ -449,6 +450,13 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
                 {celebrate && (
                   <div className="stop-result__burst" aria-hidden>
                     {Array.from({ length: 12 }).map((_, index) => (
+                      <i key={index} style={{ "--i": index } as React.CSSProperties} />
+                    ))}
+                  </div>
+                )}
+                {result.stars === 3 && (
+                  <div className="stop-confetti" aria-hidden>
+                    {Array.from({ length: 36 }).map((_, index) => (
                       <i key={index} style={{ "--i": index } as React.CSSProperties} />
                     ))}
                   </div>

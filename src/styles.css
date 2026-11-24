@@ -9952,3 +9952,133 @@
     animation-delay: 0.16s;
   }
 }
+
+/* ============ STOP — CONFETES, SCAN E RELÓGIO ============ */
+@keyframes stopScanSweep {
+  from {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(320%);
+    opacity: 0;
+  }
+}
+
+@keyframes stopTick {
+  0% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes stopConfettiFall {
+  0% {
+    transform: translate3d(0, -14vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(calc(var(--drift, 4rem) * 0.6), 118vh, 0)
+      rotate(calc(var(--spin, 540deg)));
+    opacity: 0;
+  }
+}
+
+.stop-countdown {
+  position: relative;
+  overflow: hidden;
+}
+
+.stop-countdown__scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--stop-cyan) 85%, transparent),
+    transparent
+  );
+  box-shadow: 0 0 18px 2px color-mix(in oklab, var(--stop-cyan) 55%, transparent);
+}
+
+.stop-confetti {
+  position: absolute;
+  inset: -10% -20%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.stop-confetti i {
+  position: absolute;
+  top: 0;
+  left: calc((var(--i) + 0.5) * 2.7%);
+  width: 6px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--stop-amber);
+  opacity: 0;
+  --drift: 3rem;
+  --spin: 540deg;
+}
+
+.stop-confetti i:nth-child(4n + 1) {
+  background: var(--stop-cyan);
+}
+
+.stop-confetti i:nth-child(4n + 2) {
+  background: var(--stop-violet);
+  height: 8px;
+  --spin: -420deg;
+}
+
+.stop-confetti i:nth-child(4n + 3) {
+  background: color-mix(in oklab, white 85%, transparent);
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  --spin: 720deg;
+}
+
+.stop-confetti i:nth-child(3n) {
+  --drift: -4.5rem;
+}
+
+.stop-confetti i:nth-child(5n) {
+  --drift: 6.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stop-countdown__scan {
+    animation: stopScanSweep 1.6s ease-in-out infinite;
+  }
+
+  .stop-timer.is-danger .stop-timer__value {
+    color: oklch(0.8 0.14 25);
+    animation: stopTick 1s ease-out infinite;
+  }
+
+  .stop-timer.is-danger svg {
+    filter: drop-shadow(0 0 8px color-mix(in oklab, oklch(0.7 0.2 25) 55%, transparent));
+  }
+
+  .stop-confetti i {
+    animation: stopConfettiFall 2.6s cubic-bezier(0.35, 0.1, 0.5, 1) forwards;
+    animation-delay: calc(var(--i) * 55ms);
+  }
+}
