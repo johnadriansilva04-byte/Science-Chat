@@ -189,10 +189,17 @@ function CampaignPage() {
             <h1 className="run__title">
               Expedição <em>Stop</em>
             </h1>
-            <p className="run__meta">
-              {doneLevels}/{STOP_LEVELS.length} fases · {campaign.stars}/{STOP_TOTAL_STARS}{" "}
-              <Star size={11} aria-hidden /> · {campaign.rank.title} · {campaign.xp} XP
-            </p>
+            <div className="run__chips">
+              <span className="run__chip">
+                {doneLevels}/{STOP_LEVELS.length} fases
+              </span>
+              <span className="run__chip">
+                <Star size={11} aria-hidden />
+                {campaign.stars}/{STOP_TOTAL_STARS}
+              </span>
+              <span className="run__chip">{campaign.rank.title}</span>
+              <span className="run__chip">{campaign.xp} XP</span>
+            </div>
           </div>
 
           <button type="button" className="run__play" onClick={() => setPlaying(hero)}>
