@@ -104,3 +104,30 @@ export function takePendingQuestion(): PendingQuestion | null {
     return null;
   }
 }
+
+const PENDING_METHODOLOGY_KEY = "sc:onboarding-methodology";
+
+/**
+ * A metodologia tem a sua própria semente ("Que método você quer usar?"). Ela
+ * não pode cair no slot do artigo: o visitante que escolhe metodologia na home
+ * precisa entrar e encontrar uma metodologia, não um artigo.
+ */
+export function setPendingMethodology(seed: string): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(PENDING_METHODOLOGY_KEY, seed);
+  } catch {
+    /* armazenamento indisponível — segue sem a semente */
+  }
+}
+
+export function takePendingMethodology(): string | null {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    const value = sessionStorage.getItem(PENDING_METHODOLOGY_KEY);
+    if (value) sessionStorage.removeItem(PENDING_METHODOLOGY_KEY);
+    return value?.trim() ? value.trim() : null;
+  } catch {
+    return null;
+  }
+}

@@ -1,11 +1,26 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpenText, FilePlus2, Play, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  BookOpenText,
+  FilePlus2,
+  FlaskConical,
+  Loader2,
+  Play,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { listArticles } from "@/lib/article.functions";
 import { JOURNEY_ACTS } from "@/lib/journey";
-import { faqSeed, setPendingQuestion, takePendingQuestion } from "@/lib/onboarding";
+import {
+  faqSeed,
+  setPendingMethodology,
+  setPendingQuestion,
+  takePendingMethodology,
+  takePendingQuestion,
+} from "@/lib/onboarding";
+import { createMethodology, listMyMethodologies } from "@/lib/methodology.functions";
 import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/app/AppHeader";
 import { createArticle } from "@/components/app/ArticlesMenu";
@@ -38,6 +53,13 @@ function Index() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState("");
   const [creating, setCreating] = useState(false);
+  // Segunda entrada da home: a metodologia tem semente própria e nasce como
+  // entidade separada (chat + spec), não como aba do artigo.
+  const [methodSeed, setMethodSeed] = useState("");
+  const [creatingMethod, setCreatingMethod] = useState(false);
+  const [methodologies, setMethodologies] = useState<
+    { id: string; title: string; status: string }[]
+  >([]);
   // A inquietação é o ponto de partida do artigo: sem ela a entrevista começa
   // no vazio e a IA não tem o que interrogar. Por isso é obrigatória.
   const [ideaTouched, setIdeaTouched] = useState(false);
@@ -54,6 +76,7 @@ function Index() {
   // `takePendingQuestion` devolve o texto E a origem: só a pergunta do FAQ leva
   // a instrução de resposta pronta; a inquietação digitada na home vai crua.
   const consumedQuestion = useRef(false);
+  const consumedMethodology = useRef(false);
   useEffect(() => {
     if (loading || !user || consumedQuestion.current) return;
     const pending = takePendingQuestion();
@@ -62,6 +85,59 @@ function Index() {
     const seed = pending.fromFaq ? faqSeed(pending.text) : pending.text;
     void createArticle(navigate, seed, pending.text);
   }, [loading, user, navigate]);
+
+  const startMethodology = useCallback(
+    async (seedText: string) => {
+      const clean = seedText.trim();
+      if (!clean) return;
+      if (!user) {
+        setPendingMethodology(clean);
+        navigate({ to: "/auth" });
+        return;
+      }
+      setCreatingMethod(true);
+      try {
+        const { id } = await createMethodology({ data: { seed: clean, title: clean } });
+        navigate({ to: "/metodologia/$id", params: { id }, search: { seed: clean } });
+      } catch {
+        toast.error("Não foi possível criar a metodologia");
+      } finally {
+        setCreatingMethod(false);
+      }
+    },
+    [user, navigate],
+  );
+
+  // Semente de metodologia escolhida antes do cadastro ("Criar metodologia" sem
+  // conta): ao entrar, ela vira uma metodologia e abre o caderno de método.
+  useEffect(() => {
+    if (loading || !user || consumedMethodology.current) return;
+    const pending = takePendingMethodology();
+    if (!pending) return;
+    consumedMethodology.current = true;
+    void startMethodology(pending);
+  }, [loading, user, startMethodology]);
+
+  // Lista curta das metodologias do pesquisador: sem isso, o caderno só seria
+  // alcançável pelo link recém-criado (não há índice público de metodologias).
+  useEffect(() => {
+    if (!user) {
+      setMethodologies([]);
+      return;
+    }
+    let active = true;
+    listMyMethodologies()
+      .then((rows) => {
+        if (active)
+          setMethodologies(rows.map((r) => ({ id: r.id, title: r.title, status: r.status })));
+      })
+      .catch(() => {
+        if (active) setMethodologies([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   // O brilho acompanha o ponteiro — dá vida ao fundo sem custo de render.
   useEffect(() => {
@@ -245,14 +321,109 @@ function Index() {
               ))}
             </ol>
 
-            {/* O card de ensino abre a coluna da esquerda, logo abaixo do
-                formulário: é a primeira coisa que quem chega sem vínculo precisa
-                ler, e ele é um cartão — não o guia inteiro. */}
-            <ScienceAccessCard className="mt-5" />
+            {/* Segunda porta de entrada, logo abaixo do artigo: a metodologia é
+                uma peça separada, com caderno próprio, e pode ser acoplada depois. */}
+            <div className="mt-4 rounded-2xl border border-accent-2/30 bg-card/60 p-3.5 backdrop-blur lg:mt-5">
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-2/15 text-accent-2">
+                  <FlaskConical className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="font-serif text-sm font-semibold leading-tight">
+                    Ou comece pelo método
+                  </h2>
+                  <p className="text-[11px] text-muted-foreground">
+                    Peça separada do artigo — acople depois, se quiser.
+                  </p>
+                </div>
+              </div>
+
+              <form
+                className="mt-2.5 flex flex-col gap-2 sm:flex-row"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void startMethodology(methodSeed);
+                }}
+              >
+                <input
+                  value={methodSeed}
+                  onChange={(e) => setMethodSeed(e.target.value)}
+                  placeholder="Que método você quer usar?"
+                  aria-label="Que método você quer usar?"
+                  className="h-10 flex-1 rounded-xl border border-input bg-background/60 px-3 text-sm outline-none transition focus:border-accent-2 focus:ring-2 focus:ring-accent-2/25"
+                />
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={creatingMethod || methodSeed.trim().length < 6}
+                  className="h-10 gap-1.5 rounded-xl border-accent-2/40 text-accent-2 hover:bg-accent-2/10 hover:text-accent-2"
+                >
+                  {creatingMethod ? <Loader2 className="animate-spin" /> : <FlaskConical />}
+                  Criar metodologia
+                </Button>
+              </form>
+
+              {/* A lista fica ao lado da semente: quem já tem metodologia reabre
+                  o caderno em um clique, sem passar pelo menu do topo. */}
+              {user && (
+                <div className="mt-3 border-t border-border/60 pt-2.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Suas metodologias
+                    </span>
+                    {methodologies.length > 0 && (
+                      <span className="text-[10px] tabular-nums text-muted-foreground">
+                        {methodologies.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {methodologies.length === 0 ? (
+                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                      Nenhuma ainda. Escreva a semente acima para abrir o primeiro caderno.
+                    </p>
+                  ) : (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {methodologies.map((m) => (
+                        <li key={m.id}>
+                          <Link
+                            to="/metodologia/$id"
+                            params={{ id: m.id }}
+                            className="group flex items-center gap-2 rounded-lg border border-transparent px-1.5 py-1 transition-colors hover:border-border hover:bg-card/80"
+                          >
+                            <FlaskConical
+                              className="size-3.5 shrink-0 text-accent-2/70"
+                              aria-hidden
+                            />
+                            <span className="min-w-0 flex-1 truncate text-xs text-foreground/85 group-hover:text-foreground">
+                              {m.title}
+                            </span>
+                            <span
+                              className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
+                                m.status === "approved"
+                                  ? "border-success/40 text-success"
+                                  : "border-border text-muted-foreground"
+                              }`}
+                            >
+                              {m.status === "approved" ? "aprovada" : "rascunho"}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           </section>
 
-          {/* Coluna direita: a coletânea e o Stop. */}
+          {/* Coluna direita: as duas portas de entrada, a coletânea e o Stop. */}
           <section className="order-3 flex min-h-0 flex-col gap-3 lg:order-2">
+            {/* O card de ensino fica na coluna da direita, ao lado da promessa:
+                é a primeira coisa que quem chega sem vínculo precisa ler, e ele
+                é um cartão — não o guia inteiro. */}
+            <ScienceAccessCard />
+
             <div className="landing-shelf-card card-accent--shelf rounded-2xl border bg-card/60 p-4 backdrop-blur">
               <div className="mb-3 flex items-baseline gap-2">
                 <BookOpenText className="landing-shelf-card__accent size-4" />

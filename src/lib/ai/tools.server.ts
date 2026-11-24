@@ -4,6 +4,7 @@ import * as repo from "@/lib/cf/repo.server";
 import { searchLiterature, formatHits } from "@/lib/research.server";
 import { insertAnexoMarker } from "@/lib/anexo";
 import { normalizeOrcid, isValidOrcid } from "@/lib/front-matter";
+import { matchMethodologyReference, methodologyProtocolCode } from "@/lib/methodology";
 
 export type ToolContext = { userId: string; articleId: string };
 
@@ -18,6 +19,8 @@ export const TOOL_NAMES = [
   "editar_pagina",
   "acrescentar_na_pagina",
   "anexar_documento_em_pagina",
+  "listar_metodologias",
+  "usar_metodologia",
 ] as const;
 
 /** Lê o texto de um anexo: usa o texto salvo ou tenta OCR/visão sob demanda. */
@@ -174,6 +177,58 @@ export function buildTools(ctx: ToolContext) {
           parts.push(await readAnexoText(ctx, doc, perDoc));
         }
         return parts.join("\n\n---\n\n");
+      },
+    }),
+
+    listar_metodologias: tool({
+      description:
+        "Lista as metodologias próprias do pesquisador (título, código e se está aprovada). Use quando ele citar uma metodologia que você não conseguiu identificar.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const rows = await repo.listMethodologies(ctx.userId);
+        if (!rows.length) {
+          return 'O pesquisador ainda não tem metodologia própria. Ela é criada na home, em "Criar metodologia", e serve para vários artigos.';
+        }
+        return rows
+          .map(
+            (m) =>
+              `- ${m.title} (${m.status === "approved" ? "aprovada" : "rascunho"}) — ${methodologyProtocolCode(m.id)}`,
+          )
+          .join("\n");
+      },
+    }),
+
+    usar_metodologia: tool({
+      description:
+        'Acopla ao artigo uma metodologia APROVADA do pesquisador, pelo título, por um trecho do título ou pelo código do protocolo. Use quando ele disser "use a metodologia X". A mesma metodologia pode ser usada em vários artigos.',
+      inputSchema: z.object({
+        metodologia: z
+          .string()
+          .min(1)
+          .max(200)
+          .describe("Título, trecho do título ou código (PROT-XXXXXX) da metodologia citada."),
+      }),
+      execute: async ({ metodologia }) => {
+        const rows = await repo.listMethodologies(ctx.userId);
+        const { match, candidates } = matchMethodologyReference(rows, metodologia);
+        if (!match) {
+          if (candidates.length) {
+            return `Mais de uma metodologia casa com "${metodologia}": ${candidates
+              .map((c) => c.title)
+              .join("; ")}. Pergunte qual delas.`;
+          }
+          if (!rows.length) {
+            return `Não encontrei "${metodologia}" e o pesquisador ainda não tem metodologia própria.`;
+          }
+          return `Não encontrei "${metodologia}". Metodologias do pesquisador: ${rows
+            .map((r) => r.title)
+            .join("; ")}.`;
+        }
+        if (match.status !== "approved") {
+          return `A metodologia "${match.title}" ainda está em rascunho. Peça para aprovar a spec no caderno de método antes de acoplar.`;
+        }
+        await repo.setArticleMethodology(ctx.userId, ctx.articleId, match.id);
+        return `Metodologia "${match.title}" acoplada a este artigo. As próximas páginas escritas já usam essa spec como lente; as páginas já aprovadas não mudam sozinhas — se quiser, reescreva a página de Metodologia.`;
       },
     }),
 

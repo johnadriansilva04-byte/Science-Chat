@@ -13,10 +13,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CienciaRouteImport } from './routes/ciencia'
 import { Route as MuseuRouteImport } from './routes/museu'
+import { Route as StopRouteImport } from './routes/stop'
 import { Route as AArticleIdRouteImport } from './routes/a/$articleId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as MetodologiaIdRouteImport } from './routes/metodologia/$id'
 import { Route as PublicacoesIndexRouteImport } from './routes/publicacoes/index'
 import { Route as PublicacoesSlugRouteImport } from './routes/publicacoes/$slug'
+import { Route as StopAmigosRouteImport } from './routes/stop_.amigos'
+import { Route as StopCampanhaRouteImport } from './routes/stop_.campanha'
+import { Route as StopSalaCodeRouteImport } from './routes/stop_.sala.$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -38,6 +43,11 @@ const MuseuRoute = MuseuRouteImport.update({
   path: '/museu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StopRoute = StopRouteImport.update({
+  id: '/stop',
+  path: '/stop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AArticleIdRoute = AArticleIdRouteImport.update({
   id: '/a/$articleId',
   path: '/a/$articleId',
@@ -46,6 +56,11 @@ const AArticleIdRoute = AArticleIdRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetodologiaIdRoute = MetodologiaIdRouteImport.update({
+  id: '/metodologia/$id',
+  path: '/metodologia/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicacoesIndexRoute = PublicacoesIndexRouteImport.update({
@@ -58,26 +73,51 @@ const PublicacoesSlugRoute = PublicacoesSlugRouteImport.update({
   path: '/publicacoes/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StopAmigosRoute = StopAmigosRouteImport.update({
+  id: '/stop_/amigos',
+  path: '/stop/amigos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StopCampanhaRoute = StopCampanhaRouteImport.update({
+  id: '/stop_/campanha',
+  path: '/stop/campanha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StopSalaCodeRoute = StopSalaCodeRouteImport.update({
+  id: '/stop_/sala/$code',
+  path: '/stop/sala/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
+  '/stop': typeof StopRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
+  '/metodologia/$id': typeof MetodologiaIdRoute
   '/publicacoes/$slug': typeof PublicacoesSlugRoute
+  '/stop/amigos': typeof StopAmigosRoute
+  '/stop/campanha': typeof StopCampanhaRoute
   '/publicacoes/': typeof PublicacoesIndexRoute
+  '/stop/sala/$code': typeof StopSalaCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
+  '/stop': typeof StopRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
+  '/metodologia/$id': typeof MetodologiaIdRoute
   '/publicacoes/$slug': typeof PublicacoesSlugRoute
+  '/stop/amigos': typeof StopAmigosRoute
+  '/stop/campanha': typeof StopCampanhaRoute
   '/publicacoes': typeof PublicacoesIndexRoute
+  '/stop/sala/$code': typeof StopSalaCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,10 +125,15 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/ciencia': typeof CienciaRoute
   '/museu': typeof MuseuRoute
+  '/stop': typeof StopRoute
   '/a/$articleId': typeof AArticleIdRoute
   '/api/chat': typeof ApiChatRoute
+  '/metodologia/$id': typeof MetodologiaIdRoute
   '/publicacoes/$slug': typeof PublicacoesSlugRoute
+  '/stop_/amigos': typeof StopAmigosRoute
+  '/stop_/campanha': typeof StopCampanhaRoute
   '/publicacoes/': typeof PublicacoesIndexRoute
+  '/stop_/sala/$code': typeof StopSalaCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,30 +142,45 @@ export interface FileRouteTypes {
     | '/auth'
     | '/ciencia'
     | '/museu'
+    | '/stop'
     | '/a/$articleId'
     | '/api/chat'
+    | '/metodologia/$id'
     | '/publicacoes/$slug'
+    | '/stop/amigos'
+    | '/stop/campanha'
     | '/publicacoes/'
+    | '/stop/sala/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/ciencia'
     | '/museu'
+    | '/stop'
     | '/a/$articleId'
     | '/api/chat'
+    | '/metodologia/$id'
     | '/publicacoes/$slug'
+    | '/stop/amigos'
+    | '/stop/campanha'
     | '/publicacoes'
+    | '/stop/sala/$code'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/ciencia'
     | '/museu'
+    | '/stop'
     | '/a/$articleId'
     | '/api/chat'
+    | '/metodologia/$id'
     | '/publicacoes/$slug'
+    | '/stop_/amigos'
+    | '/stop_/campanha'
     | '/publicacoes/'
+    | '/stop_/sala/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -128,10 +188,15 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CienciaRoute: typeof CienciaRoute
   MuseuRoute: typeof MuseuRoute
+  StopRoute: typeof StopRoute
   AArticleIdRoute: typeof AArticleIdRoute
   ApiChatRoute: typeof ApiChatRoute
+  MetodologiaIdRoute: typeof MetodologiaIdRoute
   PublicacoesSlugRoute: typeof PublicacoesSlugRoute
+  StopAmigosRoute: typeof StopAmigosRoute
+  StopCampanhaRoute: typeof StopCampanhaRoute
   PublicacoesIndexRoute: typeof PublicacoesIndexRoute
+  StopSalaCodeRoute: typeof StopSalaCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MuseuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stop': {
+      id: '/stop'
+      path: '/stop'
+      fullPath: '/stop'
+      preLoaderRoute: typeof StopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/a/$articleId': {
       id: '/a/$articleId'
       path: '/a/$articleId'
@@ -176,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metodologia/$id': {
+      id: '/metodologia/$id'
+      path: '/metodologia/$id'
+      fullPath: '/metodologia/$id'
+      preLoaderRoute: typeof MetodologiaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/publicacoes/': {
@@ -192,6 +271,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicacoesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stop_/amigos': {
+      id: '/stop_/amigos'
+      path: '/stop/amigos'
+      fullPath: '/stop/amigos'
+      preLoaderRoute: typeof StopAmigosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stop_/campanha': {
+      id: '/stop_/campanha'
+      path: '/stop/campanha'
+      fullPath: '/stop/campanha'
+      preLoaderRoute: typeof StopCampanhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stop_/sala/$code': {
+      id: '/stop_/sala/$code'
+      path: '/stop/sala/$code'
+      fullPath: '/stop/sala/$code'
+      preLoaderRoute: typeof StopSalaCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -200,10 +300,15 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CienciaRoute: CienciaRoute,
   MuseuRoute: MuseuRoute,
+  StopRoute: StopRoute,
   AArticleIdRoute: AArticleIdRoute,
   ApiChatRoute: ApiChatRoute,
+  MetodologiaIdRoute: MetodologiaIdRoute,
   PublicacoesSlugRoute: PublicacoesSlugRoute,
+  StopAmigosRoute: StopAmigosRoute,
+  StopCampanhaRoute: StopCampanhaRoute,
   PublicacoesIndexRoute: PublicacoesIndexRoute,
+  StopSalaCodeRoute: StopSalaCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

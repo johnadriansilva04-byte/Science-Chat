@@ -11,6 +11,8 @@ export type Article = {
   title: string;
   phase: string;
   plan: string | null;
+  /** Metodologia acoplada (opcional). Só pode apontar para uma `approved`. */
+  methodology_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -41,7 +43,7 @@ function nowIso() {
 export async function listArticles(userId: string): Promise<Article[]> {
   const { results } = await requireDb()
     .prepare(
-      "select id, user_id, title, phase, plan, created_at, updated_at from articles where user_id = ? order by updated_at desc",
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where user_id = ? order by updated_at desc",
     )
     .bind(userId)
     .all<Article>();
@@ -51,7 +53,7 @@ export async function listArticles(userId: string): Promise<Article[]> {
 export async function getArticle(userId: string, articleId: string): Promise<Article | null> {
   return requireDb()
     .prepare(
-      "select id, user_id, title, phase, plan, created_at, updated_at from articles where id = ? and user_id = ?",
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where id = ? and user_id = ?",
     )
     .bind(articleId, userId)
     .first<Article>();
@@ -73,6 +75,7 @@ export async function createArticle(userId: string, title?: string): Promise<Art
     title: cleanTitle,
     phase: "interview",
     plan: null,
+    methodology_id: null,
     created_at: ts,
     updated_at: ts,
   };
@@ -81,7 +84,12 @@ export async function createArticle(userId: string, title?: string): Promise<Art
 export async function updateArticle(
   userId: string,
   articleId: string,
-  patch: { title?: string; phase?: string; plan?: string | null },
+  patch: {
+    title?: string;
+    phase?: string;
+    plan?: string | null;
+    methodology_id?: string | null;
+  },
 ): Promise<void> {
   const sets: string[] = [];
   const values: unknown[] = [];
@@ -96,6 +104,10 @@ export async function updateArticle(
   if (patch.plan !== undefined) {
     sets.push("plan = ?");
     values.push(patch.plan);
+  }
+  if (patch.methodology_id !== undefined) {
+    sets.push("methodology_id = ?");
+    values.push(patch.methodology_id);
   }
   sets.push("updated_at = ?");
   values.push(nowIso());
@@ -1029,4 +1041,608 @@ export async function upsertEditorialConfig(
     created_at: ts,
     updated_at: ts,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Metodologia — entidade própria, separada do artigo.
+ * ------------------------------------------------------------------ */
+
+export type Methodology = {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MethodologyMessage = {
+  id: string;
+  methodology_id: string;
+  user_id: string;
+  role: string;
+  parts: string;
+  created_at: string;
+};
+
+export type MethodologyDocumentRow = {
+  id: string;
+  methodology_id: string;
+  user_id: string;
+  seq: number;
+  filename: string;
+  mime: string;
+  size: number;
+  text_content: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type MethodologyDocumentWithContent = MethodologyDocumentRow & {
+  content: string | null;
+  storage_key: string | null;
+};
+
+const METHODOLOGY_COLUMNS = "id, user_id, title, content, status, created_at, updated_at";
+
+export async function listMethodologies(userId: string): Promise<Methodology[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${METHODOLOGY_COLUMNS} from methodologies where user_id = ? order by updated_at desc`,
+    )
+    .bind(userId)
+    .all<Methodology>();
+  return results;
+}
+
+export async function getMethodology(userId: string, id: string): Promise<Methodology | null> {
+  return requireDb()
+    .prepare(`select ${METHODOLOGY_COLUMNS} from methodologies where id = ? and user_id = ?`)
+    .bind(id, userId)
+    .first<Methodology>();
+}
+
+export async function createMethodology(userId: string, title?: string): Promise<Methodology> {
+  const id = newId();
+  const ts = nowIso();
+  const cleanTitle = title?.trim().slice(0, 200) || "Metodologia sem título";
+  await requireDb()
+    .prepare(
+      "insert into methodologies (id, user_id, title, status, created_at, updated_at) values (?, ?, ?, 'draft', ?, ?)",
+    )
+    .bind(id, userId, cleanTitle, ts, ts)
+    .run();
+  return {
+    id,
+    user_id: userId,
+    title: cleanTitle,
+    content: null,
+    status: "draft",
+    created_at: ts,
+    updated_at: ts,
+  };
+}
+
+export async function updateMethodology(
+  userId: string,
+  id: string,
+  patch: { title?: string; content?: string | null; status?: string },
+): Promise<void> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  if (patch.title !== undefined) {
+    sets.push("title = ?");
+    values.push(patch.title);
+  }
+  if (patch.content !== undefined) {
+    sets.push("content = ?");
+    values.push(patch.content);
+  }
+  if (patch.status !== undefined) {
+    sets.push("status = ?");
+    values.push(patch.status);
+  }
+  sets.push("updated_at = ?");
+  values.push(nowIso());
+  values.push(id, userId);
+  await requireDb()
+    .prepare(`update methodologies set ${sets.join(", ")} where id = ? and user_id = ?`)
+    .bind(...values)
+    .run();
+}
+
+export async function setMethodologyStatus(
+  userId: string,
+  id: string,
+  status: string,
+): Promise<void> {
+  await updateMethodology(userId, id, { status });
+}
+
+export async function deleteMethodology(userId: string, id: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from methodologies where id = ? and user_id = ?")
+    .bind(id, userId)
+    .run();
+}
+
+export async function listMethodologyMessages(
+  userId: string,
+  methodologyId: string,
+): Promise<MethodologyMessage[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, methodology_id, user_id, role, parts, created_at from methodology_messages where methodology_id = ? and user_id = ? order by created_at",
+    )
+    .bind(methodologyId, userId)
+    .all<MethodologyMessage>();
+  return results;
+}
+
+export async function addMethodologyMessage(
+  userId: string,
+  methodologyId: string,
+  role: string,
+  parts: unknown,
+): Promise<void> {
+  await requireDb()
+    .prepare(
+      "insert into methodology_messages (id, methodology_id, user_id, role, parts, created_at) values (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(newId(), methodologyId, userId, role, JSON.stringify(parts), nowIso())
+    .run();
+}
+
+export async function listMethodologyDocuments(
+  userId: string,
+  methodologyId: string,
+): Promise<MethodologyDocumentRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, methodology_id, user_id, seq, filename, mime, size, text_content, note, created_at from methodology_documents where methodology_id = ? and user_id = ? order by seq",
+    )
+    .bind(methodologyId, userId)
+    .all<MethodologyDocumentRow>();
+  return results;
+}
+
+export async function getMethodologyDocument(
+  userId: string,
+  methodologyId: string,
+  id: string,
+): Promise<MethodologyDocumentWithContent | null> {
+  return requireDb()
+    .prepare(
+      "select id, methodology_id, user_id, seq, filename, mime, size, content, storage_key, text_content, note, created_at from methodology_documents where id = ? and methodology_id = ? and user_id = ?",
+    )
+    .bind(id, methodologyId, userId)
+    .first<MethodologyDocumentWithContent>();
+}
+
+export async function addMethodologyDocument(
+  userId: string,
+  methodologyId: string,
+  doc: {
+    id?: string;
+    filename: string;
+    mime: string;
+    size: number;
+    content: string | null;
+    storageKey: string | null;
+    textContent: string | null;
+    note: string | null;
+  },
+): Promise<MethodologyDocumentRow> {
+  const db = requireDb();
+  const next = await db
+    .prepare(
+      "select coalesce(max(seq), 0) + 1 as seq from methodology_documents where methodology_id = ? and user_id = ?",
+    )
+    .bind(methodologyId, userId)
+    .first<{ seq: number }>();
+  const seq = next?.seq ?? 1;
+  const id = doc.id ?? newId();
+  const ts = nowIso();
+  await db
+    .prepare(
+      "insert into methodology_documents (id, methodology_id, user_id, seq, filename, mime, size, content, storage_key, text_content, note, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(
+      id,
+      methodologyId,
+      userId,
+      seq,
+      doc.filename,
+      doc.mime,
+      doc.size,
+      doc.content,
+      doc.storageKey,
+      doc.textContent,
+      doc.note,
+      ts,
+    )
+    .run();
+  return {
+    id,
+    methodology_id: methodologyId,
+    user_id: userId,
+    seq,
+    filename: doc.filename,
+    mime: doc.mime,
+    size: doc.size,
+    text_content: doc.textContent,
+    note: doc.note,
+    created_at: ts,
+  };
+}
+
+export async function deleteMethodologyDocument(
+  userId: string,
+  methodologyId: string,
+  id: string,
+): Promise<void> {
+  await requireDb()
+    .prepare(
+      "delete from methodology_documents where id = ? and methodology_id = ? and user_id = ?",
+    )
+    .bind(id, methodologyId, userId)
+    .run();
+}
+
+/** Acopla (ou desacopla, com `null`) uma metodologia a um artigo. */
+export async function setArticleMethodology(
+  userId: string,
+  articleId: string,
+  methodologyId: string | null,
+): Promise<void> {
+  await updateArticle(userId, articleId, { methodology_id: methodologyId });
+}
+
+export async function listArticlesByMethodology(
+  userId: string,
+  methodologyId: string,
+): Promise<Article[]> {
+  const { results } = await requireDb()
+    .prepare(
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where methodology_id = ? and user_id = ? order by updated_at desc",
+    )
+    .bind(methodologyId, userId)
+    .all<Article>();
+  return results;
+}
+
+/* ------------------------------------------------------------------ *
+ * Stop com amigos (salas)
+ * ------------------------------------------------------------------ */
+
+export type StopRoomRow = {
+  id: string;
+  code: string;
+  host_id: string;
+  status: string;
+  round: number;
+  letter: string | null;
+  seconds: number;
+  categories: string | null;
+  auto: number;
+  deadline_at: string | null;
+  total_rounds: number;
+  letters_used: string | null;
+  settled_round: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StopRoomPlayerRow = {
+  room_id: string;
+  user_id: string;
+  name: string;
+  total: number;
+  played: number;
+  submitted_round: number | null;
+  answers: string | null;
+  verdicts: string | null;
+  round_score: number | null;
+  joined_round: number;
+  joined_at: string;
+  display_name?: string | null;
+};
+
+export type StopRoomMessageRow = {
+  id: string;
+  room_id: string;
+  user_id: string;
+  name: string;
+  body: string;
+  created_at: string;
+};
+
+const STOP_ROOM_COLUMNS =
+  "id, code, host_id, status, round, letter, seconds, categories, auto, deadline_at, total_rounds, letters_used, settled_round, created_at, updated_at";
+const STOP_ROOM_PLAYER_COLUMNS =
+  "room_id, user_id, name, total, played, submitted_round, answers, verdicts, round_score, joined_round, joined_at";
+
+export async function createStopRoom(input: {
+  hostId: string;
+  code: string;
+  seconds: number;
+}): Promise<StopRoomRow> {
+  const id = newId();
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      "insert into stop_rooms (id, code, host_id, status, round, seconds, auto, created_at, updated_at) values (?, ?, ?, 'lobby', 0, ?, 1, ?, ?)",
+    )
+    .bind(id, input.code, input.hostId, input.seconds, ts, ts)
+    .run();
+  const row = await requireDb()
+    .prepare(`select ${STOP_ROOM_COLUMNS} from stop_rooms where id = ?`)
+    .bind(id)
+    .first<StopRoomRow>();
+  if (!row) throw new Error("Não foi possível abrir a sala.");
+  return row;
+}
+
+export async function getStopRoomByCode(code: string): Promise<StopRoomRow | null> {
+  return requireDb()
+    .prepare(`select ${STOP_ROOM_COLUMNS} from stop_rooms where code = ?`)
+    .bind(code)
+    .first<StopRoomRow>();
+}
+
+export async function listStopRoomPlayers(roomId: string): Promise<StopRoomPlayerRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${STOP_ROOM_PLAYER_COLUMNS} from stop_room_players where room_id = ? order by joined_at asc`,
+    )
+    .bind(roomId)
+    .all<StopRoomPlayerRow>();
+  return results;
+}
+
+/** Entrar de novo na mesma sala não duplica a pessoa: só atualiza o apelido.
+ *  `joinedRound` fixa a rodada de estreia — quem entra no meio assiste até a próxima. */
+export async function upsertStopRoomPlayer(input: {
+  roomId: string;
+  userId: string;
+  name: string;
+  joinedRound?: number;
+}): Promise<StopRoomPlayerRow> {
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      `insert into stop_room_players (room_id, user_id, name, joined_round, joined_at) values (?, ?, ?, ?, ?)
+       on conflict(room_id, user_id) do update set name = excluded.name`,
+    )
+    .bind(input.roomId, input.userId, input.name, input.joinedRound ?? 0, ts)
+    .run();
+  const row = await requireDb()
+    .prepare(
+      `select ${STOP_ROOM_PLAYER_COLUMNS} from stop_room_players where room_id = ? and user_id = ?`,
+    )
+    .bind(input.roomId, input.userId)
+    .first<StopRoomPlayerRow>();
+  if (!row) throw new Error("Não foi possível entrar na sala.");
+  return row;
+}
+
+export type StopRoomPatch = {
+  status?: string;
+  round?: number;
+  letter?: string | null;
+  seconds?: number;
+  categories?: string | null;
+  auto?: number;
+  deadlineAt?: string | null;
+  lettersUsed?: string | null;
+  settledRound?: number;
+};
+
+export async function updateStopRoom(roomId: string, patch: StopRoomPatch): Promise<void> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  const push = (column: string, value: unknown) => {
+    sets.push(`${column} = ?`);
+    values.push(value);
+  };
+  if (patch.status !== undefined) push("status", patch.status);
+  if (patch.round !== undefined) push("round", patch.round);
+  if (patch.letter !== undefined) push("letter", patch.letter);
+  if (patch.seconds !== undefined) push("seconds", patch.seconds);
+  if (patch.categories !== undefined) push("categories", patch.categories);
+  if (patch.auto !== undefined) push("auto", patch.auto);
+  if (patch.deadlineAt !== undefined) push("deadline_at", patch.deadlineAt);
+  if (patch.lettersUsed !== undefined) push("letters_used", patch.lettersUsed);
+  if (patch.settledRound !== undefined) push("settled_round", patch.settledRound);
+  push("updated_at", nowIso());
+
+  await requireDb()
+    .prepare(`update stop_rooms set ${sets.join(", ")} where id = ?`)
+    .bind(...values, roomId)
+    .run();
+}
+
+/** Fecha a rodada para todo mundo: zera entregas e resultado da rodada. */
+export async function resetStopRoomRound(roomId: string): Promise<void> {
+  await requireDb()
+    .prepare(
+      "update stop_room_players set submitted_round = null, answers = null, verdicts = null, round_score = null where room_id = ?",
+    )
+    .bind(roomId)
+    .run();
+}
+
+/** Guarda respostas e veredictos da rodada. Os pontos só entram no placar
+ *  quando a rodada fecha, porque dependem das respostas dos outros jogadores. */
+export async function saveStopRoomSubmission(input: {
+  roomId: string;
+  userId: string;
+  round: number;
+  answers: string;
+  verdicts: string;
+}): Promise<void> {
+  await requireDb()
+    .prepare(
+      `update stop_room_players
+          set submitted_round = ?, answers = ?, verdicts = ?, round_score = null
+        where room_id = ? and user_id = ? and (submitted_round is null or submitted_round <> ?)`,
+    )
+    .bind(input.round, input.answers, input.verdicts, input.roomId, input.userId, input.round)
+    .run();
+}
+
+/** Reserva o fechamento da rodada. Só a primeira chamada aplica o placar,
+ *  então dois navegadores lendo a sala ao mesmo tempo não somam em dobro. */
+export async function claimStopRoomSettlement(roomId: string, round: number): Promise<boolean> {
+  const result = await requireDb()
+    .prepare(
+      "update stop_rooms set settled_round = ?, updated_at = ? where id = ? and settled_round < ?",
+    )
+    .bind(round, nowIso(), roomId, round)
+    .run();
+  return Number(result.meta['changes'] ?? 0) > 0;
+}
+
+/** Grava o placar da rodada: 10 por resposta inédita, 5 quando repete com alguém. */
+export async function applyStopRoomScores(input: {
+  roomId: string;
+  scores: { userId: string; total: number }[];
+}): Promise<void> {
+  for (const score of input.scores) {
+    await requireDb()
+      .prepare(
+        `update stop_room_players
+            set round_score = ?, total = total + ?, played = played + 1
+          where room_id = ? and user_id = ?`,
+      )
+      .bind(score.total, score.total, input.roomId, score.userId)
+      .run();
+  }
+}
+
+/** Quem entrou no meio da rodada assiste; quem entrou antes joga. */
+export async function markStopRoomSpectator(input: {
+  roomId: string;
+  userId: string;
+  round: number;
+  answers: string;
+  verdicts: string;
+}): Promise<void> {
+  await requireDb()
+    .prepare(
+      `update stop_room_players set submitted_round = ?, answers = ?, verdicts = ?
+        where room_id = ? and user_id = ?`,
+    )
+    .bind(input.round, input.answers, input.verdicts, input.roomId, input.userId)
+    .run();
+}
+
+export async function listStopRoomMessages(
+  roomId: string,
+  limit = 40,
+): Promise<StopRoomMessageRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select id, room_id, user_id, name, body, created_at from stop_room_messages
+        where room_id = ? order by created_at desc limit ?`,
+    )
+    .bind(roomId, limit)
+    .all<StopRoomMessageRow>();
+  return [...results].reverse();
+}
+
+export async function addStopRoomMessage(input: {
+  roomId: string;
+  userId: string;
+  name: string;
+  body: string;
+}): Promise<StopRoomMessageRow> {
+  const id = newId();
+  await requireDb()
+    .prepare(
+      "insert into stop_room_messages (id, room_id, user_id, name, body, created_at) values (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(id, input.roomId, input.userId, input.name, input.body, nowIso())
+    .run();
+  const row = await requireDb()
+    .prepare(
+      "select id, room_id, user_id, name, body, created_at from stop_room_messages where id = ?",
+    )
+    .bind(id)
+    .first<StopRoomMessageRow>();
+  if (!row) throw new Error("Não foi possível enviar a mensagem.");
+  return row;
+}
+
+export async function removeStopRoomPlayer(roomId: string, userId: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from stop_room_players where room_id = ? and user_id = ?")
+    .bind(roomId, userId)
+    .run();
+}
+
+export async function deleteStopRoom(roomId: string): Promise<void> {
+  await requireDb().prepare("delete from stop_rooms where id = ?").bind(roomId).run();
+}
+
+/* ------------------------------------------------------------------ *
+ * Stop científico (campanha)
+ * ------------------------------------------------------------------ */
+
+export type StopProgressRow = {
+  user_id: string;
+  level_id: string;
+  stars: number;
+  best_score: number;
+  attempts: number;
+  updated_at: string;
+};
+
+const STOP_PROGRESS_COLUMNS = "user_id, level_id, stars, best_score, attempts, updated_at";
+
+export async function listStopProgress(userId: string): Promise<StopProgressRow[]> {
+  const { results } = await requireDb()
+    .prepare(`select ${STOP_PROGRESS_COLUMNS} from stop_progress where user_id = ?`)
+    .bind(userId)
+    .all<StopProgressRow>();
+  return results;
+}
+
+/**
+ * Grava o resultado de uma rodada sem nunca piorar o recorde: estrelas e
+ * pontuação só sobem, e cada tentativa é contada.
+ */
+export async function saveStopResult(
+  userId: string,
+  levelId: string,
+  score: number,
+  stars: number,
+): Promise<StopProgressRow> {
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      `insert into stop_progress (user_id, level_id, stars, best_score, attempts, updated_at)
+       values (?, ?, ?, ?, 1, ?)
+       on conflict(user_id, level_id) do update set
+         stars = max(stop_progress.stars, excluded.stars),
+         best_score = max(stop_progress.best_score, excluded.best_score),
+         attempts = stop_progress.attempts + 1,
+         updated_at = excluded.updated_at`,
+    )
+    .bind(userId, levelId, stars, score, ts)
+    .run();
+
+  const row = await requireDb()
+    .prepare(
+      `select ${STOP_PROGRESS_COLUMNS} from stop_progress where user_id = ? and level_id = ?`,
+    )
+    .bind(userId, levelId)
+    .first<StopProgressRow>();
+  if (!row) throw new Error("Não foi possível salvar o progresso do Stop.");
+  return row;
+}
+
+export async function resetStopProgress(userId: string): Promise<void> {
+  await requireDb().prepare("delete from stop_progress where user_id = ?").bind(userId).run();
 }

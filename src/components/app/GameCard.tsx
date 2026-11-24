@@ -1,31 +1,16 @@
-import { useState } from "react";
-import { ArrowRight, Gamepad2 } from "lucide-react";
+import { ArrowRight, Gamepad2, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { GAME_NAME, GAME_TAGLINE, STOP_CATEGORIES, gameEmbedUrl } from "@/lib/game";
+import { GAME_NAME, GAME_PATH, GAME_TAGLINE, STOP_CATEGORIES } from "@/lib/game";
 
 /**
- * Card compacto do joguinho: uma linha com ícone, categorias e botão.
+ * Card compacto do Stop científico.
  *
  * Vive nas telas de espera (cota da IA esgotada, página não encontrada) e na
- * home, onde a pessoa descobre que o jogo existe. Nunca no meio da produção do
- * artigo: ali o foco é o texto, e um convite para jogar seria ruído.
- *
- * O jogo não mora aqui. Este card é o encaixe: quando `VITE_GAME_URL` está
- * definida, o botão abre o jogo num diálogo; sem ela, o botão fica desabilitado
- * e o card ainda mostra as categorias.
+ * home. O jogo é interno (`/stop`), então o card é só uma porta: link direto,
+ * sem iframe e sem URL de ambiente.
  */
 export function GameCard({ className }: { className?: string }) {
-  const embedUrl = gameEmbedUrl();
-  const [open, setOpen] = useState(false);
-
   return (
     <section
       aria-labelledby="game-card-title"
@@ -50,35 +35,16 @@ export function GameCard({ className }: { className?: string }) {
               </li>
             ))}
           </ul>
+          <p className="mt-1.5 flex items-center gap-1 text-[0.68rem] text-muted-foreground">
+            <Star className="size-3 text-[oklch(0.79_0.15_78)]" aria-hidden />5 campanhas ·
+            estrelas, XP e banca de IA
+          </p>
         </div>
-        <button
-          type="button"
-          disabled={!embedUrl}
-          onClick={() => setOpen(true)}
-          className="game-card__cta"
-        >
-          {embedUrl ? "Jogar" : "Em breve"}
-          {embedUrl && <ArrowRight className="size-3.5" aria-hidden />}
-        </button>
+        <a href={GAME_PATH} className="game-card__cta" title={GAME_TAGLINE}>
+          Jogar
+          <ArrowRight className="size-3.5" aria-hidden />
+        </a>
       </div>
-
-      {embedUrl && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-3xl gap-2 p-3 sm:p-4">
-            <DialogHeader className="px-1 text-left">
-              <DialogTitle className="font-serif text-base">{GAME_NAME}</DialogTitle>
-              <DialogDescription className="text-xs">{GAME_TAGLINE}</DialogDescription>
-            </DialogHeader>
-            <iframe
-              src={embedUrl}
-              title={GAME_NAME}
-              className="game-card__frame"
-              loading="lazy"
-              allow="clipboard-write"
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </section>
   );
 }

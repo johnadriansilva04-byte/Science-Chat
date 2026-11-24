@@ -122,3 +122,45 @@ export function normalizePageText(text: string): string {
   }
   return out.join("\n\n");
 }
+
+export type PagePromptInput = {
+  plan: string;
+  transcript: string;
+  /** Bloco já formatado com a lista de anexos (ou string vazia). */
+  anexos: string;
+  number: number;
+  prev?: { page_number: number; content: string } | null | undefined;
+  nextApproved?: { page_number: number; content: string } | null | undefined;
+  current?: { content: string } | null | undefined;
+  feedback?: string | null | undefined;
+  /**
+   * Bloco da metodologia aprovada (ver `methodologySpecBlock`). Vazio quando o
+   * artigo não tem metodologia acoplada ou ela ainda é rascunho — nesse caso o
+   * prompt é idêntico ao de antes.
+   */
+  methodologySpec?: string | undefined;
+};
+
+/**
+ * Monta o pedido de uma página. Função pura para que a injeção (ou não) da spec
+ * de metodologia seja testável sem Worker, banco ou IA.
+ */
+export function buildPagePrompt(input: PagePromptInput): string {
+  const { plan, transcript, anexos, number, prev, nextApproved, current, feedback } = input;
+  const methodologySpec = input.methodologySpec?.trim();
+  return [
+    `PLANO APROVADO:\n${plan}`,
+    `ENTREVISTA:\n${transcript}`,
+    methodologySpec || "",
+    anexos,
+    prev ? `PÁGINA ANTERIOR (${prev.page_number}), APROVADA:\n${prev.content}` : "",
+    nextApproved
+      ? `PRÓXIMA PÁGINA JÁ APROVADA (${nextApproved.page_number}) — mantenha continuidade com ela:\n${nextApproved.content}`
+      : "",
+    current && feedback
+      ? `VERSÃO ATUAL DA PÁGINA ${number}:\n${current.content}\n\nCORREÇÃO PEDIDA PELO PESQUISADOR: ${feedback}\n\nReescreva a página ${number} aplicando a correção.`
+      : `Escreva agora a PÁGINA ${number}.`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
