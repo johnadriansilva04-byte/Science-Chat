@@ -4709,12 +4709,18 @@
 }
 
 .stop-intro__eras {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, auto));
   justify-content: center;
   gap: 0.4rem;
   margin-top: 0.6rem;
-  max-width: 36rem;
+  max-width: 42rem;
+}
+
+@media (max-width: 720px) {
+  .stop-intro__eras {
+    grid-template-columns: repeat(2, minmax(0, auto));
+  }
 }
 
 .stop-intro__era {
