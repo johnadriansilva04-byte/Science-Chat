@@ -450,6 +450,23 @@ function StopPage() {
                 </p>
               </div>
               <RoomBar />
+              <div className="hub-trail hub-trail--steps">
+                <span className="hub-trail__head">
+                  <span>Passo a passo</span>
+                  <span>2 a 12 pessoas</span>
+                </span>
+                <div className="hub-steps">
+                  <span className="hub-step">
+                    <em>1</em> Abra a sala e escolha o relógio.
+                  </span>
+                  <span className="hub-step">
+                    <em>2</em> Mande o código de seis caracteres.
+                  </span>
+                  <span className="hub-step">
+                    <em>3</em> Mesma letra, mesmo tempo, dez rodadas.
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="hub-folds">

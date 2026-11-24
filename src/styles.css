@@ -8519,7 +8519,7 @@
 }
 
 .hub-panel.is-amigos {
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .hub-hero {
@@ -8630,8 +8630,12 @@
 .hub-hero.is-amigos {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  grid-template-areas:
+    "text actions"
+    "steps steps";
   align-items: center;
-  align-content: center;
+  align-content: start;
+  gap: 0.9rem 1.25rem;
   background:
     radial-gradient(
       90% 140% at 100% 0%,
@@ -8650,7 +8654,43 @@
 }
 
 .hub-hero.is-amigos .stop-rooms__actions {
+  grid-area: actions;
   justify-content: flex-end;
+}
+
+.hub-hero.is-amigos .hub-hero__text {
+  grid-area: text;
+}
+
+.hub-hero.is-amigos .hub-trail--steps {
+  grid-area: steps;
+}
+
+.hub-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.hub-step {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, white 9%, transparent);
+  background: color-mix(in oklab, white 3%, transparent);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: color-mix(in oklab, white 62%, transparent);
+}
+
+.hub-step em {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-style: normal;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--stop-violet);
 }
 
 .hub-hero__text {
