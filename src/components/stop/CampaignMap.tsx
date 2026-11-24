@@ -35,7 +35,10 @@ export function CampaignMap({ state, onPlay }: Props) {
     <div className="stop-map">
       {STOP_ERAS.map((era) => {
         const levels = levelsOfEra(era.id);
-        const eraStars = levels.reduce((sum, level) => sum + (state.progress[level.id]?.stars ?? 0), 0);
+        const eraStars = levels.reduce(
+          (sum, level) => sum + (state.progress[level.id]?.stars ?? 0),
+          0,
+        );
         const eraOpen = levels.some((level) => state.unlocked.includes(level.id));
 
         return (
@@ -98,6 +101,7 @@ export function CampaignMap({ state, onPlay }: Props) {
                       {unlocked ? (
                         <>
                           {level.seconds}s · {level.categories.length} campos
+                          {progress?.bestScore ? ` · recorde ${progress.bestScore}` : ""}
                         </>
                       ) : (
                         "Conclua a fase anterior"

@@ -3005,14 +3005,13 @@
   --stop-cyan: var(--color-primary);
   position: relative;
   min-height: 100dvh;
-  isolation: isolate;
   overflow-x: clip;
 }
 
 .stop-page__sky {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   background:
     radial-gradient(60rem 34rem at 78% -8%, color-mix(in oklab, var(--stop-violet) 16%, transparent), transparent 70%),
@@ -4180,5 +4179,520 @@
 
   .stop-rank-card__bar span {
     transition: none;
+  }
+}
+
+/* Abertura da campanha: a capa do jogo, no mesmo céu do resto do app. */
+.stop-intro {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - 4.5rem);
+  overflow: hidden;
+  padding: 3rem 1.25rem;
+  background:
+    radial-gradient(38rem 26rem at 50% 8%, color-mix(in oklab, var(--stop-violet) 22%, transparent), transparent 70%),
+    radial-gradient(30rem 22rem at 82% 82%, color-mix(in oklab, var(--stop-amber) 12%, transparent), transparent 72%),
+    color-mix(in oklab, var(--color-background) 97%, black);
+  animation: stop-fade 260ms ease-out;
+}
+
+.stop-intro__sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.stop-intro__orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 12%, transparent);
+  transform: translate(-50%, -50%);
+}
+
+.stop-intro__orbit--a {
+  width: 34rem;
+  height: 34rem;
+  border-color: color-mix(in oklab, var(--stop-amber) 22%, transparent);
+  animation: stop-orbit 46s linear infinite;
+}
+
+.stop-intro__orbit--b {
+  width: 52rem;
+  height: 52rem;
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--stop-cyan) 16%, transparent);
+  animation: stop-orbit 78s linear infinite reverse;
+}
+
+.stop-intro__orbit--c {
+  width: 74rem;
+  height: 74rem;
+  border-color: color-mix(in oklab, var(--color-foreground) 7%, transparent);
+  animation: stop-orbit 120s linear infinite;
+}
+
+.stop-intro__flare {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  width: 46rem;
+  height: 20rem;
+  translate: -50% 0;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--stop-amber) 16%, transparent), transparent 78%);
+  filter: blur(6px);
+  animation: stop-breathe 9s ease-in-out infinite;
+}
+
+.stop-intro__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  max-width: 40rem;
+  text-align: center;
+}
+
+.stop-intro__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--stop-amber) 38%, transparent);
+  background: color-mix(in oklab, var(--stop-amber) 9%, transparent);
+  padding: 0.3rem 0.75rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--stop-amber);
+}
+
+.stop-intro__title {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  margin-top: 0.4rem;
+}
+
+.stop-intro__title-line {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  font-style: italic;
+  line-height: 1;
+  color: var(--color-muted-foreground);
+  animation: stop-fade-up 520ms ease-out both;
+}
+
+.stop-intro__wordmark {
+  display: flex;
+  gap: 0.06em;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(3.6rem, 13vw, 7rem);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+}
+
+.stop-intro__letter {
+  display: inline-block;
+  background: linear-gradient(170deg, var(--stop-amber) 10%, var(--color-foreground) 55%, var(--stop-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0;
+  animation: stop-letter-in 700ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.stop-intro__phrase {
+  min-height: 1.4rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-foreground);
+  animation: stop-fade 420ms ease-out;
+}
+
+.stop-intro__resume {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 26rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--stop-amber) 32%, transparent);
+  background: color-mix(in oklab, var(--stop-amber) 7%, transparent);
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  color: var(--stop-amber);
+}
+
+.stop-intro__resume-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.stop-intro__resume-meta {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  color: var(--color-muted-foreground);
+}
+
+.stop-intro__resume-star {
+  margin-left: auto;
+}
+
+.stop-intro__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.stop-intro__start {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.2rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in oklab, var(--stop-amber) 65%, transparent);
+  background: linear-gradient(120deg, color-mix(in oklab, var(--stop-amber) 92%, white 8%), var(--stop-amber));
+  padding: 0 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: color-mix(in oklab, var(--color-background) 90%, black);
+  box-shadow: 0 22px 44px -22px color-mix(in oklab, var(--stop-amber) 95%, transparent);
+  transition:
+    transform 160ms ease,
+    box-shadow 200ms ease;
+  overflow: hidden;
+}
+
+.stop-intro__start::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, white 45%, transparent) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: stop-shine 3.6s ease-in-out infinite;
+}
+
+.stop-intro__start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 26px 50px -22px color-mix(in oklab, var(--stop-amber) 95%, transparent);
+}
+
+.stop-intro__howto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 3.2rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 90%, transparent);
+  background: color-mix(in oklab, var(--color-card) 70%, transparent);
+  padding: 0 1rem;
+  font-size: 0.82rem;
+  color: var(--color-foreground);
+  transition: border-color 160ms ease;
+}
+
+.stop-intro__howto:hover {
+  border-color: color-mix(in oklab, var(--stop-cyan) 45%, transparent);
+}
+
+.stop-intro__rules {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 34rem;
+  margin-top: 0.4rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+  background: color-mix(in oklab, var(--color-card) 55%, transparent);
+  padding: 0.9rem 1rem;
+  text-align: left;
+  animation: stop-fade-up 320ms ease-out;
+}
+
+.stop-intro__rules p {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--color-muted-foreground);
+}
+
+.stop-intro__rules strong {
+  color: var(--color-foreground);
+}
+
+.stop-intro__foot {
+  margin-top: 0.3rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--color-muted-foreground);
+}
+
+.stop-intro__foot kbd {
+  border-radius: 0.3rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 90%, transparent);
+  padding: 0.05rem 0.3rem;
+  font-size: 0.58rem;
+  color: var(--color-foreground);
+}
+
+.stop-countdown {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.2rem;
+  padding-bottom: 14vh;
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--color-background) 55%, transparent), transparent 85%);
+}
+
+.stop-countdown__label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--stop-amber);
+}
+
+.stop-countdown__number {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(6rem, 22vw, 12rem);
+  line-height: 1;
+  background: linear-gradient(160deg, var(--color-foreground), var(--stop-amber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: stop-count 600ms cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+.stop-countdown__hint {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted-foreground);
+}
+
+.stop-arena.is-urgent::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  box-shadow: inset 0 0 120px 10px color-mix(in oklab, oklch(0.6 0.22 25) 22%, transparent);
+  animation: stop-breathe 1.6s ease-in-out infinite;
+}
+
+.stop-result__hero {
+  position: relative;
+}
+
+.stop-result__burst {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.stop-result__burst::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30rem;
+  height: 30rem;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in oklab, var(--stop-amber) 75%, transparent) 0 2.4deg,
+    transparent 2.4deg 26deg
+  );
+  mask-image: radial-gradient(closest-side, transparent 18%, black 38%, black 58%, transparent 74%);
+  animation: stop-orbit 34s linear infinite, stop-fade 700ms ease-out both;
+  opacity: 0.85;
+}
+
+.stop-result__burst i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--stop-amber);
+  box-shadow: 0 0 10px 1px color-mix(in oklab, var(--stop-amber) 70%, transparent);
+  transform: rotate(calc(var(--i) * 30deg)) translateY(-6rem);
+  opacity: 0;
+  animation: stop-spark 1.6s ease-out forwards;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+.stop-foot__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@keyframes stop-orbit {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes stop-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes stop-letter-in {
+  0% {
+    opacity: 0;
+    transform: translateY(0.5em) scale(0.86);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes stop-shine {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  85%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes stop-count {
+  0% {
+    opacity: 0;
+    transform: scale(1.6);
+    filter: blur(8px);
+  }
+  40% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+@keyframes stop-spark {
+  0% {
+    opacity: 0;
+    transform: rotate(calc(var(--i) * 30deg)) translateY(-2rem) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(calc(var(--i) * 30deg)) translateY(-11rem) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stop-intro,
+  .stop-intro__title-line,
+  .stop-intro__orbit,
+  .stop-intro__flare,
+  .stop-intro__start::after,
+  .stop-intro__phrase,
+  .stop-intro__rules,
+  .stop-countdown__number,
+  .stop-result__burst::before,
+  .stop-result__burst i,
+  .stop-arena.is-urgent::after {
+    animation: none;
+  }
+
+  .stop-intro__letter {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+
+}
+
+.stop-intro__eras {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  max-width: 36rem;
+}
+
+.stop-intro__era {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  background: color-mix(in oklab, var(--color-card) 45%, transparent);
+  padding: 0.28rem 0.6rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--color-muted-foreground);
+  opacity: 0;
+  animation: stop-fade-up 420ms ease-out both;
+}
+
+.stop-intro__era.is-open {
+  border-color: color-mix(in oklab, var(--stop-cyan) 40%, transparent);
+  color: var(--color-foreground);
+}
+
+.stop-intro__era.is-full {
+  border-color: color-mix(in oklab, var(--stop-amber) 55%, transparent);
+  color: var(--stop-amber);
+}
+
+.stop-intro__era-numeral {
+  font-size: 0.58rem;
+  opacity: 0.65;
+}
+
+.stop-intro__era-stars {
+  color: var(--stop-amber);
+}
+
+.stop-intro__era:not(.is-open) .stop-intro__era-stars {
+  color: var(--color-muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stop-intro__era {
+    animation: none;
+    opacity: 1;
   }
 }

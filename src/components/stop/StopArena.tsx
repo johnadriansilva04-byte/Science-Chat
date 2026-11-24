@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  RotateCcw,
-  Sparkles,
-  Star,
-  Trophy,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, RotateCcw, Sparkles, Star, Trophy, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -34,11 +25,7 @@ function TimerRing({ remaining, total }: { remaining: number; total: number }) {
   const circumference = 2 * Math.PI * radius;
   return (
     <div
-      className={cn(
-        "stop-timer",
-        ratio <= 0.34 && "is-warn",
-        ratio <= 0.15 && "is-danger",
-      )}
+      className={cn("stop-timer", ratio <= 0.34 && "is-warn", ratio <= 0.15 && "is-danger")}
       role="timer"
       aria-live="off"
       aria-label={`${remaining} segundos restantes`}
@@ -67,7 +54,9 @@ type Props = {
   onNext: (levelId: string) => void;
 };
 
-type Phase = "brief" | "playing" | "judging" | "result";
+type Phase = "brief" | "countdown" | "playing" | "judging" | "result";
+
+const COUNTDOWN = ["3", "2", "1", "JÁ!"];
 
 export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props) {
   const [phase, setPhase] = useState<Phase>("brief");
@@ -76,6 +65,7 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
   const [result, setResult] = useState<StopRoundResult | null>(null);
   const [phrase, setPhrase] = useState(0);
   const [runId, setRunId] = useState(0);
+  const [countText, setCountText] = useState(COUNTDOWN[0]);
 
   const answersRef = useRef(answers);
   const submittedRef = useRef(false);
@@ -111,7 +101,10 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
       submittedRef.current = true;
       setPhase("judging");
       try {
-        const view = await onSubmit(answersRef.current, Math.max(0, Math.min(level.seconds, secondsLeft)));
+        const view = await onSubmit(
+          answersRef.current,
+          Math.max(0, Math.min(level.seconds, secondsLeft)),
+        );
         setResult(view);
       } catch {
         setResult(null);
@@ -152,6 +145,24 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
     return () => window.clearInterval(id);
   }, [phase]);
 
+  // Contagem antes do cronômetro: o tempo só corre quando a banca diz "JÁ!".
+  useEffect(() => {
+    if (phase !== "countdown") return;
+    let index = 0;
+    setCountText(COUNTDOWN[0]);
+    const id = window.setInterval(() => {
+      index += 1;
+      if (index >= COUNTDOWN.length) {
+        window.clearInterval(id);
+        setRunId((value) => value + 1);
+        setPhase("playing");
+        return;
+      }
+      setCountText(COUNTDOWN[index]);
+    }, 620);
+    return () => window.clearInterval(id);
+  }, [phase]);
+
   useEffect(() => {
     if (phase === "playing") inputsRef.current[0]?.focus();
   }, [phase, runId]);
@@ -162,8 +173,7 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
     setAnswers(level.categories.map(() => ""));
     setResult(null);
     setRemaining(level.seconds);
-    setRunId((value) => value + 1);
-    setPhase("playing");
+    setPhase("countdown");
   };
 
   const updateAnswer = (index: number, value: string) => {
@@ -183,8 +193,19 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
     else void submit(remaining);
   };
 
+  const urgent = phase === "playing" && remaining <= 10;
+  const celebrate = Boolean(
+    result &&
+    (result.stars === 3 || (result.best.bestScore === result.score.total && result.stars > 0)),
+  );
+
   return (
-    <div className="stop-arena" role="dialog" aria-modal="true" aria-label={`Fase ${level.title}`}>
+    <div
+      className={cn("stop-arena", urgent && "is-urgent")}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Fase ${level.title}`}
+    >
       <div className="stop-arena__glow" aria-hidden />
 
       <header className="stop-arena__bar">
@@ -248,7 +269,7 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
         </div>
       )}
 
-      {(phase === "playing" || phase === "judging") && (
+      {(phase === "countdown" || phase === "playing" || phase === "judging") && (
         <div className="stop-board">
           <div className="stop-board__letter" aria-hidden>
             {level.letter}
@@ -273,7 +294,7 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
                       value={value}
                       onChange={(event) => updateAnswer(index, event.target.value)}
                       onKeyDown={(event) => handleKeyDown(index, event)}
-                      disabled={phase === "judging"}
+                      disabled={phase !== "playing"}
                       autoComplete="off"
                       spellCheck={false}
                       maxLength={60}
@@ -304,12 +325,22 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
             <button
               type="button"
               onClick={() => void submit(remaining)}
-              disabled={phase === "judging"}
+              disabled={phase !== "playing"}
               className="stop-stop-btn"
             >
               STOP!
             </button>
           </footer>
+        </div>
+      )}
+
+      {phase === "countdown" && (
+        <div className="stop-countdown" role="status" aria-live="assertive">
+          <p className="stop-countdown__label">Fase {level.letter} em</p>
+          <p key={countText} className="stop-countdown__number">
+            {countText}
+          </p>
+          <p className="stop-countdown__hint">Enter pula para o próximo campo</p>
         </div>
       )}
 
@@ -329,7 +360,14 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
         <div className="stop-result">
           {result ? (
             <>
-              <div className="stop-result__hero">
+              <div className={cn("stop-result__hero", celebrate && "is-celebrating")}>
+                {celebrate && (
+                  <div className="stop-result__burst" aria-hidden>
+                    {Array.from({ length: 12 }).map((_, index) => (
+                      <i key={index} style={{ "--i": index } as React.CSSProperties} />
+                    ))}
+                  </div>
+                )}
                 <div className="stop-result__stars" aria-label={`${result.stars} de 3 estrelas`}>
                   {[0, 1, 2].map((index) => (
                     <Star
@@ -364,7 +402,11 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
                         className={cn("stop-verdict", verdict?.valid ? "is-ok" : "is-no")}
                       >
                         <span className="stop-verdict__icon" aria-hidden>
-                          {verdict?.valid ? <Check className="size-3.5" /> : <X className="size-3.5" />}
+                          {verdict?.valid ? (
+                            <Check className="size-3.5" />
+                          ) : (
+                            <X className="size-3.5" />
+                          )}
                         </span>
                         <span className="stop-verdict__category">{category.label}</span>
                         <span className="stop-verdict__answer">{answer || "—"}</span>
@@ -381,7 +423,8 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
                     <p>
                       <span>Respostas válidas</span>
                       <strong>
-                        {result.score.base} <small>({result.score.base / STOP_SCORING.perAnswer})</small>
+                        {result.score.base}{" "}
+                        <small>({result.score.base / STOP_SCORING.perAnswer})</small>
                       </strong>
                     </p>
                     <p>
