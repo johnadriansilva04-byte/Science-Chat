@@ -5050,3 +5050,890 @@
 .stop-era.is-active {
   animation: stop-fade-up 260ms ease-out both;
 }
+
+/* ------------------------------------------------------------------ *
+ * Stop com amigos — sala, lobby, tabuleiro e placar
+ * ------------------------------------------------------------------ */
+
+.stop-rooms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--stop-cyan) 26%, transparent);
+  background:
+    radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in oklab, var(--stop-cyan) 12%, transparent),
+      transparent 62%
+    ),
+    color-mix(in oklab, var(--color-card) 62%, transparent);
+}
+
+.stop-rooms__text {
+  min-width: 16rem;
+  flex: 1 1 22rem;
+}
+
+.stop-rooms__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stop-cyan);
+}
+
+.stop-rooms__title {
+  margin: 0.25rem 0 0.2rem;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.stop-rooms__lead {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-muted-foreground);
+  max-width: 34rem;
+}
+
+.stop-rooms__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stop-rooms__create,
+.stop-rooms__join button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--stop-amber) 55%, transparent);
+  background: color-mix(in oklab, var(--stop-amber) 16%, transparent);
+  color: var(--color-foreground);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition:
+    transform 140ms ease,
+    background 140ms ease;
+}
+
+.stop-rooms__create:hover,
+.stop-rooms__join button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--stop-amber) 26%, transparent);
+}
+
+.stop-rooms__join {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stop-rooms__join input {
+  width: 8.5rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 85%, transparent);
+  background: color-mix(in oklab, var(--color-background) 55%, transparent);
+  padding: 0.5rem 0.6rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.stop-rooms__join button:disabled {
+  opacity: 0.45;
+}
+
+.stop-rooms__enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  color: var(--stop-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.room-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.room-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.room-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-back:hover {
+  color: var(--color-foreground);
+}
+
+.room-topbar__title {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-topbar__title strong {
+  color: var(--stop-amber);
+  letter-spacing: 0.2em;
+}
+
+.room-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+}
+
+.room-head__id {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-head__label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-head__code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 1.45rem;
+  letter-spacing: 0.24em;
+  color: var(--stop-amber);
+}
+
+.room-head__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  padding: 0.2rem 0.45rem;
+  font-size: 0.6rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-head__copy:hover {
+  color: var(--color-foreground);
+  border-color: color-mix(in oklab, var(--stop-amber) 45%, transparent);
+}
+
+.room-head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.room-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-border) 85%, transparent);
+  background: color-mix(in oklab, var(--color-card) 55%, transparent);
+  padding: 0.15rem 0.5rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-chip--playing {
+  border-color: color-mix(in oklab, var(--stop-cyan) 50%, transparent);
+  color: var(--stop-cyan);
+}
+
+.room-chip--finished {
+  border-color: color-mix(in oklab, var(--stop-amber) 55%, transparent);
+  color: var(--stop-amber);
+}
+
+.room-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--stop-cyan) 45%, transparent);
+  padding: 0.15rem 0.55rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--stop-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.room-timer.is-warn {
+  border-color: color-mix(in oklab, var(--stop-amber) 60%, transparent);
+  color: var(--stop-amber);
+}
+
+.room-loading,
+.room-gate,
+.room-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--color-muted-foreground);
+  font-size: 0.85rem;
+}
+
+.room-error {
+  color: color-mix(in oklab, var(--stop-amber) 80%, white);
+}
+
+.room-cta,
+.room-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition:
+    transform 140ms ease,
+    background 140ms ease;
+}
+
+.room-cta {
+  border-color: color-mix(in oklab, var(--stop-amber) 60%, transparent);
+  background: color-mix(in oklab, var(--stop-amber) 18%, transparent);
+  color: var(--color-foreground);
+}
+
+.room-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--stop-amber) 30%, transparent);
+}
+
+.room-ghost {
+  border-color: color-mix(in oklab, var(--color-border) 85%, transparent);
+  background: color-mix(in oklab, var(--color-card) 45%, transparent);
+  color: var(--color-muted-foreground);
+}
+
+.room-ghost:hover:not(:disabled) {
+  color: var(--color-foreground);
+  border-color: color-mix(in oklab, var(--stop-cyan) 40%, transparent);
+}
+
+.room-cta:disabled,
+.room-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.room-lobby {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+
+@media (max-width: 860px) {
+  .room-lobby {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.room-lobby__players,
+.room-lobby__setup {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 75%, transparent);
+  background: color-mix(in oklab, var(--color-card) 45%, transparent);
+  padding: 0.9rem 1rem;
+}
+
+.room-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.room-players li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.room-players__avatar {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--stop-cyan) 18%, transparent);
+  color: var(--stop-cyan);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+}
+
+.room-players__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-players__name em {
+  font-style: normal;
+  color: var(--color-muted-foreground);
+  font-size: 0.68rem;
+}
+
+.room-players__host {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--stop-amber);
+}
+
+.room-players__total {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  color: var(--color-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.room-players__hint {
+  margin: 0.7rem 0 0;
+  font-size: 0.72rem;
+  color: var(--color-muted-foreground);
+  line-height: 1.5;
+}
+
+.room-players__hint strong {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.16em;
+  color: var(--stop-amber);
+}
+
+.room-setup {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.room-setup__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.room-setup__letter,
+.room-setup__seconds {
+  display: grid;
+  gap: 0.2rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-setup__letter select,
+.room-setup__seconds select {
+  border-radius: 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 85%, transparent);
+  background: color-mix(in oklab, var(--color-background) 55%, transparent);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.78rem;
+  color: var(--color-foreground);
+}
+
+.room-setup__letter select {
+  width: 4.6rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.room-setup__draw {
+  margin-left: auto;
+}
+
+.room-setup__catalog {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.room-setup__catalog legend {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  padding: 0;
+  margin-bottom: 0.35rem;
+}
+
+.room-setup__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.room-chip-toggle {
+  border-radius: 999px;
+  border: 1px dashed color-mix(in oklab, var(--color-border) 90%, transparent);
+  background: color-mix(in oklab, var(--color-card) 40%, transparent);
+  padding: 0.2rem 0.55rem;
+  font-size: 0.68rem;
+  color: var(--color-muted-foreground);
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.room-chip-toggle:hover:not(:disabled) {
+  color: var(--color-foreground);
+  border-color: color-mix(in oklab, var(--stop-cyan) 45%, transparent);
+}
+
+.room-chip-toggle.is-on {
+  border-style: solid;
+  border-color: color-mix(in oklab, var(--stop-amber) 55%, transparent);
+  background: color-mix(in oklab, var(--stop-amber) 15%, transparent);
+  color: var(--color-foreground);
+}
+
+.room-chip-toggle:disabled {
+  opacity: 0.35;
+}
+
+.room-setup__label {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-setup__label strong {
+  color: var(--stop-amber);
+}
+
+.room-setup__custom-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.room-setup__custom-row input {
+  flex: 1 1 11rem;
+  min-width: 8rem;
+  border-radius: 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 85%, transparent);
+  background: color-mix(in oklab, var(--color-background) 55%, transparent);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.76rem;
+}
+
+.room-setup__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  counter-reset: room-field;
+}
+
+.room-setup__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+  padding: 0.3rem 0.45rem;
+  font-size: 0.75rem;
+}
+
+.room-setup__list li::before {
+  counter-increment: room-field;
+  content: counter(room-field);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  color: var(--stop-cyan);
+}
+
+.room-setup__list li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-setup__list li em {
+  font-style: normal;
+  font-size: 0.65rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-setup__list li button {
+  color: var(--color-muted-foreground);
+  border-radius: 0.35rem;
+  padding: 0.1rem;
+}
+
+.room-setup__list li button:hover {
+  color: var(--stop-amber);
+}
+
+.room-setup__hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-preview {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.room-preview__letter {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-preview__letter strong {
+  font-size: 1.1rem;
+  color: var(--stop-amber);
+}
+
+.room-preview__tag {
+  margin-left: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--stop-cyan) 45%, transparent);
+  padding: 0.05rem 0.4rem;
+  font-size: 0.55rem;
+  color: var(--stop-cyan);
+}
+
+.room-preview__fields {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.room-preview__fields li {
+  display: grid;
+  gap: 0.05rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+  padding: 0.3rem 0.5rem;
+}
+
+.room-preview__fields li strong {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.room-preview__fields li span {
+  font-size: 0.66rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-preview__empty {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--color-muted-foreground);
+  line-height: 1.5;
+}
+
+.room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.room-actions__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-board-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.room-wait {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  border: 1px dashed color-mix(in oklab, var(--stop-cyan) 35%, transparent);
+  background: color-mix(in oklab, var(--color-card) 40%, transparent);
+  padding: 1.6rem 1rem;
+  text-align: center;
+}
+
+.room-wait__pulse {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.room-wait__pulse span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--stop-cyan);
+  animation: stop-pulse 1.2s ease-in-out infinite;
+}
+
+.room-wait__pulse span:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.room-wait__pulse span:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+.room-wait__title {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.2rem;
+}
+
+.room-wait__lead {
+  margin: 0;
+  max-width: 32rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--color-muted-foreground);
+}
+
+.room-wait__list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.room-wait__list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-wait__list li.is-in {
+  border-color: color-mix(in oklab, var(--stop-cyan) 50%, transparent);
+  color: var(--stop-cyan);
+}
+
+.room-result {
+  display: grid;
+  gap: 1rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--stop-amber) 30%, transparent);
+  background:
+    radial-gradient(
+      120% 120% at 50% 0%,
+      color-mix(in oklab, var(--stop-amber) 10%, transparent),
+      transparent 60%
+    ),
+    color-mix(in oklab, var(--color-card) 45%, transparent);
+  padding: 1.1rem;
+}
+
+.room-result__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.15rem;
+}
+
+.room-result__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+}
+
+@media (max-width: 820px) {
+  .room-result__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.room-result__self {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.room-result__score {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 2.1rem;
+  line-height: 1;
+  color: var(--stop-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.room-result__caption {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.room-ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  counter-reset: none;
+}
+
+.room-ranking li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 65%, transparent);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+.room-ranking li.is-self {
+  border-color: color-mix(in oklab, var(--stop-cyan) 50%, transparent);
+  background: color-mix(in oklab, var(--stop-cyan) 8%, transparent);
+}
+
+.room-ranking__pos {
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-foreground) 8%, transparent);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  color: var(--color-muted-foreground);
+}
+
+.room-ranking li:first-child .room-ranking__pos {
+  background: color-mix(in oklab, var(--stop-amber) 25%, transparent);
+  color: var(--stop-amber);
+}
+
+.room-ranking__name {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-ranking__round {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  color: var(--stop-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.room-ranking__total {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.82rem;
+  color: var(--stop-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-wait__pulse span {
+    animation: none;
+  }
+}

@@ -19,6 +19,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as MetodologiaIdRouteImport } from './routes/metodologia/$id'
 import { Route as PublicacoesIndexRouteImport } from './routes/publicacoes/index'
 import { Route as PublicacoesSlugRouteImport } from './routes/publicacoes/$slug'
+import { Route as StopSalaCodeRouteImport } from './routes/stop_.sala.$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const PublicacoesSlugRoute = PublicacoesSlugRouteImport.update({
   path: '/publicacoes/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StopSalaCodeRoute = StopSalaCodeRouteImport.update({
+  id: '/stop_/sala/$code',
+  path: '/stop/sala/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/metodologia/$id': typeof MetodologiaIdRoute
   '/publicacoes/$slug': typeof PublicacoesSlugRoute
   '/publicacoes/': typeof PublicacoesIndexRoute
+  '/stop/sala/$code': typeof StopSalaCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/metodologia/$id': typeof MetodologiaIdRoute
   '/publicacoes/$slug': typeof PublicacoesSlugRoute
   '/publicacoes': typeof PublicacoesIndexRoute
+  '/stop/sala/$code': typeof StopSalaCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/metodologia/$id': typeof MetodologiaIdRoute
   '/publicacoes/$slug': typeof PublicacoesSlugRoute
   '/publicacoes/': typeof PublicacoesIndexRoute
+  '/stop_/sala/$code': typeof StopSalaCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/metodologia/$id'
     | '/publicacoes/$slug'
     | '/publicacoes/'
+    | '/stop/sala/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/metodologia/$id'
     | '/publicacoes/$slug'
     | '/publicacoes'
+    | '/stop/sala/$code'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/metodologia/$id'
     | '/publicacoes/$slug'
     | '/publicacoes/'
+    | '/stop_/sala/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   MetodologiaIdRoute: typeof MetodologiaIdRoute
   PublicacoesSlugRoute: typeof PublicacoesSlugRoute
   PublicacoesIndexRoute: typeof PublicacoesIndexRoute
+  StopSalaCodeRoute: typeof StopSalaCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicacoesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stop_/sala/$code': {
+      id: '/stop_/sala/$code'
+      path: '/stop/sala/$code'
+      fullPath: '/stop/sala/$code'
+      preLoaderRoute: typeof StopSalaCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetodologiaIdRoute: MetodologiaIdRoute,
   PublicacoesSlugRoute: PublicacoesSlugRoute,
   PublicacoesIndexRoute: PublicacoesIndexRoute,
+  StopSalaCodeRoute: StopSalaCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

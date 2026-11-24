@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AppHeader } from "@/components/app/AppHeader";
 import { CampaignIntro } from "@/components/stop/CampaignIntro";
 import { CampaignMap } from "@/components/stop/CampaignMap";
+import { RoomBar } from "@/components/stop/RoomBar";
 import { StopArena } from "@/components/stop/StopArena";
 import { useAuth } from "@/hooks/useAuth";
 import { getStopCampaign, judgeStopRound, resetStopCampaign } from "@/lib/stop.functions";
@@ -259,6 +260,8 @@ function StopPage() {
               Expedição fechada. Rejogue as fases para trocar uma estrela por três.
             </p>
           )}
+
+          <RoomBar />
 
           <CampaignMap state={campaign} onPlay={(level) => setPlaying(level)} />
 

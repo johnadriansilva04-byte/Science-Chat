@@ -1313,6 +1313,187 @@ export async function listArticlesByMethodology(
 }
 
 /* ------------------------------------------------------------------ *
+ * Stop com amigos (salas)
+ * ------------------------------------------------------------------ */
+
+export type StopRoomRow = {
+  id: string;
+  code: string;
+  host_id: string;
+  status: string;
+  round: number;
+  letter: string | null;
+  seconds: number;
+  categories: string | null;
+  auto: number;
+  deadline_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StopRoomPlayerRow = {
+  room_id: string;
+  user_id: string;
+  name: string;
+  total: number;
+  played: number;
+  submitted_round: number | null;
+  answers: string | null;
+  verdicts: string | null;
+  round_score: number | null;
+  joined_at: string;
+  display_name?: string | null;
+};
+
+const STOP_ROOM_COLUMNS =
+  "id, code, host_id, status, round, letter, seconds, categories, auto, deadline_at, created_at, updated_at";
+const STOP_ROOM_PLAYER_COLUMNS =
+  "room_id, user_id, name, total, played, submitted_round, answers, verdicts, round_score, joined_at";
+
+export async function createStopRoom(input: {
+  hostId: string;
+  code: string;
+  seconds: number;
+}): Promise<StopRoomRow> {
+  const id = newId();
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      "insert into stop_rooms (id, code, host_id, status, round, seconds, auto, created_at, updated_at) values (?, ?, ?, 'lobby', 0, ?, 1, ?, ?)",
+    )
+    .bind(id, input.code, input.hostId, input.seconds, ts, ts)
+    .run();
+  const row = await requireDb()
+    .prepare(`select ${STOP_ROOM_COLUMNS} from stop_rooms where id = ?`)
+    .bind(id)
+    .first<StopRoomRow>();
+  if (!row) throw new Error("Não foi possível abrir a sala.");
+  return row;
+}
+
+export async function getStopRoomByCode(code: string): Promise<StopRoomRow | null> {
+  return requireDb()
+    .prepare(`select ${STOP_ROOM_COLUMNS} from stop_rooms where code = ?`)
+    .bind(code)
+    .first<StopRoomRow>();
+}
+
+export async function listStopRoomPlayers(roomId: string): Promise<StopRoomPlayerRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${STOP_ROOM_PLAYER_COLUMNS} from stop_room_players where room_id = ? order by joined_at asc`,
+    )
+    .bind(roomId)
+    .all<StopRoomPlayerRow>();
+  return results;
+}
+
+/** Entrar de novo na mesma sala não duplica a pessoa: só atualiza o apelido. */
+export async function upsertStopRoomPlayer(input: {
+  roomId: string;
+  userId: string;
+  name: string;
+}): Promise<StopRoomPlayerRow> {
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      `insert into stop_room_players (room_id, user_id, name, joined_at) values (?, ?, ?, ?)
+       on conflict(room_id, user_id) do update set name = excluded.name`,
+    )
+    .bind(input.roomId, input.userId, input.name, ts)
+    .run();
+  const row = await requireDb()
+    .prepare(
+      `select ${STOP_ROOM_PLAYER_COLUMNS} from stop_room_players where room_id = ? and user_id = ?`,
+    )
+    .bind(input.roomId, input.userId)
+    .first<StopRoomPlayerRow>();
+  if (!row) throw new Error("Não foi possível entrar na sala.");
+  return row;
+}
+
+export type StopRoomPatch = {
+  status?: string;
+  round?: number;
+  letter?: string | null;
+  seconds?: number;
+  categories?: string | null;
+  auto?: number;
+  deadlineAt?: string | null;
+};
+
+export async function updateStopRoom(roomId: string, patch: StopRoomPatch): Promise<void> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  const push = (column: string, value: unknown) => {
+    sets.push(`${column} = ?`);
+    values.push(value);
+  };
+  if (patch.status !== undefined) push("status", patch.status);
+  if (patch.round !== undefined) push("round", patch.round);
+  if (patch.letter !== undefined) push("letter", patch.letter);
+  if (patch.seconds !== undefined) push("seconds", patch.seconds);
+  if (patch.categories !== undefined) push("categories", patch.categories);
+  if (patch.auto !== undefined) push("auto", patch.auto);
+  if (patch.deadlineAt !== undefined) push("deadline_at", patch.deadlineAt);
+  push("updated_at", nowIso());
+
+  await requireDb()
+    .prepare(`update stop_rooms set ${sets.join(", ")} where id = ?`)
+    .bind(...values, roomId)
+    .run();
+}
+
+/** Fecha a rodada para todo mundo: zera entregas e resultado da rodada. */
+export async function resetStopRoomRound(roomId: string): Promise<void> {
+  await requireDb()
+    .prepare(
+      "update stop_room_players set submitted_round = null, answers = null, verdicts = null, round_score = null where room_id = ?",
+    )
+    .bind(roomId)
+    .run();
+}
+
+export async function saveStopRoomSubmission(input: {
+  roomId: string;
+  userId: string;
+  round: number;
+  answers: string;
+  verdicts: string;
+  score: number;
+}): Promise<void> {
+  await requireDb()
+    .prepare(
+      `update stop_room_players
+          set submitted_round = ?, answers = ?, verdicts = ?, round_score = ?,
+              total = total + ?, played = played + 1
+        where room_id = ? and user_id = ? and (submitted_round is null or submitted_round <> ?)`,
+    )
+    .bind(
+      input.round,
+      input.answers,
+      input.verdicts,
+      input.score,
+      input.score,
+      input.roomId,
+      input.userId,
+      input.round,
+    )
+    .run();
+}
+
+export async function removeStopRoomPlayer(roomId: string, userId: string): Promise<void> {
+  await requireDb()
+    .prepare("delete from stop_room_players where room_id = ? and user_id = ?")
+    .bind(roomId, userId)
+    .run();
+}
+
+export async function deleteStopRoom(roomId: string): Promise<void> {
+  await requireDb().prepare("delete from stop_rooms where id = ?").bind(roomId).run();
+}
+
+/* ------------------------------------------------------------------ *
  * Stop científico (campanha)
  * ------------------------------------------------------------------ */
 
