@@ -8,7 +8,7 @@ import { createStopRoom } from "@/lib/stop-room.functions";
 import { normalizeRoomCode, roomCodeValid } from "@/lib/stop-room";
 
 /** Entrada do jogo em grupo: abrir sala ou entrar pelo código de 6 caracteres. */
-export function RoomBar() {
+export function RoomBar({ compact = false }: { compact?: boolean } = {}) {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [code, setCode] = useState("");
@@ -40,20 +40,25 @@ export function RoomBar() {
   };
 
   return (
-    <section className="stop-rooms" aria-labelledby="stop-rooms-title">
-      <div className="stop-rooms__text">
-        <span className="stop-rooms__kicker">
-          <Users className="size-3.5" aria-hidden />
-          Stop com amigos
-        </span>
-        <h2 id="stop-rooms-title" className="stop-rooms__title">
-          Abra uma sala e jogue junto
-        </h2>
-        <p className="stop-rooms__lead">
-          Quem cria escolhe as perguntas a dedo — ou deixa o sorteio decidir. Todo mundo recebe a
-          mesma letra, no mesmo cronômetro.
-        </p>
-      </div>
+    <section
+      className={compact ? "stop-rooms is-compact" : "stop-rooms"}
+      aria-labelledby={compact ? undefined : "stop-rooms-title"}
+    >
+      {compact ? null : (
+        <div className="stop-rooms__text">
+          <span className="stop-rooms__kicker">
+            <Users className="size-3.5" aria-hidden />
+            Stop com amigos
+          </span>
+          <h2 id="stop-rooms-title" className="stop-rooms__title">
+            Abra uma sala e jogue junto
+          </h2>
+          <p className="stop-rooms__lead">
+            Quem cria escolhe as perguntas a dedo — ou deixa o sorteio decidir. Todo mundo recebe a
+            mesma letra, no mesmo cronômetro.
+          </p>
+        </div>
+      )}
 
       <div className="stop-rooms__actions">
         <button
