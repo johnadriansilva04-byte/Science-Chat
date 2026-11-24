@@ -12,7 +12,7 @@ describe("GameCard", () => {
     for (const category of STOP_CATEGORIES) {
       expect(screen.getByText(category)).toBeInTheDocument();
     }
-    expect(screen.getByText(/12 fases/i)).toBeInTheDocument();
+    expect(screen.getByText(/5 campanhas/i)).toBeInTheDocument();
   });
 
   it("leva para a campanha interna, sem iframe", () => {

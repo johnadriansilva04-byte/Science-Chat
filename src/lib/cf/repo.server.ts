@@ -1360,7 +1360,9 @@ export async function saveStopResult(
     .run();
 
   const row = await requireDb()
-    .prepare(`select ${STOP_PROGRESS_COLUMNS} from stop_progress where user_id = ? and level_id = ?`)
+    .prepare(
+      `select ${STOP_PROGRESS_COLUMNS} from stop_progress where user_id = ? and level_id = ?`,
+    )
     .bind(userId, levelId)
     .first<StopProgressRow>();
   if (!row) throw new Error("Não foi possível salvar o progresso do Stop.");

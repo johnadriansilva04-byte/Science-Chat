@@ -11,68 +11,121 @@
  * as regras locais como piso quando a IA não responde.
  */
 
-export type StopCategoryId = "scientist" | "element" | "journal" | "method" | "country" | "lab";
+export type StopCategoryId =
+  | "nome"
+  | "cidade"
+  | "animal"
+  | "fruta"
+  | "cor"
+  | "objeto"
+  | "comida"
+  | "artista"
+  | "filme"
+  | "time"
+  | "marca"
+  | "profissao"
+  | "sogra"
+  | "bebida"
+  | "personagem"
+  | "jogo"
+  | "esporte"
+  | "atleta"
+  | "pais"
+  | "disciplina"
+  | "elemento"
+  | "cientista";
 
 export type StopCategory = { id: StopCategoryId; label: string; hint: string };
 
+/** As categorias populares do Stop brasileiro, mais as da bancada. */
 export const STOP_CATEGORY_LIST: readonly StopCategory[] = [
-  { id: "scientist", label: "Cientista", hint: "Quem pesquisou de verdade" },
-  { id: "element", label: "Elemento químico", hint: "Da tabela periódica" },
-  { id: "journal", label: "Revista científica", hint: "Periódico que existe" },
-  { id: "method", label: "Método", hint: "Procedimento de pesquisa" },
-  { id: "country", label: "País", hint: "Estado reconhecido" },
-  { id: "lab", label: "Objeto de laboratório", hint: "Peça de bancada" },
+  { id: "nome", label: "Nome", hint: "Nome próprio de gente" },
+  { id: "cidade", label: "Cidade", hint: "Cidade ou capital" },
+  { id: "animal", label: "Animal", hint: "Bicho que existe" },
+  { id: "fruta", label: "Fruta", hint: "Fruta de verdade" },
+  { id: "cor", label: "Cor", hint: "Cor que existe" },
+  { id: "objeto", label: "Objeto", hint: "Coisa que cabe em casa" },
+  { id: "comida", label: "Comida", hint: "Prato ou lanche" },
+  { id: "artista", label: "Artista", hint: "Cantor, ator ou banda" },
+  { id: "filme", label: "Filme ou série", hint: "Título que existe" },
+  { id: "time", label: "Time", hint: "Clube de futebol" },
+  { id: "marca", label: "Marca", hint: "Marca de produto" },
+  { id: "profissao", label: "Profissão", hint: "Trabalho de gente" },
+  { id: "sogra", label: "Minha sogra é…", hint: "Um adjetivo para a sogra" },
+  { id: "bebida", label: "Bebida", hint: "Algo pra beber" },
+  { id: "personagem", label: "Personagem", hint: "De desenho, filme ou jogo" },
+  { id: "jogo", label: "Jogo", hint: "Jogo ou brincadeira" },
+  { id: "esporte", label: "Esporte", hint: "Modalidade esportiva" },
+  { id: "atleta", label: "Atleta", hint: "Atleta ou técnico" },
+  { id: "pais", label: "País", hint: "País que existe" },
+  { id: "disciplina", label: "Matéria da escola", hint: "Disciplina escolar" },
+  { id: "elemento", label: "Elemento químico", hint: "Da tabela periódica" },
+  { id: "cientista", label: "Cientista", hint: "Quem pesquisou de verdade" },
 ];
 
-const ALL_CATEGORIES: StopCategoryId[] = STOP_CATEGORY_LIST.map((c) => c.id);
-
-const CATEGORY_BY_ID: Record<StopCategoryId, StopCategory> = {
-  scientist: { id: "scientist", label: "Cientista", hint: "Quem pesquisou de verdade" },
-  element: { id: "element", label: "Elemento químico", hint: "Da tabela periódica" },
-  journal: { id: "journal", label: "Revista científica", hint: "Periódico que existe" },
-  method: { id: "method", label: "Método", hint: "Procedimento de pesquisa" },
-  country: { id: "country", label: "País", hint: "Estado reconhecido" },
-  lab: { id: "lab", label: "Objeto de laboratório", hint: "Peça de bancada" },
-};
+const CATEGORY_BY_ID = new Map(STOP_CATEGORY_LIST.map((category) => [category.id, category]));
 
 export function stopCategory(id: StopCategoryId): StopCategory {
-  return CATEGORY_BY_ID[id];
+  const found = CATEGORY_BY_ID.get(id);
+  if (!found) throw new Error(`Categoria desconhecida: ${id}`);
+  return found;
 }
 
-export type StopEraId = "observatorio" | "bancada" | "arquivo" | "conselho";
+export type StopCampaignId = "classico" | "brasil" | "pop" | "esportes" | "bancada";
 
-export type StopEra = { id: StopEraId; numeral: string; title: string; subtitle: string };
+export type StopCampaign = {
+  id: StopCampaignId;
+  numeral: string;
+  title: string;
+  tagline: string;
+  subtitle: string;
+};
 
-export const STOP_ERAS: readonly StopEra[] = [
+/**
+ * Campanhas por tema. Cada uma abre na primeira fase, então a pessoa escolhe
+ * por onde quer começar; dentro da campanha a dificuldade cresce fase a fase.
+ */
+export const STOP_CAMPAIGNS: readonly StopCampaign[] = [
   {
-    id: "observatorio",
+    id: "classico",
     numeral: "I",
-    title: "Observatório",
-    subtitle: "O primeiro turno do telescópio. Letras simples, tempo de sobra.",
+    title: "Clássico",
+    tagline: "O Stop de sempre",
+    subtitle: "Nome, cidade, animal e cor: seis campos que todo mundo sabe responder.",
+  },
+  {
+    id: "brasil",
+    numeral: "II",
+    title: "Brasil",
+    tagline: "Cidade, comida e time",
+    subtitle: "Comida típica, artista daqui e time de futebol — o país em seis campos.",
+  },
+  {
+    id: "pop",
+    numeral: "III",
+    title: "Cultura pop",
+    tagline: "Artista, filme e jogo",
+    subtitle: "Cantor, série de streaming, personagem e marca que todo mundo conhece.",
+  },
+  {
+    id: "esportes",
+    numeral: "IV",
+    title: "Esportes",
+    tagline: "Time, atleta e jogo",
+    subtitle: "Clube, modalidade e atleta de qualquer época. O cronômetro aperta.",
   },
   {
     id: "bancada",
-    numeral: "II",
+    numeral: "V",
     title: "Bancada",
-    subtitle: "Bancada limpa, cronômetro ligado. A banca cobra nome certo.",
-  },
-  {
-    id: "arquivo",
-    numeral: "III",
-    title: "Arquivo",
-    subtitle: "Arquivo morto do instituto. Tempo curto, exigência alta.",
-  },
-  {
-    id: "conselho",
-    numeral: "IV",
-    title: "Conselho",
-    subtitle: "A banca está olhando. Só fecha quem entrega rápido e certo.",
+    tagline: "A versão científica",
+    subtitle: "Cientista, elemento e matéria da escola: o Stop com sotaque de laboratório.",
   },
 ];
 
 export type StopLevel = {
   id: string;
-  era: StopEraId;
+  campaign: StopCampaignId;
   title: string;
   letter: string;
   seconds: number;
@@ -84,124 +137,154 @@ export type StopLevel = {
 
 export const STOP_LEVELS: readonly StopLevel[] = [
   {
-    id: "obs-1",
-    era: "observatorio",
-    title: "Primeiro turno",
-    letter: "A",
+    id: "cla-1",
+    campaign: "classico",
+    title: "Rodada de sempre",
+    letter: "M",
     seconds: 90,
-    categories: ALL_CATEGORIES,
-    meta: 35,
-    brief: "Aquecimento. Qualquer resposta real vale — nome próprio conta.",
+    categories: ["nome", "cidade", "animal", "fruta", "cor", "objeto"],
+    meta: 32,
+    brief: "O Stop clássico: seis campos que qualquer pessoa responde sem pensar muito.",
   },
   {
-    id: "obs-2",
-    era: "observatorio",
-    title: "Céu de B",
-    letter: "B",
+    id: "cla-2",
+    campaign: "classico",
+    title: "S de sempre",
+    letter: "S",
     seconds: 85,
-    categories: ALL_CATEGORIES,
-    meta: 40,
-    brief: "Siglas contam, desde que comecem pela letra e existam de verdade.",
+    categories: ["nome", "cidade", "animal", "comida", "cor", "profissao"],
+    meta: 36,
+    brief: "Fruta sai, comida entra; objeto sai, profissão entra. Cronômetro ligado.",
   },
   {
-    id: "obs-3",
-    era: "observatorio",
-    title: "Sem a revista",
-    letter: "C",
+    id: "cla-3",
+    campaign: "classico",
+    title: "H de aperto",
+    letter: "H",
     seconds: 80,
-    categories: ALL_CATEGORIES.filter((c) => c !== "journal"),
+    categories: ["nome", "cidade", "animal", "fruta", "objeto", "marca"],
     meta: 40,
-    brief: "Sem a categoria Revista nesta rodada: cinco campos.",
+    brief: "H tem cidade, animal e marca na ponta da língua — mas travar é perder.",
+  },
+  {
+    id: "bra-1",
+    campaign: "brasil",
+    title: "Brasa",
+    letter: "C",
+    seconds: 85,
+    categories: ["cidade", "comida", "artista", "time", "fruta", "cor"],
+    meta: 34,
+    brief: "Aqui vale sotaque: comida típica, time de futebol e artista daqui contam.",
+  },
+  {
+    id: "bra-2",
+    campaign: "brasil",
+    title: "Ginga",
+    letter: "G",
+    seconds: 80,
+    categories: ["cidade", "comida", "artista", "time", "profissao", "objeto"],
+    meta: 38,
+    brief: "Artista brasileiro conta até apelido conhecido. G pede jogo de cintura.",
+  },
+  {
+    id: "bra-3",
+    campaign: "brasil",
+    title: "Jejum",
+    letter: "J",
+    seconds: 75,
+    categories: ["cidade", "comida", "artista", "time", "animal", "marca"],
+    meta: 40,
+    brief: "J tem cidade, comida e time — mas o cronômetro já está correndo.",
+  },
+  {
+    id: "pop-1",
+    campaign: "pop",
+    title: "Playlist B",
+    letter: "B",
+    seconds: 80,
+    categories: ["artista", "filme", "personagem", "jogo", "marca", "esporte"],
+    meta: 36,
+    brief: "Vale artista internacional, série de streaming e jogo antigo.",
+  },
+  {
+    id: "pop-2",
+    campaign: "pop",
+    title: "R de replay",
+    letter: "R",
+    seconds: 75,
+    categories: ["artista", "filme", "personagem", "jogo", "marca", "bebida"],
+    meta: 38,
+    brief: "Personagem pode ser de desenho, de filme ou de videogame.",
+  },
+  {
+    id: "pop-3",
+    campaign: "pop",
+    title: "K de cult",
+    letter: "K",
+    seconds: 70,
+    categories: ["artista", "filme", "personagem", "jogo", "marca", "time"],
+    meta: 40,
+    brief: "K é letra rara: apelido artístico, game asiático e clube valem.",
+  },
+  {
+    id: "esp-1",
+    campaign: "esportes",
+    title: "Campo F",
+    letter: "F",
+    seconds: 80,
+    categories: ["time", "esporte", "atleta", "jogo", "pais", "objeto"],
+    meta: 36,
+    brief: "Time de qualquer liga, atleta de qualquer época, jogo de qualquer década.",
+  },
+  {
+    id: "esp-2",
+    campaign: "esportes",
+    title: "V de vitória",
+    letter: "V",
+    seconds: 70,
+    categories: ["time", "esporte", "atleta", "jogo", "cidade", "marca"],
+    meta: 40,
+    brief: "Cidade pode ser de fora do país; marca de material esportivo vale.",
+  },
+  {
+    id: "esp-3",
+    campaign: "esportes",
+    title: "W de wildcard",
+    letter: "W",
+    seconds: 65,
+    categories: ["atleta", "esporte", "jogo", "cidade", "comida", "marca"],
+    meta: 42,
+    brief: "Letra ingrata: nome estrangeiro, prato e jogo antigo salvam a rodada.",
   },
   {
     id: "ban-1",
-    era: "bancada",
-    title: "Bancada limpa",
-    letter: "D",
-    seconds: 80,
-    categories: ALL_CATEGORIES,
-    meta: 45,
-    brief: "A banca cobra o nome certo: sigla não é método.",
+    campaign: "bancada",
+    title: "Amostra A",
+    letter: "A",
+    seconds: 85,
+    categories: ["cientista", "elemento", "disciplina", "animal", "pais", "cidade"],
+    meta: 34,
+    brief: "Ciência de escola: Arquimedes, argônio, artes, anta, Argentina, Aracaju.",
   },
   {
     id: "ban-2",
-    era: "bancada",
-    title: "Precisão",
-    letter: "E",
+    campaign: "bancada",
+    title: "Amostra M",
+    letter: "M",
     seconds: 75,
-    categories: ALL_CATEGORIES,
-    meta: 45,
-    brief: "Resposta vaga (\"estudo\", \"experimento\") não passa.",
+    categories: ["cientista", "elemento", "disciplina", "animal", "pais", "cidade"],
+    meta: 38,
+    brief: "M tem Marie Curie, magnésio, matemática, macaco e Manaus.",
   },
   {
     id: "ban-3",
-    era: "bancada",
-    title: "Sem o vidro",
-    letter: "F",
+    campaign: "bancada",
+    title: "Amostra Z",
+    letter: "Z",
     seconds: 70,
-    categories: ALL_CATEGORIES.filter((c) => c !== "lab"),
-    meta: 42,
-    brief: "Sem Objeto de laboratório nesta rodada.",
-  },
-  {
-    id: "arq-1",
-    era: "arquivo",
-    title: "Caixa G",
-    letter: "G",
-    seconds: 70,
-    categories: ALL_CATEGORIES,
-    meta: 50,
-    brief: "Revista com G é rara: a banca só aceita periódico que existe.",
-  },
-  {
-    id: "arq-2",
-    era: "arquivo",
-    title: "Ficha M",
-    letter: "M",
-    seconds: 65,
-    categories: ALL_CATEGORIES,
-    meta: 50,
-    brief: "Nome estrangeiro conta — vale a primeira letra do nome.",
-  },
-  {
-    id: "arq-3",
-    era: "arquivo",
-    title: "Pasta P",
-    letter: "P",
-    seconds: 60,
-    categories: ALL_CATEGORIES,
-    meta: 55,
-    brief: "Cada campo pede uma resposta diferente. Repetir não pontua duas vezes.",
-  },
-  {
-    id: "con-1",
-    era: "conselho",
-    title: "Arguição",
-    letter: "R",
-    seconds: 60,
-    categories: ALL_CATEGORIES.filter((c) => c !== "journal"),
-    meta: 52,
-    brief: "Sem Revista: cinco campos, sessenta segundos.",
-  },
-  {
-    id: "con-2",
-    era: "conselho",
-    title: "Sala S",
-    letter: "S",
-    seconds: 55,
-    categories: ALL_CATEGORIES,
-    meta: 58,
-    brief: "S tem gente demais na história da ciência. Escolha uma.",
-  },
-  {
-    id: "con-3",
-    era: "conselho",
-    title: "Tese",
-    letter: "T",
-    seconds: 50,
-    categories: ALL_CATEGORIES,
-    meta: 62,
-    brief: "Última fase: cinquenta segundos para fechar a expedição.",
+    categories: ["elemento", "animal", "cidade", "pais", "objeto", "nome"],
+    meta: 40,
+    brief: "Fechamento: zinco, zebra, Zurique, Zâmbia, zíper — a banca confere.",
   },
 ];
 
@@ -215,8 +298,13 @@ export function stopLevelIndex(id: string): number {
   return STOP_LEVELS.findIndex((level) => level.id === id);
 }
 
-export function levelsOfEra(era: StopEraId): StopLevel[] {
-  return STOP_LEVELS.filter((level) => level.era === era);
+export function levelsOfCampaign(campaign: StopCampaignId): StopLevel[] {
+  return STOP_LEVELS.filter((level) => level.campaign === campaign);
+}
+
+export function campaignOfLevel(level: StopLevel): StopCampaign {
+  const found = STOP_CAMPAIGNS.find((campaign) => campaign.id === level.campaign);
+  return found ?? STOP_CAMPAIGNS[0]!;
 }
 
 /* ------------------------------------------------------------------ *
@@ -386,18 +474,20 @@ export function stopRank(xp: number): StopRank {
 }
 
 /**
- * A primeira fase é livre; as outras abrem com pelo menos uma estrela na
- * anterior. Sem isso a campanha vira uma lista de links e perde a escalada.
+ * Cada campanha abre na primeira fase — a pessoa escolhe o tema — e as
+ * seguintes pedem pelo menos uma estrela na fase anterior da mesma campanha.
  */
 export function unlockedLevelIds(progress: StopProgressMap): Set<string> {
   const unlocked = new Set<string>();
-  STOP_LEVELS.forEach((level, index) => {
-    if (index === 0) {
-      unlocked.add(level.id);
-      return;
-    }
-    const previous = STOP_LEVELS[index - 1];
-    if (previous && (progress[previous.id]?.stars ?? 0) >= 1) unlocked.add(level.id);
+  STOP_CAMPAIGNS.forEach((campaign) => {
+    levelsOfCampaign(campaign.id).forEach((level, index) => {
+      if (index === 0) {
+        unlocked.add(level.id);
+        return;
+      }
+      const previous = levelsOfCampaign(campaign.id)[index - 1];
+      if (previous && (progress[previous.id]?.stars ?? 0) >= 1) unlocked.add(level.id);
+    });
   });
   return unlocked;
 }
@@ -405,9 +495,21 @@ export function unlockedLevelIds(progress: StopProgressMap): Set<string> {
 /** Próxima fase a jogar: a primeira aberta que ainda não tem estrela. */
 export function nextLevelToPlay(progress: StopProgressMap): StopLevel | null {
   const unlocked = unlockedLevelIds(progress);
-  const pending = STOP_LEVELS.find((level) => unlocked.has(level.id) && (progress[level.id]?.stars ?? 0) < 1);
-  if (pending) return pending;
+  for (const campaign of STOP_CAMPAIGNS) {
+    const next = levelsOfCampaign(campaign.id).find(
+      (level) => unlocked.has(level.id) && (progress[level.id]?.stars ?? 0) < 1,
+    );
+    if (next) return next;
+  }
   return STOP_LEVELS.find((level) => unlocked.has(level.id)) ?? null;
+}
+
+/** Estrelas conquistadas em uma campanha (teto de fases × 3). */
+export function campaignStars(progress: StopProgressMap, campaign: StopCampaignId): number {
+  return levelsOfCampaign(campaign).reduce(
+    (sum, level) => sum + clampInt(progress[level.id]?.stars ?? 0, 0, 3),
+    0,
+  );
 }
 
 export function isCampaignComplete(progress: StopProgressMap): boolean {
@@ -425,7 +527,10 @@ export type RefereeVerdict = { valid: boolean; reason: string };
  * do formato vira `null` naquela posição, e quem chamou completa com as regras
  * locais. Um modelo confuso não pode derrubar a rodada.
  */
-export function parseRefereeVerdicts(text: string, total: number): Array<RefereeVerdict | null> | null {
+export function parseRefereeVerdicts(
+  text: string,
+  total: number,
+): Array<RefereeVerdict | null> | null {
   const start = text.indexOf("[");
   const end = text.lastIndexOf("]");
   if (start < 0 || end <= start) return null;

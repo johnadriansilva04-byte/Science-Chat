@@ -25,13 +25,13 @@ import {
 export const Route = createFileRoute("/stop")({
   head: () => ({
     meta: [
-      { title: "Stop científico — expedição em 12 fases · ScienceChat" },
+      { title: "Stop científico — expedição em 5 campanhas · ScienceChat" },
       {
         name: "description",
         content:
-          "O Stop de sempre com categorias de ciência, agora como campanha: 12 fases, quatro eras, estrelas, XP e uma banca de IA que confere cada resposta.",
+          "O Stop de sempre, agora em campanhas: clássico, Brasil, cultura pop, esportes e bancada. Quinze fases, estrelas, XP e uma banca de IA que confere cada resposta.",
       },
-      { property: "og:title", content: "Stop científico — expedição em 12 fases" },
+      { property: "og:title", content: "Stop científico — expedição em 5 campanhas" },
     ],
   }),
   component: StopPage,
@@ -214,8 +214,8 @@ function StopPage() {
                 Expedição <em>Stop</em>
               </h1>
               <p className="stop-head__lead">
-                Doze fases, quatro eras e uma letra por rodada. Você preenche os campos de ciência,
-                a banca confere se o nome existe — e o cronômetro decide o resto.
+                Cinco campanhas, quinze fases e uma letra por rodada. Você preenche os campos, a
+                banca confere se o nome existe — e o cronômetro decide o resto.
               </p>
             </div>
 

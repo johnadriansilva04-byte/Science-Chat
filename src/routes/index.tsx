@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpenText,
@@ -86,6 +86,28 @@ function Index() {
     void createArticle(navigate, seed, pending.text);
   }, [loading, user, navigate]);
 
+  const startMethodology = useCallback(
+    async (seedText: string) => {
+      const clean = seedText.trim();
+      if (!clean) return;
+      if (!user) {
+        setPendingMethodology(clean);
+        navigate({ to: "/auth" });
+        return;
+      }
+      setCreatingMethod(true);
+      try {
+        const { id } = await createMethodology({ data: { seed: clean, title: clean } });
+        navigate({ to: "/metodologia/$id", params: { id }, search: { seed: clean } });
+      } catch {
+        toast.error("Não foi possível criar a metodologia");
+      } finally {
+        setCreatingMethod(false);
+      }
+    },
+    [user, navigate],
+  );
+
   // Semente de metodologia escolhida antes do cadastro ("Criar metodologia" sem
   // conta): ao entrar, ela vira uma metodologia e abre o caderno de método.
   useEffect(() => {
@@ -94,7 +116,7 @@ function Index() {
     if (!pending) return;
     consumedMethodology.current = true;
     void startMethodology(pending);
-  }, [loading, user]);
+  }, [loading, user, startMethodology]);
 
   // Lista curta das metodologias do pesquisador: sem isso, o caderno só seria
   // alcançável pelo link recém-criado (não há índice público de metodologias).
@@ -179,29 +201,6 @@ function Index() {
       return;
     }
     navigate({ to: "/a/$articleId", params: { articleId: first.id } });
-  }
-
-  async function startMethodology(seedText: string) {
-    const clean = seedText.trim();
-    if (!clean) return;
-    if (!user) {
-      setPendingMethodology(clean);
-      navigate({ to: "/auth" });
-      return;
-    }
-    setCreatingMethod(true);
-    try {
-      const { id } = await createMethodology({ data: { seed: clean, title: clean } });
-      navigate({
-        to: "/metodologia/$id",
-        params: { id },
-        search: { seed: clean },
-      });
-    } catch {
-      toast.error("Não foi possível criar a metodologia");
-    } finally {
-      setCreatingMethod(false);
-    }
   }
 
   async function ignite() {

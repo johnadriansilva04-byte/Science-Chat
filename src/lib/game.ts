@@ -11,7 +11,7 @@ import { STOP_CATEGORY_LIST } from "@/lib/stop";
 export const GAME_NAME = "Stop científico";
 
 export const GAME_TAGLINE =
-  "O Stop de sempre, com categorias de ciência — agora em campanha de 12 fases.";
+  "O Stop de sempre em cinco campanhas: clássico, Brasil, cultura pop, esportes e bancada.";
 
 /** Rota interna da campanha. */
 export const GAME_PATH = "/stop";

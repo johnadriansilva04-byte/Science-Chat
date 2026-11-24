@@ -36,8 +36,8 @@ export function GameCard({ className }: { className?: string }) {
             ))}
           </ul>
           <p className="mt-1.5 flex items-center gap-1 text-[0.68rem] text-muted-foreground">
-            <Star className="size-3 text-[oklch(0.79_0.15_78)]" aria-hidden />
-            12 fases · estrelas, XP e banca de IA
+            <Star className="size-3 text-[oklch(0.79_0.15_78)]" aria-hidden />5 campanhas ·
+            estrelas, XP e banca de IA
           </p>
         </div>
         <a href={GAME_PATH} className="game-card__cta" title={GAME_TAGLINE}>

@@ -222,8 +222,7 @@
   /* Barra de rolagem discreta, na cor da tinta. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 40%, transparent)
-      transparent;
+    scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 40%, transparent) transparent;
   }
   *::-webkit-scrollbar {
     width: 10px;
@@ -422,742 +421,776 @@
     animation: pracinha-pulse 2.4s ease-in-out infinite;
   }
 
-.cracha-card {
-  --ci-ink: var(--foreground);
-  --ci-soft: var(--muted-foreground);
-  --ci-accent: var(--star-amber);
-  --ci-rule: color-mix(in oklab, var(--foreground) 14%, transparent);
-  --ci-surface-2: color-mix(in oklab, var(--foreground) 6%, transparent);
-  border-color: color-mix(in oklab, var(--color-primary) 22%, transparent);
-  background:
-    radial-gradient(120% 130% at 0% 0%, color-mix(in oklab, var(--color-primary) 9%, transparent), transparent 58%),
-    color-mix(in oklab, var(--card) 76%, transparent);
-  backdrop-filter: blur(10px);
-  color: var(--ci-ink);
-}
-.cracha-card__icon {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-  border-radius: var(--radius-md);
-  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
-  color: var(--color-primary);
-}
-.cracha-card__spine {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(
-    to bottom,
-    var(--color-primary),
-    color-mix(in oklab, var(--color-primary) 35%, transparent)
-  );
-}
-.landing-shelf-card {
-  --card-accent: var(--color-primary);
-  border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
-  background-image: radial-gradient(
-    120% 140% at 0% 0%,
-    color-mix(in oklab, var(--card-accent) 9%, transparent),
-    transparent 55%
-  );
-  box-shadow: 0 1px 2px oklch(0 0 0 / 0.04);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-.landing-shelf-card__accent {
-  color: var(--card-accent);
-}
-.landing-shelf-card:hover {
-  border-color: color-mix(in oklab, var(--card-accent) 46%, transparent);
-  box-shadow: 0 10px 28px -22px color-mix(in oklab, var(--card-accent) 80%, transparent);
-}
+  .cracha-card {
+    --ci-ink: var(--foreground);
+    --ci-soft: var(--muted-foreground);
+    --ci-accent: var(--star-amber);
+    --ci-rule: color-mix(in oklab, var(--foreground) 14%, transparent);
+    --ci-surface-2: color-mix(in oklab, var(--foreground) 6%, transparent);
+    border-color: color-mix(in oklab, var(--color-primary) 22%, transparent);
+    background:
+      radial-gradient(
+        120% 130% at 0% 0%,
+        color-mix(in oklab, var(--color-primary) 9%, transparent),
+        transparent 58%
+      ),
+      color-mix(in oklab, var(--card) 76%, transparent);
+    backdrop-filter: blur(10px);
+    color: var(--ci-ink);
+  }
+  .cracha-card__icon {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+  }
+  .cracha-card__spine {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(
+      to bottom,
+      var(--color-primary),
+      color-mix(in oklab, var(--color-primary) 35%, transparent)
+    );
+  }
+  .landing-shelf-card {
+    --card-accent: var(--color-primary);
+    border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
+    background-image: radial-gradient(
+      120% 140% at 0% 0%,
+      color-mix(in oklab, var(--card-accent) 9%, transparent),
+      transparent 55%
+    );
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.04);
+    transition:
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  .landing-shelf-card__accent {
+    color: var(--card-accent);
+  }
+  .landing-shelf-card:hover {
+    border-color: color-mix(in oklab, var(--card-accent) 46%, transparent);
+    box-shadow: 0 10px 28px -22px color-mix(in oklab, var(--card-accent) 80%, transparent);
+  }
 
-/* Um acento por card da home: mesmo formato, cores diferentes. */
-.card-accent--guide {
-  --card-accent: oklch(0.78 0.13 195);
-}
-.landing-shelf-card.card-accent--shelf {
-  --card-accent: oklch(0.74 0.16 305);
-}
-.game-card.card-accent--stop {
-  --card-accent: oklch(0.79 0.15 78);
-}
+  /* Um acento por card da home: mesmo formato, cores diferentes. */
+  .card-accent--guide {
+    --card-accent: oklch(0.78 0.13 195);
+  }
+  .landing-shelf-card.card-accent--shelf {
+    --card-accent: oklch(0.74 0.16 305);
+  }
+  .game-card.card-accent--stop {
+    --card-accent: oklch(0.79 0.15 78);
+  }
 
-/* Ações do card. */
-.cracha-cta {
-  display: inline-flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid transparent;
-  background: var(--color-primary);
-  color: oklch(0.18 0.03 285);
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-align: center;
-  transition:
-    transform 0.2s ease,
-    filter 0.2s ease;
-}
-.cracha-cta:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
-}
-.cracha-cta--ghost {
-  border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
-  background: transparent;
-  color: var(--ci-ink);
-}
+  /* Ações do card. */
+  .cracha-cta {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid transparent;
+    background: var(--color-primary);
+    color: oklch(0.18 0.03 285);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    transition:
+      transform 0.2s ease,
+      filter 0.2s ease;
+  }
+  .cracha-cta:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+  .cracha-cta--ghost {
+    border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+    background: transparent;
+    color: var(--ci-ink);
+  }
 
-/* Carta de apresentação: fonte monoespaçada leve, para parecer um rascunho
+  /* Carta de apresentação: fonte monoespaçada leve, para parecer um rascunho
    pronto para editar — com realce nos campos a preencher ([ ... ]). */
-.ciencia-letter {
-  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: -0.01em;
-  scrollbar-width: thin;
-}
+  .ciencia-letter {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: -0.01em;
+    scrollbar-width: thin;
+  }
 
-/* ===== Card de identidade do ORCID (dentro do chat) ===== */
-/* Card do fluxo "Ciência sem crachá" no chat: um bocado por vez. Herda a
+  /* ===== Card de identidade do ORCID (dentro do chat) ===== */
+  /* Card do fluxo "Ciência sem crachá" no chat: um bocado por vez. Herda a
    estética editorial do card da home para o pesquisador reconhecer que é o
    mesmo assunto, mas é compacto porque divide espaço com a conversa. */
-.ciencia-chat-card {
-  --ci-ink: oklch(0.24 0.03 260);
-  --ci-soft: oklch(0.46 0.03 260);
-  --ci-accent: oklch(0.5 0.15 32);
-  --ci-accent-2: oklch(0.5 0.1 205);
-  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--ci-rule);
-  border-radius: var(--radius-xl);
-  padding: 0.85rem 0.95rem;
-  color: var(--ci-ink);
-  background:
-    radial-gradient(130% 120% at 100% 0%, color-mix(in oklab, var(--ci-accent) 10%, transparent), transparent 60%),
-    var(--ci-surface);
-  box-shadow: 0 18px 40px -30px color-mix(in oklab, var(--ci-accent) 80%, transparent);
-  animation: orcid-card-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-.ciencia-chat-card__seal {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-  border-radius: 9999px;
-  color: oklch(0.98 0.02 60);
-  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), oklch(0.47 0.17 27));
-  box-shadow:
-    inset 0 1px 2px oklch(1 0 0 / 0.4),
-    inset 0 -2px 4px oklch(0.2 0.05 20 / 0.4);
-}
-.ciencia-chat-card--done .ciencia-chat-card__seal {
-  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.14 155), oklch(0.47 0.13 155));
-}
-.ciencia-chat-card__step {
-  display: grid;
-  place-items: center;
-  width: 1.55rem;
-  height: 1.55rem;
-  flex: none;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--ci-accent) 45%, transparent);
-  color: var(--ci-accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.ciencia-chat-card__why,
-.ciencia-chat-card__use {
-  border-left: 2px solid color-mix(in oklab, var(--ci-accent) 40%, transparent);
-  padding-left: 0.6rem;
-}
-.ciencia-chat-card__use {
-  border-left-color: color-mix(in oklab, var(--ci-accent-2) 45%, transparent);
-}
-
-.orcid-card {
-  --ci-ink: oklch(0.24 0.03 260);
-  --ci-soft: oklch(0.46 0.03 260);
-  --ci-accent: oklch(0.5 0.15 32);
-  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--ci-rule);
-  border-radius: var(--radius-xl);
-  padding: 0.85rem 0.95rem;
-  color: var(--ci-ink);
-  background:
-    radial-gradient(130% 120% at 100% 0%, color-mix(in oklab, var(--ci-accent) 10%, transparent), transparent 60%),
-    linear-gradient(180deg, oklch(0.995 0.006 85), oklch(0.975 0.012 80));
-  box-shadow: 0 18px 40px -30px color-mix(in oklab, var(--ci-accent) 80%, transparent);
-  animation: orcid-card-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-@keyframes orcid-card-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
+  .ciencia-chat-card {
+    --ci-ink: oklch(0.24 0.03 260);
+    --ci-soft: oklch(0.46 0.03 260);
+    --ci-accent: oklch(0.5 0.15 32);
+    --ci-accent-2: oklch(0.5 0.1 205);
+    --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--ci-rule);
+    border-radius: var(--radius-xl);
+    padding: 0.85rem 0.95rem;
+    color: var(--ci-ink);
+    background:
+      radial-gradient(
+        130% 120% at 100% 0%,
+        color-mix(in oklab, var(--ci-accent) 10%, transparent),
+        transparent 60%
+      ),
+      var(--ci-surface);
+    box-shadow: 0 18px 40px -30px color-mix(in oklab, var(--ci-accent) 80%, transparent);
+    animation: orcid-card-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
-  to {
-    opacity: 1;
-    transform: none;
+  .ciencia-chat-card__seal {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: 9999px;
+    color: oklch(0.98 0.02 60);
+    background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), oklch(0.47 0.17 27));
+    box-shadow:
+      inset 0 1px 2px oklch(1 0 0 / 0.4),
+      inset 0 -2px 4px oklch(0.2 0.05 20 / 0.4);
   }
-}
-.orcid-card__seal {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-  border-radius: 9999px;
-  color: oklch(0.98 0.02 60);
-  background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), oklch(0.47 0.17 27));
-  box-shadow:
-    inset 0 1px 2px oklch(1 0 0 / 0.4),
-    inset 0 -2px 4px oklch(0.2 0.05 20 / 0.4);
-}
-.orcid-card__input {
-  width: 100%;
-  height: 2.5rem;
-  padding: 0 2.25rem 0 0.75rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--ci-rule);
-  background: color-mix(in oklab, var(--background) 75%, transparent);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  color: var(--ci-ink);
-  outline: none;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-.orcid-card__input::placeholder {
-  letter-spacing: 0.08em;
-  color: color-mix(in oklab, var(--ci-soft) 60%, transparent);
-}
-.orcid-card__input:focus {
-  border-color: var(--ci-accent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ci-accent) 20%, transparent);
-}
+  .ciencia-chat-card--done .ciencia-chat-card__seal {
+    background: radial-gradient(circle at 32% 28%, oklch(0.62 0.14 155), oklch(0.47 0.13 155));
+  }
+  .ciencia-chat-card__step {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    flex: none;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in oklab, var(--ci-accent) 45%, transparent);
+    color: var(--ci-accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .ciencia-chat-card__why,
+  .ciencia-chat-card__use {
+    border-left: 2px solid color-mix(in oklab, var(--ci-accent) 40%, transparent);
+    padding-left: 0.6rem;
+  }
+  .ciencia-chat-card__use {
+    border-left-color: color-mix(in oklab, var(--ci-accent-2) 45%, transparent);
+  }
 
-/* ===== Onboarding do Pracinha (tela de entrada) ===== */
-.onboarding-panel {
-  --ci-ink: oklch(0.24 0.03 260);
-  --ci-soft: oklch(0.46 0.03 260);
-  --ci-accent: oklch(0.5 0.15 32);
-  --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 15%, transparent);
-  position: relative;
-  border: 1px solid var(--ci-rule);
-  border-radius: var(--radius-2xl);
-  padding: 1.35rem 1.5rem 1.5rem;
-  color: var(--ci-ink);
-  background:
-    radial-gradient(120% 130% at 100% 0%, color-mix(in oklab, var(--ci-accent) 9%, transparent), transparent 55%),
-    radial-gradient(120% 120% at 0% 100%, color-mix(in oklab, oklch(0.5 0.09 210) 7%, transparent), transparent 55%),
-    var(--ci-surface);
-  box-shadow: var(--paper-shadow);
-}
-.onboarding-main {
-  position: relative;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--ci-rule);
-  padding: 0.9rem 1rem;
-  background: var(--ci-surface-2);
-}
-.onboarding-main::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.85rem;
-  bottom: 0.85rem;
-  width: 3px;
-  border-radius: 9999px;
-  background: var(--ci-accent);
-}
-.onboarding-main__kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ci-accent);
-}
-.onboarding-ask {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 9999px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: oklch(0.18 0.03 285);
-  background: var(--ci-accent);
-  box-shadow: 0 8px 20px -12px color-mix(in oklab, var(--ci-accent) 90%, transparent);
-  cursor: pointer;
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease;
-}
-.onboarding-ask:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px -12px color-mix(in oklab, var(--ci-accent) 90%, transparent);
-}
-.onboarding-faq__trigger {
-  font-family: var(--font-serif);
-}
+  .orcid-card {
+    --ci-ink: oklch(0.24 0.03 260);
+    --ci-soft: oklch(0.46 0.03 260);
+    --ci-accent: oklch(0.5 0.15 32);
+    --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 16%, transparent);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--ci-rule);
+    border-radius: var(--radius-xl);
+    padding: 0.85rem 0.95rem;
+    color: var(--ci-ink);
+    background:
+      radial-gradient(
+        130% 120% at 100% 0%,
+        color-mix(in oklab, var(--ci-accent) 10%, transparent),
+        transparent 60%
+      ),
+      linear-gradient(180deg, oklch(0.995 0.006 85), oklch(0.975 0.012 80));
+    box-shadow: 0 18px 40px -30px color-mix(in oklab, var(--ci-accent) 80%, transparent);
+    animation: orcid-card-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes orcid-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .orcid-card__seal {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: 9999px;
+    color: oklch(0.98 0.02 60);
+    background: radial-gradient(circle at 32% 28%, oklch(0.62 0.17 30), oklch(0.47 0.17 27));
+    box-shadow:
+      inset 0 1px 2px oklch(1 0 0 / 0.4),
+      inset 0 -2px 4px oklch(0.2 0.05 20 / 0.4);
+  }
+  .orcid-card__input {
+    width: 100%;
+    height: 2.5rem;
+    padding: 0 2.25rem 0 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--ci-rule);
+    background: color-mix(in oklab, var(--background) 75%, transparent);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    color: var(--ci-ink);
+    outline: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .orcid-card__input::placeholder {
+    letter-spacing: 0.08em;
+    color: color-mix(in oklab, var(--ci-soft) 60%, transparent);
+  }
+  .orcid-card__input:focus {
+    border-color: var(--ci-accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ci-accent) 20%, transparent);
+  }
 
-/* Controles que hoje só aparecem no hover (excluir artigo, ações da mensagem).
+  /* ===== Onboarding do Pracinha (tela de entrada) ===== */
+  .onboarding-panel {
+    --ci-ink: oklch(0.24 0.03 260);
+    --ci-soft: oklch(0.46 0.03 260);
+    --ci-accent: oklch(0.5 0.15 32);
+    --ci-rule: color-mix(in oklab, oklch(0.24 0.03 260) 15%, transparent);
+    position: relative;
+    border: 1px solid var(--ci-rule);
+    border-radius: var(--radius-2xl);
+    padding: 1.35rem 1.5rem 1.5rem;
+    color: var(--ci-ink);
+    background:
+      radial-gradient(
+        120% 130% at 100% 0%,
+        color-mix(in oklab, var(--ci-accent) 9%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        120% 120% at 0% 100%,
+        color-mix(in oklab, oklch(0.5 0.09 210) 7%, transparent),
+        transparent 55%
+      ),
+      var(--ci-surface);
+    box-shadow: var(--paper-shadow);
+  }
+  .onboarding-main {
+    position: relative;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--ci-rule);
+    padding: 0.9rem 1rem;
+    background: var(--ci-surface-2);
+  }
+  .onboarding-main::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.85rem;
+    bottom: 0.85rem;
+    width: 3px;
+    border-radius: 9999px;
+    background: var(--ci-accent);
+  }
+  .onboarding-main__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ci-accent);
+  }
+  .onboarding-ask {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: oklch(0.18 0.03 285);
+    background: var(--ci-accent);
+    box-shadow: 0 8px 20px -12px color-mix(in oklab, var(--ci-accent) 90%, transparent);
+    cursor: pointer;
+    transition:
+      transform 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+  .onboarding-ask:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px -12px color-mix(in oklab, var(--ci-accent) 90%, transparent);
+  }
+  .onboarding-faq__trigger {
+    font-family: var(--font-serif);
+  }
+
+  /* Controles que hoje só aparecem no hover (excluir artigo, ações da mensagem).
    Em telas de toque não há hover: ficam sempre visíveis para continuarem
    acessíveis no celular. */
-@media (hover: none) {
-  .touch-visible {
-    opacity: 1 !important;
+  @media (hover: none) {
+    .touch-visible {
+      opacity: 1 !important;
+    }
   }
-}
 
-/* ===== Mapa da entrevista (faixa sob o cabeçalho do chat) =====
+  /* ===== Mapa da entrevista (faixa sob o cabeçalho do chat) =====
    Seis pílulas, uma por seção do artigo. Cabe numa linha e rola na horizontal no
    celular; o estado nunca é só cor — cada item tem ícone e texto para leitor de
    tela. */
-.interview-map__item {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 0.25rem;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
-  padding: 0.15rem 0.5rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--muted-foreground);
-  white-space: nowrap;
-}
-.interview-map__dot {
-  width: 0.3rem;
-  height: 0.3rem;
-  flex: none;
-  border-radius: 9999px;
-  background: currentColor;
-  opacity: 0.45;
-}
-.interview-map__item[data-state="answered"] {
-  border-color: color-mix(in oklab, var(--primary) 40%, transparent);
-  background: color-mix(in oklab, var(--primary) 12%, transparent);
-  color: var(--primary);
-}
-.interview-map__item[data-state="skipped"] {
-  border-style: dashed;
-  opacity: 0.75;
-}
-.interview-map__item[data-state="current"] {
-  border-color: color-mix(in oklab, var(--primary) 60%, transparent);
-  color: var(--foreground);
-}
-.interview-map__item[data-state="current"] .interview-map__dot {
-  background: var(--primary);
-  opacity: 1;
-  animation: interview-map-pulse 1.8s ease-in-out infinite;
-}
-@keyframes interview-map-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
+  .interview-map__item {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+    padding: 0.15rem 0.5rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    white-space: nowrap;
   }
-  50% {
-    transform: scale(1.5);
-    opacity: 0.55;
+  .interview-map__dot {
+    width: 0.3rem;
+    height: 0.3rem;
+    flex: none;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.45;
   }
-}
-@media (prefers-reduced-motion: reduce) {
+  .interview-map__item[data-state="answered"] {
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent);
+    background: color-mix(in oklab, var(--primary) 12%, transparent);
+    color: var(--primary);
+  }
+  .interview-map__item[data-state="skipped"] {
+    border-style: dashed;
+    opacity: 0.75;
+  }
+  .interview-map__item[data-state="current"] {
+    border-color: color-mix(in oklab, var(--primary) 60%, transparent);
+    color: var(--foreground);
+  }
   .interview-map__item[data-state="current"] .interview-map__dot {
-    animation: none;
-  }
-}
-
-/* ===== Céu profundo: movimento e respeito ao usuário ===== */
-
-/* Nebulosa respirando devagar: dá vida ao fundo sem competir com o texto. */
-@keyframes nebula-breathe {
-  0%,
-  100% {
-    opacity: 0.85;
-  }
-  50% {
+    background: var(--primary);
     opacity: 1;
+    animation: interview-map-pulse 1.8s ease-in-out infinite;
   }
-}
+  @keyframes interview-map-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.5);
+      opacity: 0.55;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .interview-map__item[data-state="current"] .interview-map__dot {
+      animation: none;
+    }
+  }
 
-/* ===== Acervo em linhas: lista densa que abre no lugar ===== */
-/* Antes: 30 cartões abertos = ~10.000px no celular. Agora cada obra ocupa uma
+  /* ===== Céu profundo: movimento e respeito ao usuário ===== */
+
+  /* Nebulosa respirando devagar: dá vida ao fundo sem competir com o texto. */
+  @keyframes nebula-breathe {
+    0%,
+    100% {
+      opacity: 0.85;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* ===== Acervo em linhas: lista densa que abre no lugar ===== */
+  /* Antes: 30 cartões abertos = ~10.000px no celular. Agora cada obra ocupa uma
    linha de ~64px e só paga o custo do detalhe quando o leitor pede. */
 
-.acervo-list {
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--color-border);
-}
-
-.acervo-row {
-  border-bottom: 1px solid var(--color-border);
-  transition: background-color 0.18s ease;
-}
-
-.acervo-row.is-open {
-  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-}
-
-.acervo-row__head {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 0.25rem;
-  min-height: 3.5rem;
-  text-align: left;
-  background: none;
-  cursor: pointer;
-}
-
-.acervo-row__head:focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
-.acervo-row__year {
-  flex: none;
-  width: 3.1rem;
-  font-family: var(--font-serif);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.acervo-row__main {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.acervo-row__title {
-  font-family: var(--font-serif);
-  font-size: 0.97rem;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--color-foreground);
-  /* Duas linhas no máximo: mantém o ritmo da lista previsível. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.acervo-row__authors {
-  font-size: 0.74rem;
-  color: var(--color-muted-foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.acervo-row__seal {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 9999px;
-}
-
-.acervo-row__seal--classico {
-  background: color-mix(in oklab, var(--color-star-amber) 18%, transparent);
-  color: var(--color-star-amber);
-}
-
-.acervo-row__seal--ok {
-  background: color-mix(in oklab, var(--color-success) 18%, transparent);
-  color: var(--color-success);
-}
-
-.acervo-row__seal--pending {
-  background: color-mix(in oklab, var(--color-muted-foreground) 16%, transparent);
-  color: var(--color-muted-foreground);
-}
-
-.acervo-row__chevron {
-  flex: none;
-  color: var(--color-muted-foreground);
-  transition: transform 0.22s ease;
-}
-
-.acervo-row.is-open .acervo-row__chevron {
-  transform: rotate(180deg);
-  color: var(--color-primary);
-}
-
-.acervo-row__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0 0.25rem 1rem;
-  animation: row-open 0.22s ease-out;
-}
-
-@keyframes row-open {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
+  .acervo-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--color-border);
   }
-  to {
-    opacity: 1;
-    transform: none;
+
+  .acervo-row {
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.18s ease;
   }
-}
 
-.acervo-row__orig {
-  font-family: var(--font-serif);
-  font-size: 0.8rem;
-  font-style: italic;
-  color: var(--color-muted-foreground);
-}
+  .acervo-row.is-open {
+    background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+  }
 
-.acervo-row__meta {
-  font-size: 0.78rem;
-  color: var(--color-muted-foreground);
-}
+  .acervo-row__head {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.25rem;
+    min-height: 3.5rem;
+    text-align: left;
+    background: none;
+    cursor: pointer;
+  }
 
-.acervo-row__note {
-  border-left: 2px solid color-mix(in oklab, var(--color-primary) 55%, transparent);
-  padding-left: 0.7rem;
-  font-size: 0.86rem;
-  line-height: 1.55;
-}
+  .acervo-row__head:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 
-.acervo-row__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
+  .acervo-row__year {
+    flex: none;
+    width: 3.1rem;
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
 
-.acervo-row__doi {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.7rem;
-  color: var(--color-primary);
-  overflow-wrap: anywhere;
-}
+  .acervo-row__main {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
 
-.acervo-row__doi:hover {
-  text-decoration: underline;
-}
+  .acervo-row__title {
+    font-family: var(--font-serif);
+    font-size: 0.97rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-foreground);
+    /* Duas linhas no máximo: mantém o ritmo da lista previsível. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 
-.acervo-row__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.15rem;
-}
+  .acervo-row__authors {
+    font-size: 0.74rem;
+    color: var(--color-muted-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  .acervo-row__body,
+  .acervo-row__seal {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 9999px;
+  }
+
+  .acervo-row__seal--classico {
+    background: color-mix(in oklab, var(--color-star-amber) 18%, transparent);
+    color: var(--color-star-amber);
+  }
+
+  .acervo-row__seal--ok {
+    background: color-mix(in oklab, var(--color-success) 18%, transparent);
+    color: var(--color-success);
+  }
+
+  .acervo-row__seal--pending {
+    background: color-mix(in oklab, var(--color-muted-foreground) 16%, transparent);
+    color: var(--color-muted-foreground);
+  }
+
   .acervo-row__chevron {
-    animation: none;
-    transition: none;
+    flex: none;
+    color: var(--color-muted-foreground);
+    transition: transform 0.22s ease;
   }
-}
 
-/* ===== Faixa do protocolo no compositor do chat =====
+  .acervo-row.is-open .acervo-row__chevron {
+    transform: rotate(180deg);
+    color: var(--color-primary);
+  }
+
+  .acervo-row__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0 0.25rem 1rem;
+    animation: row-open 0.22s ease-out;
+  }
+
+  @keyframes row-open {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .acervo-row__orig {
+    font-family: var(--font-serif);
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--color-muted-foreground);
+  }
+
+  .acervo-row__meta {
+    font-size: 0.78rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .acervo-row__note {
+    border-left: 2px solid color-mix(in oklab, var(--color-primary) 55%, transparent);
+    padding-left: 0.7rem;
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+
+  .acervo-row__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .acervo-row__doi {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--color-primary);
+    overflow-wrap: anywhere;
+  }
+
+  .acervo-row__doi:hover {
+    text-decoration: underline;
+  }
+
+  .acervo-row__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .acervo-row__body,
+    .acervo-row__chevron {
+      animation: none;
+      transition: none;
+    }
+  }
+
+  /* ===== Faixa do protocolo no compositor do chat =====
    Uma linha discreta em vez de cinco cartões empilhados. Fechada, mostra só
    onde estamos ("3/10 Metodologia"); aberta, revela a ordem completa sem tirar
    o foco do campo de escrita. */
-.chat-protocol {
-  border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
-  border-radius: var(--radius-lg);
-  background: color-mix(in oklab, var(--foreground) 4%, transparent);
-  overflow: hidden;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-.chat-protocol[data-open="true"] {
-  border-color: color-mix(in oklab, var(--color-primary) 32%, transparent);
-  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-}
-.chat-protocol__bar {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  min-height: 2rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--foreground);
-  cursor: pointer;
-  text-align: left;
-}
-.chat-protocol__bar:hover {
-  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
-}
-.chat-protocol__body {
-  padding: 0 0.6rem 0.55rem;
-  animation: ciencia-panel-in 0.24s ease both;
-}
-.chat-protocol__list {
-  display: grid;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  gap: 0.15rem;
-  font-size: 0.68rem;
-  color: var(--muted-foreground);
-}
-.chat-protocol__list > li {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  padding: 0.1rem 0.25rem;
-  border-radius: 0.3rem;
-}
-.chat-protocol__list > li > span {
-  min-width: 1rem;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.6;
-}
-.chat-protocol__list > li[data-active] {
-  color: var(--color-primary);
-  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
-  font-weight: 600;
-}
+  .chat-protocol {
+    border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--foreground) 4%, transparent);
+    overflow: hidden;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
+  }
+  .chat-protocol[data-open="true"] {
+    border-color: color-mix(in oklab, var(--color-primary) 32%, transparent);
+    background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+  }
+  .chat-protocol__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--foreground);
+    cursor: pointer;
+    text-align: left;
+  }
+  .chat-protocol__bar:hover {
+    background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+  }
+  .chat-protocol__body {
+    padding: 0 0.6rem 0.55rem;
+    animation: ciencia-panel-in 0.24s ease both;
+  }
+  .chat-protocol__list {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0.15rem;
+    font-size: 0.68rem;
+    color: var(--muted-foreground);
+  }
+  .chat-protocol__list > li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.1rem 0.25rem;
+    border-radius: 0.3rem;
+  }
+  .chat-protocol__list > li > span {
+    min-width: 1rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+  }
+  .chat-protocol__list > li[data-active] {
+    color: var(--color-primary);
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    font-weight: 600;
+  }
 
-/* Card do joguinho ("Stop científico").
+  /* Card do joguinho ("Stop científico").
    Compacto de propósito: uma linha com as categorias e o botão. Aparece nas
    telas de espera (cota esgotada, 404) e na home. O jogo em si é um projeto
    separado, acoplado por `VITE_GAME_URL`. */
-.game-card {
-  --card-accent: var(--color-primary);
-  position: relative;
-  overflow: hidden;
-  border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
-  background:
-    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--card-accent) 10%, transparent), transparent 60%),
-    color-mix(in oklab, var(--card) 80%, transparent);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-/* Um halo que atravessa o card devagar: dá vida sem competir com o texto. */
-.game-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    transparent 30%,
-    color-mix(in oklab, var(--card-accent) 12%, transparent) 50%,
-    transparent 70%
-  );
-  background-size: 220% 100%;
-  animation: game-card-sheen 7s ease-in-out infinite;
-}
-.game-card:hover {
-  border-color: color-mix(in oklab, var(--card-accent) 46%, transparent);
-  box-shadow: 0 4px 18px -10px color-mix(in oklab, var(--card-accent) 65%, transparent);
-}
-.game-card__icon {
-  display: grid;
-  place-items: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  flex: none;
-  border-radius: var(--radius-md);
-  background: color-mix(in oklab, var(--card-accent) 14%, transparent);
-  color: var(--card-accent);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.game-card:hover .game-card__icon {
-  transform: rotate(-8deg) scale(1.06);
-}
-.game-card__chip {
-  border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
-  padding: 0.05rem 0.45rem;
-  font-size: 0.65rem;
-  line-height: 1.5;
-  color: var(--muted-foreground);
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-.game-card:hover .game-card__chip {
-  border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
-  color: color-mix(in oklab, var(--foreground) 82%, transparent);
-}
-.game-card__cta {
-  display: inline-flex;
-  flex: none;
-  min-height: 2.75rem;
-  align-items: center;
-  gap: 0.3rem;
-  border-radius: var(--radius-md);
-  border: 1px solid color-mix(in oklab, var(--card-accent) 38%, transparent);
-  padding: 0 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--card-accent);
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-.game-card__cta:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--card-accent) 12%, transparent);
-  transform: translateY(-1px);
-}
-.game-card__cta:disabled {
-  cursor: not-allowed;
-  border-style: dashed;
-  opacity: 0.6;
-}
-@keyframes game-card-sheen {
-  0%,
-  100% {
-    background-position: 180% 0;
+  .game-card {
+    --card-accent: var(--color-primary);
+    position: relative;
+    overflow: hidden;
+    border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
+    background:
+      radial-gradient(
+        120% 140% at 0% 0%,
+        color-mix(in oklab, var(--card-accent) 10%, transparent),
+        transparent 60%
+      ),
+      color-mix(in oklab, var(--card) 80%, transparent);
+    transition:
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
   }
-  50% {
-    background-position: -80% 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
+  /* Um halo que atravessa o card devagar: dá vida sem competir com o texto. */
   .game-card::after {
-    animation: none;
-    opacity: 0.5;
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in oklab, var(--card-accent) 12%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 220% 100%;
+    animation: game-card-sheen 7s ease-in-out infinite;
   }
-  .game-card__icon,
-  .game-card__cta {
-    transition: none;
+  .game-card:hover {
+    border-color: color-mix(in oklab, var(--card-accent) 46%, transparent);
+    box-shadow: 0 4px 18px -10px color-mix(in oklab, var(--card-accent) 65%, transparent);
+  }
+  .game-card__icon {
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    flex: none;
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--card-accent) 14%, transparent);
+    color: var(--card-accent);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .game-card:hover .game-card__icon {
-    transform: none;
+    transform: rotate(-8deg) scale(1.06);
   }
-}
-.game-card__frame {
-  width: 100%;
-  height: min(70dvh, 34rem);
-  border: 0;
-  border-radius: var(--radius-lg);
-  background: var(--background);
-}
+  .game-card__chip {
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+    padding: 0.05rem 0.45rem;
+    font-size: 0.65rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .game-card:hover .game-card__chip {
+    border-color: color-mix(in oklab, var(--card-accent) 26%, transparent);
+    color: color-mix(in oklab, var(--foreground) 82%, transparent);
+  }
+  .game-card__cta {
+    display: inline-flex;
+    flex: none;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--card-accent) 38%, transparent);
+    padding: 0 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--card-accent);
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .game-card__cta:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--card-accent) 12%, transparent);
+    transform: translateY(-1px);
+  }
+  .game-card__cta:disabled {
+    cursor: not-allowed;
+    border-style: dashed;
+    opacity: 0.6;
+  }
+  @keyframes game-card-sheen {
+    0%,
+    100% {
+      background-position: 180% 0;
+    }
+    50% {
+      background-position: -80% 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .game-card::after {
+      animation: none;
+      opacity: 0.5;
+    }
+    .game-card__icon,
+    .game-card__cta {
+      transition: none;
+    }
+    .game-card:hover .game-card__icon {
+      transform: none;
+    }
+  }
+  .game-card__frame {
+    width: 100%;
+    height: min(70dvh, 34rem);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--background);
+  }
 }
 
 @keyframes pracinha-spin {
@@ -1425,10 +1458,7 @@
       color-mix(in oklab, var(--color-primary) 10%, transparent),
       transparent 60%
     ),
-    radial-gradient(
-      color-mix(in oklab, var(--color-border) 60%, transparent) 1px,
-      transparent 1px
-    );
+    radial-gradient(color-mix(in oklab, var(--color-border) 60%, transparent) 1px, transparent 1px);
   background-size:
     100% 100%,
     22px 22px;
@@ -1865,7 +1895,10 @@
   inset: 0;
   z-index: 0;
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-primary) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      color-mix(in oklab, var(--color-primary) 18%, transparent) 1px,
+      transparent 1px
+    ),
     linear-gradient(
       90deg,
       color-mix(in oklab, var(--color-primary) 18%, transparent) 1px,
@@ -1879,16 +1912,6 @@
   pointer-events: none;
 }
 /* Filete editorial sob o cabeçalho da home. */
-.landing-rule {
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary),
-    color-mix(in oklab, var(--color-primary) 20%, transparent) 40%,
-    transparent
-  );
-  opacity: 0.5;
-}
 .landing-badge {
   box-shadow: 0 10px 26px -18px color-mix(in oklab, var(--color-primary) 70%, transparent);
 }
@@ -2685,7 +2708,6 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-
 }
 
 /* ============================================================
@@ -3014,9 +3036,21 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(60rem 34rem at 78% -8%, color-mix(in oklab, var(--stop-violet) 16%, transparent), transparent 70%),
-    radial-gradient(46rem 30rem at 6% 12%, color-mix(in oklab, var(--stop-cyan) 12%, transparent), transparent 72%),
-    radial-gradient(38rem 26rem at 50% 110%, color-mix(in oklab, var(--stop-amber) 9%, transparent), transparent 70%),
+    radial-gradient(
+      60rem 34rem at 78% -8%,
+      color-mix(in oklab, var(--stop-violet) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      46rem 30rem at 6% 12%,
+      color-mix(in oklab, var(--stop-cyan) 12%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      38rem 26rem at 50% 110%,
+      color-mix(in oklab, var(--stop-amber) 9%, transparent),
+      transparent 70%
+    ),
     linear-gradient(to bottom, var(--color-background), var(--color-background));
 }
 
@@ -3025,8 +3059,15 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--color-foreground) 5%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in oklab, var(--color-foreground) 5%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-foreground) 5%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 44px 44px;
   mask-image: radial-gradient(70% 60% at 50% 0%, black, transparent 78%);
   opacity: 0.5;
@@ -3103,7 +3144,11 @@
   border-radius: 1rem;
   border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
   background:
-    radial-gradient(120% 120% at 100% 0%, color-mix(in oklab, var(--stop-amber) 10%, transparent), transparent 60%),
+    radial-gradient(
+      120% 120% at 100% 0%,
+      color-mix(in oklab, var(--stop-amber) 10%, transparent),
+      transparent 60%
+    ),
     color-mix(in oklab, var(--color-card) 82%, transparent);
   padding: 1rem 1.1rem 1.1rem;
   backdrop-filter: blur(10px);
@@ -3329,7 +3374,11 @@
 .stop-node.is-done {
   border-color: color-mix(in oklab, var(--stop-amber) 60%, transparent);
   background:
-    radial-gradient(120% 120% at 30% 20%, color-mix(in oklab, var(--stop-amber) 22%, transparent), transparent 62%),
+    radial-gradient(
+      120% 120% at 30% 20%,
+      color-mix(in oklab, var(--stop-amber) 22%, transparent),
+      transparent 62%
+    ),
     color-mix(in oklab, var(--color-background) 70%, transparent);
   color: var(--stop-amber);
   box-shadow: 0 10px 30px -18px color-mix(in oklab, var(--stop-amber) 80%, transparent);
@@ -3438,7 +3487,11 @@
 
 .stop-primary {
   border: 1px solid color-mix(in oklab, var(--stop-amber) 55%, transparent);
-  background: linear-gradient(120deg, color-mix(in oklab, var(--stop-amber) 92%, white 8%), var(--stop-amber));
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--stop-amber) 92%, white 8%),
+    var(--stop-amber)
+  );
   color: color-mix(in oklab, var(--color-background) 88%, black);
   box-shadow: 0 12px 28px -16px color-mix(in oklab, var(--stop-amber) 90%, transparent);
 }
@@ -3472,7 +3525,11 @@
   overflow-y: auto;
   padding: 0 1rem 2rem;
   background:
-    radial-gradient(50rem 30rem at 50% -10%, color-mix(in oklab, var(--stop-violet) 18%, transparent), transparent 70%),
+    radial-gradient(
+      50rem 30rem at 50% -10%,
+      color-mix(in oklab, var(--stop-violet) 18%, transparent),
+      transparent 70%
+    ),
     color-mix(in oklab, var(--color-background) 96%, black);
   backdrop-filter: blur(14px);
   animation: stop-fade 220ms ease-out;
@@ -3488,7 +3545,11 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(40rem 18rem at 50% 0%, color-mix(in oklab, var(--stop-cyan) 10%, transparent), transparent 70%);
+  background: radial-gradient(
+    40rem 18rem at 50% 0%,
+    color-mix(in oklab, var(--stop-cyan) 10%, transparent),
+    transparent 70%
+  );
 }
 
 .stop-arena__bar {
@@ -3502,7 +3563,11 @@
   width: 100%;
   max-width: 900px;
   padding: 0.9rem 0;
-  background: linear-gradient(to bottom, color-mix(in oklab, var(--color-background) 96%, black) 65%, transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-background) 96%, black) 65%,
+    transparent
+  );
 }
 
 .stop-arena__id {
@@ -3581,22 +3646,6 @@
   animation: stop-blink 1s steps(2, start) infinite;
 }
 
-.stop-brief {
-  margin: 0 auto;
-  width: 100%;
-  max-width: 900px;
-  display: grid;
-  gap: 1.4rem;
-  align-items: start;
-}
-
-@media (min-width: 780px) {
-  .stop-brief {
-    grid-template-columns: 240px minmax(0, 1fr);
-    gap: 2rem;
-  }
-}
-
 .stop-letter-card {
   display: flex;
   flex-direction: column;
@@ -3605,7 +3654,11 @@
   border-radius: 1.1rem;
   border: 1px solid color-mix(in oklab, var(--stop-amber) 45%, transparent);
   background:
-    radial-gradient(120% 120% at 50% 0%, color-mix(in oklab, var(--stop-amber) 16%, transparent), transparent 65%),
+    radial-gradient(
+      120% 120% at 50% 0%,
+      color-mix(in oklab, var(--stop-amber) 16%, transparent),
+      transparent 65%
+    ),
     color-mix(in oklab, var(--color-card) 85%, transparent);
   padding: 1.5rem 1rem;
   box-shadow: 0 24px 60px -40px color-mix(in oklab, var(--stop-amber) 90%, transparent);
@@ -3635,12 +3688,6 @@
   color: var(--color-muted-foreground);
 }
 
-.stop-brief__lead {
-  font-family: var(--font-serif, Georgia, serif);
-  font-size: 1.15rem;
-  line-height: 1.45;
-}
-
 .stop-brief__fields {
   margin-top: 1rem;
   display: grid;
@@ -3665,19 +3712,6 @@
 .stop-brief__fields small {
   font-size: 0.65rem;
   color: var(--color-muted-foreground);
-}
-
-.stop-brief__rules {
-  margin: 1rem 0 1.2rem;
-  display: grid;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: var(--color-muted-foreground);
-}
-
-.stop-brief__rules strong {
-  color: var(--color-foreground);
 }
 
 .stop-board {
@@ -3826,7 +3860,11 @@
   min-height: 3.1rem;
   border-radius: 0.8rem;
   border: 1px solid color-mix(in oklab, var(--stop-amber) 60%, transparent);
-  background: linear-gradient(120deg, var(--stop-amber), color-mix(in oklab, var(--stop-amber) 78%, oklch(0.68 0.18 45)));
+  background: linear-gradient(
+    120deg,
+    var(--stop-amber),
+    color-mix(in oklab, var(--stop-amber) 78%, oklch(0.68 0.18 45))
+  );
   color: color-mix(in oklab, var(--color-background) 90%, black);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 1rem;
@@ -3910,6 +3948,7 @@
 }
 
 .stop-result__hero {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 0.3rem;
@@ -4082,13 +4121,13 @@
   color: var(--color-muted-foreground);
 }
 
-.stop-result__judge,
-.stop-result__record {
+.stop-result__judge {
   font-size: 0.66rem;
   color: var(--color-muted-foreground);
 }
 
 .stop-result__record {
+  font-size: 0.66rem;
   color: var(--stop-amber);
 }
 
@@ -4191,8 +4230,16 @@
   overflow: hidden;
   padding: 3rem 1.25rem;
   background:
-    radial-gradient(38rem 26rem at 50% 8%, color-mix(in oklab, var(--stop-violet) 22%, transparent), transparent 70%),
-    radial-gradient(30rem 22rem at 82% 82%, color-mix(in oklab, var(--stop-amber) 12%, transparent), transparent 72%),
+    radial-gradient(
+      38rem 26rem at 50% 8%,
+      color-mix(in oklab, var(--stop-violet) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      30rem 22rem at 82% 82%,
+      color-mix(in oklab, var(--stop-amber) 12%, transparent),
+      transparent 72%
+    ),
     color-mix(in oklab, var(--color-background) 97%, black);
   animation: stop-fade 260ms ease-out;
 }
@@ -4242,7 +4289,11 @@
   width: 46rem;
   height: 20rem;
   translate: -50% 0;
-  background: radial-gradient(closest-side, color-mix(in oklab, var(--stop-amber) 16%, transparent), transparent 78%);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--stop-amber) 16%, transparent),
+    transparent 78%
+  );
   filter: blur(6px);
   animation: stop-breathe 9s ease-in-out infinite;
 }
@@ -4300,7 +4351,12 @@
 
 .stop-intro__letter {
   display: inline-block;
-  background: linear-gradient(170deg, var(--stop-amber) 10%, var(--color-foreground) 55%, var(--stop-cyan));
+  background: linear-gradient(
+    170deg,
+    var(--stop-amber) 10%,
+    var(--color-foreground) 55%,
+    var(--stop-cyan)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -4364,7 +4420,11 @@
   min-height: 3.2rem;
   border-radius: 0.9rem;
   border: 1px solid color-mix(in oklab, var(--stop-amber) 65%, transparent);
-  background: linear-gradient(120deg, color-mix(in oklab, var(--stop-amber) 92%, white 8%), var(--stop-amber));
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--stop-amber) 92%, white 8%),
+    var(--stop-amber)
+  );
   padding: 0 1.4rem;
   font-size: 0.95rem;
   font-weight: 700;
@@ -4380,7 +4440,12 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, white 45%, transparent) 50%, transparent 70%);
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklab, white 45%, transparent) 50%,
+    transparent 70%
+  );
   transform: translateX(-120%);
   animation: stop-shine 3.6s ease-in-out infinite;
 }
@@ -4458,7 +4523,11 @@
   gap: 0.2rem;
   padding-bottom: 14vh;
   pointer-events: none;
-  background: radial-gradient(closest-side, color-mix(in oklab, var(--color-background) 55%, transparent), transparent 85%);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--color-background) 55%, transparent),
+    transparent 85%
+  );
 }
 
 .stop-countdown__label {
@@ -4497,10 +4566,6 @@
   animation: stop-breathe 1.6s ease-in-out infinite;
 }
 
-.stop-result__hero {
-  position: relative;
-}
-
 .stop-result__burst {
   position: absolute;
   top: 40%;
@@ -4524,7 +4589,9 @@
     transparent 2.4deg 26deg
   );
   mask-image: radial-gradient(closest-side, transparent 18%, black 38%, black 58%, transparent 74%);
-  animation: stop-orbit 34s linear infinite, stop-fade 700ms ease-out both;
+  animation:
+    stop-orbit 34s linear infinite,
+    stop-fade 700ms ease-out both;
   opacity: 0.85;
 }
 
@@ -4639,7 +4706,6 @@
     opacity: 1;
     filter: none;
   }
-
 }
 
 .stop-intro__eras {
@@ -4695,4 +4761,286 @@
     animation: none;
     opacity: 1;
   }
+}
+
+/* Briefing de missão: a fase é apresentada como uma ficha, não como texto solto. */
+.stop-mission {
+  display: flex;
+  flex-direction: column;
+  gap: 1.05rem;
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+  border-radius: 1.1rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 75%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-card) 55%, transparent),
+    transparent 65%
+  );
+  padding: clamp(1.1rem, 2.2vw, 1.8rem);
+  animation: stop-fade-up 320ms ease-out both;
+}
+
+.stop-mission__head {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.stop-mission__era {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: color-mix(in oklab, var(--stop-amber) 85%, white 15%);
+}
+
+.stop-mission__title {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.stop-mission__lead {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 0.95rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--color-muted-foreground);
+}
+
+.stop-mission__grid {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.stop-mission__panel {
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+  background: color-mix(in oklab, var(--color-background) 45%, transparent);
+  padding: 0.6rem 0.7rem;
+}
+
+.stop-mission__panel-kicker {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-muted-foreground);
+}
+
+.stop-mission__panel ul {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.stop-mission__panel li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+}
+
+.stop-mission__goal-stars {
+  display: inline-flex;
+  gap: 1px;
+  color: var(--stop-amber);
+}
+
+.stop-mission__goal-points {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: 600;
+  min-width: 1.5rem;
+}
+
+.stop-mission__goal-label {
+  margin-left: auto;
+  font-size: 0.62rem;
+  color: var(--color-muted-foreground);
+}
+
+.stop-mission__best {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  color: var(--stop-amber);
+}
+
+.stop-mission__score li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--color-muted-foreground);
+}
+
+.stop-mission__score b {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--color-foreground);
+}
+
+.stop-mission__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.stop-mission__hint {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.64rem;
+  color: var(--color-muted-foreground);
+}
+
+.stop-mission__hint kbd {
+  border: 1px solid color-mix(in oklab, var(--color-border) 90%, transparent);
+  border-radius: 0.3rem;
+  padding: 0 0.25rem;
+  font-size: 0.62rem;
+  color: var(--color-foreground);
+}
+
+@media (min-width: 680px) {
+  .stop-mission__grid {
+    grid-template-columns: 128px minmax(0, 1fr) minmax(0, 0.8fr);
+  }
+}
+
+@media (max-width: 679px) {
+  .stop-mission__grid {
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+
+  .stop-mission__grid > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .stop-mission__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stop-mission {
+    animation: none;
+  }
+}
+
+/* O briefing fica no centro da arena; em telas baixas volta ao topo para não cortar. */
+.stop-mission {
+  margin-block: auto;
+}
+
+@media (max-height: 760px) {
+  .stop-mission {
+    margin-block: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .stop-letter-card__letter {
+    font-size: 4rem;
+  }
+}
+
+/* Seletor de campanha: a primeira decisão da expedição é o tema. */
+.stop-campaigns {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.stop-campaign-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 0.8rem;
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  background: color-mix(in oklab, var(--color-card) 55%, transparent);
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.stop-campaign-tab:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--stop-cyan) 45%, transparent);
+}
+
+.stop-campaign-tab.is-active {
+  border-color: color-mix(in oklab, var(--stop-amber) 60%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--stop-amber) 14%, transparent),
+      transparent 80%
+    ),
+    color-mix(in oklab, var(--color-card) 75%, transparent);
+  box-shadow: 0 10px 30px -22px color-mix(in oklab, var(--stop-amber) 90%, transparent);
+}
+
+.stop-campaign-tab__numeral {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-border) 90%, transparent);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  color: var(--color-muted-foreground);
+}
+
+.stop-campaign-tab.is-active .stop-campaign-tab__numeral {
+  border-color: color-mix(in oklab, var(--stop-amber) 55%, transparent);
+  color: var(--stop-amber);
+}
+
+.stop-campaign-tab__text {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.stop-campaign-tab__title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.stop-campaign-tab__tagline {
+  font-size: 0.6rem;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
+}
+
+.stop-campaign-tab__stars {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  color: var(--color-muted-foreground);
+}
+
+.stop-campaign-tab.is-full .stop-campaign-tab__stars {
+  color: var(--stop-amber);
+}
+
+.stop-era.is-active {
+  animation: stop-fade-up 260ms ease-out both;
 }

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, RotateCcw, Sparkles, Star, Trophy, X } fr
 import { cn } from "@/lib/utils";
 import {
   STOP_SCORING,
+  campaignOfLevel,
   localStopVerdict,
   scoreStopRound,
   starThresholds,
@@ -72,7 +73,8 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const total = level.categories.length;
-  const [one, , three] = starThresholds(level);
+  const [one, two, three] = starThresholds(level);
+  const campaign = campaignOfLevel(level);
 
   const filled = answers.filter((answer) => answer.trim()).length;
   const locallyValid = useMemo(
@@ -167,14 +169,33 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
     if (phase === "playing") inputsRef.current[0]?.focus();
   }, [phase, runId]);
 
-  const start = () => {
+  const start = useCallback(() => {
     submittedRef.current = false;
     answersRef.current = level.categories.map(() => "");
     setAnswers(level.categories.map(() => ""));
     setResult(null);
     setRemaining(level.seconds);
     setPhase("countdown");
-  };
+  }, [level.categories, level.seconds]);
+
+  // No briefing, Enter começa e Esc volta ao mapa — o tabuleiro ainda não tem foco.
+  useEffect(() => {
+    if (phase !== "brief") return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onExit();
+        return;
+      }
+      if (event.key !== "Enter") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && ["BUTTON", "INPUT", "TEXTAREA"].includes(active.tagName))
+        return;
+      event.preventDefault();
+      start();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, onExit, start]);
 
   const updateAnswer = (index: number, value: string) => {
     setAnswers((previous) => {
@@ -227,44 +248,91 @@ export function StopArena({ level, bestScore, onSubmit, onExit, onNext }: Props)
       </header>
 
       {phase === "brief" && (
-        <div className="stop-brief">
-          <div className="stop-letter-card">
-            <span className="stop-letter-card__kicker">Sua letra</span>
-            <span className="stop-letter-card__letter">{level.letter}</span>
-            <span className="stop-letter-card__meta">
-              {level.categories.length} campos · {level.seconds}s
+        <div className="stop-mission">
+          <div className="stop-mission__head">
+            <span className="stop-mission__era">
+              Campanha {campaign.numeral} · {campaign.title}
             </span>
+            <h3 className="stop-mission__title">{level.title}</h3>
+            <p className="stop-mission__lead">{level.brief}</p>
           </div>
 
-          <div className="stop-brief__body">
-            <p className="stop-brief__lead">{level.brief}</p>
-            <ul className="stop-brief__fields">
-              {level.categories.map((id) => {
-                const category = stopCategory(id);
-                return (
-                  <li key={id}>
-                    <span>{category.label}</span>
-                    <small>{category.hint}</small>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="stop-brief__rules">
-              <p>
-                Cada resposta certa vale <strong>{STOP_SCORING.perAnswer}</strong> pontos. Preencher
-                todos os campos vale <strong>+{STOP_SCORING.cleanRound}</strong>; o tempo que sobrar
-                vale até <strong>+{STOP_SCORING.timeBonusMax}</strong>.
-              </p>
-              <p>
-                A banca confere se o nome existe. Meta da fase: <strong>{one}</strong> para a
-                primeira estrela, <strong>{three}</strong> para as três.
-                {bestScore > 0 && ` Seu recorde aqui: ${bestScore}.`}
-              </p>
+          <div className="stop-mission__grid">
+            <div className="stop-letter-card">
+              <span className="stop-letter-card__kicker">Sua letra</span>
+              <span className="stop-letter-card__letter">{level.letter}</span>
+              <span className="stop-letter-card__meta">
+                {level.categories.length} campos · {level.seconds}s
+              </span>
             </div>
+
+            <div className="stop-mission__panel">
+              <span className="stop-mission__panel-kicker">Metas da banca</span>
+              <ul>
+                {[
+                  { points: one, stars: 1 },
+                  { points: two, stars: 2 },
+                  { points: three, stars: 3 },
+                ].map((goal) => (
+                  <li key={goal.stars}>
+                    <span className="stop-mission__goal-stars" aria-hidden>
+                      {Array.from({ length: goal.stars }).map((_, i) => (
+                        <Star key={i} className="size-3" />
+                      ))}
+                    </span>
+                    <span className="stop-mission__goal-points">{goal.points}</span>
+                    <span className="stop-mission__goal-label">
+                      {goal.stars === 1 ? "primeira estrela" : `${goal.stars} estrelas`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {bestScore > 0 && (
+                <p className="stop-mission__best">
+                  <Trophy className="size-3" aria-hidden /> recorde {bestScore}
+                </p>
+              )}
+            </div>
+
+            <div className="stop-mission__panel">
+              <span className="stop-mission__panel-kicker">Como pontua</span>
+              <ul className="stop-mission__score">
+                <li>
+                  <b>{STOP_SCORING.perAnswer}</b>
+                  <span>resposta válida</span>
+                </li>
+                <li>
+                  <b>+{STOP_SCORING.cleanRound}</b>
+                  <span>rodada limpa</span>
+                </li>
+                <li>
+                  <b>+{STOP_SCORING.timeBonusMax}</b>
+                  <span>bônus de tempo</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <ul className="stop-brief__fields">
+            {level.categories.map((id) => {
+              const category = stopCategory(id);
+              return (
+                <li key={id}>
+                  <span>{category.label}</span>
+                  <small>{category.hint}</small>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="stop-mission__actions">
             <button type="button" onClick={start} className="stop-primary">
               <Sparkles className="size-4" aria-hidden />
               {bestScore > 0 ? "Jogar de novo" : "Começar a rodada"}
             </button>
+            <span className="stop-mission__hint">
+              ou tecle <kbd>Enter</kbd>
+            </span>
           </div>
         </div>
       )}

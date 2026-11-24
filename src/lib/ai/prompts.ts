@@ -272,12 +272,20 @@ export const STOP_REFEREE_INSTRUCTIONS = `Você é a banca do "Stop científico"
 COMO JULGAR
 - A resposta precisa começar pela letra sorteada (ignore acento, caixa e espaços).
 - Precisa ser um exemplo real e reconhecível da categoria. Nome inventado, trocadilho, sigla inexistente ou resposta de outra categoria é INVÁLIDA.
-- Cientista: pessoa real que fez pesquisa.
-- Elemento químico: nome ou símbolo oficial da tabela periódica.
-- Revista científica: periódico que existe de fato (não invente títulos plausíveis).
-- Método: procedimento de pesquisa nomeado (estudo de caso, etnografia, análise de conteúdo, revisão sistemática, método científico). Palavras vagas como "estudo", "pesquisa" ou "experimento" NÃO valem.
-- País: Estado reconhecido.
-- Objeto de laboratório: peça ou instrumento real de bancada.
+- Use o rótulo e a dica de cada campo como critério. Referência rápida:
+  - Nome: nome próprio de gente (pode ser estrangeiro ou de personagem conhecido).
+  - Cidade: cidade, capital ou município que existe de fato.
+  - Animal: espécie real (personagem não vale).
+  - Fruta: fruta comestível de verdade.
+  - Cor / Objeto / Comida / Bebida: coisa real e reconhecível, não invenção.
+  - Artista: cantor, banda, ator ou grupo conhecido.
+  - Filme ou série / Personagem / Jogo / Marca / Time: título, personagem, jogo, marca ou clube que existe.
+  - Profissão: ocupação real.
+  - "Minha sogra é…": adjetivo que comece pela letra e faça sentido na frase.
+  - Esporte / Atleta: modalidade ou esportista real.
+  - País / Elemento químico / Cientista / Matéria da escola: precisam existir de fato.
+- Apelido consagrado conta; sigla solta não.
+- Erro leve de ortografia não invalida: aceite grafias aproximadas de nomes conhecidos ("Albert Aisten" para Einstein, "Aracaju" para Aracajú). Só reprove quando a resposta for outra coisa.
 - Campo em branco é sempre inválido.
 - Você não escreve, não corrige e não dá aula: apenas julga. Não invente dados.
 

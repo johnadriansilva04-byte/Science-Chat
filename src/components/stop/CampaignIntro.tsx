@@ -3,17 +3,18 @@ import { BookOpen, ChevronRight, Lock, Play, Sparkles, Star, Trophy } from "luci
 
 import { cn } from "@/lib/utils";
 import {
-  STOP_ERAS,
+  STOP_CAMPAIGNS,
   STOP_RANKS,
   STOP_SCORING,
   STOP_TOTAL_STARS,
-  levelsOfEra,
+  campaignStars,
+  levelsOfCampaign,
   stopLevel,
   type StopCampaignState,
 } from "@/lib/stop";
 
 const PHRASES = [
-  "Doze fases. Quatro eras. Uma letra por rodada.",
+  "Quinze fases. Cinco campanhas. Uma letra por rodada.",
   "A banca confere se o nome existe.",
   "Errar de letra custa o campo.",
   "Quem chega primeiro ao STOP! escreve a ata.",
@@ -139,26 +140,28 @@ export function CampaignIntro({ state, onEnter, signedIn }: Props) {
           </p>
         </div>
 
-        <ul className="stop-intro__eras" aria-label="Eras da expedição">
-          {STOP_ERAS.map((era, index) => {
-            const levels = levelsOfEra(era.id);
-            const stars = levels.reduce(
-              (sum, level) => sum + (state.progress[level.id]?.stars ?? 0),
-              0,
-            );
+        <ul className="stop-intro__eras" aria-label="Campanhas da expedição">
+          {STOP_CAMPAIGNS.map((campaign, index) => {
+            const levels = levelsOfCampaign(campaign.id);
+            const stars = campaignStars(state.progress, campaign.id);
+            const total = levels.length * 3;
             const open = levels.some((level) => state.unlocked.includes(level.id));
             return (
               <li
-                key={era.id}
-                className={cn("stop-intro__era", open && "is-open", stars === 9 && "is-full")}
+                key={campaign.id}
+                className={cn(
+                  "stop-intro__era",
+                  open && "is-open",
+                  stars === total && total > 0 && "is-full",
+                )}
                 style={{ animationDelay: `${420 + index * 90}ms` }}
               >
                 <span className="stop-intro__era-numeral" aria-hidden>
-                  {era.numeral}
+                  {campaign.numeral}
                 </span>
-                <span className="stop-intro__era-title">{era.title}</span>
+                <span className="stop-intro__era-title">{campaign.title}</span>
                 <span className="stop-intro__era-stars">
-                  {open ? `${stars}/9` : <Lock className="size-3" aria-hidden />}
+                  {open ? `${stars}/${total}` : <Lock className="size-3" aria-hidden />}
                 </span>
               </li>
             );

@@ -20,7 +20,11 @@ import {
 
 function toProgressMap(rows: repo.StopProgressRow[]): StopProgressMap {
   const map: StopProgressMap = {};
-  for (const row of rows) map[row.level_id] = { stars: row.stars, bestScore: row.best_score };
+  for (const row of rows) {
+    // Linhas de fases antigas (campanhas renomeadas) não podem inflar XP nem estrelas.
+    if (!stopLevel(row.level_id)) continue;
+    map[row.level_id] = { stars: row.stars, bestScore: row.best_score };
+  }
   return map;
 }
 
@@ -44,9 +48,10 @@ function campaignView(rows: repo.StopProgressRow[]): StopCampaignView {
 /** Texto que a banca recebe. Respostas entre aspas para não confundir com o rótulo. */
 function refereePrompt(level: StopLevel, answers: string[]): string {
   const fields = level.categories
-    .map(
-      (id, index) => `${index}. ${stopCategory(id).label} = ${JSON.stringify(answers[index] ?? "")}`,
-    )
+    .map((id, index) => {
+      const category = stopCategory(id);
+      return `${index}. ${category.label} (${category.hint}) = ${JSON.stringify(answers[index] ?? "")}`;
+    })
     .join("\n");
   return `LETRA SORTEADA: ${level.letter}\nFASE: ${level.title}\nCAMPOS:\n${fields}`;
 }
@@ -96,10 +101,7 @@ export const judgeStopRound = createServerFn({ method: "POST" })
         });
         if (limit.ok) {
           const [{ generateFinalText, INTERVIEW_MODEL }, { STOP_REFEREE_INSTRUCTIONS }] =
-            await Promise.all([
-              import("@/lib/ai/gateway.server"),
-              import("@/lib/ai/prompts"),
-            ]);
+            await Promise.all([import("@/lib/ai/gateway.server"), import("@/lib/ai/prompts")]);
           const text = await withTimeout(
             generateFinalText(
               refereePrompt(level, answers),
