@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BookOpen,
   Check,
+  ChevronDown,
   Eye,
   FlaskConical,
   Link2,
@@ -27,8 +28,10 @@ import { listArticles } from "@/lib/article.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { fileToBase64, formatSize } from "@/lib/file-upload";
 import {
+  cleanMethodologyReply,
   METHODOLOGY_SPEC_SECTIONS,
   methodologyProtocolCode,
+  splitMethodReply,
   specSectionCoverage,
 } from "@/lib/methodology";
 import {
@@ -73,6 +76,41 @@ const SCANNING = [
 type LinkedArticle = { id: string; title: string; phase: string; updated_at: string };
 type ArticleOption = { id: string; title: string };
 
+function Fold({
+  icon,
+  title,
+  badge,
+  open,
+  onToggle,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  badge: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="shrink-0 rounded-2xl border bg-card/40 backdrop-blur">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left"
+      >
+        {icon}
+        <span className="font-serif text-sm font-semibold">{title}</span>
+        <span className="method-kicker ml-auto">{badge}</span>
+        <ChevronDown
+          className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && <div className="border-t px-3 py-2.5">{children}</div>}
+    </section>
+  );
+}
+
 function entryText(m: MethodologyMessageView): string {
   return m.parts
     .map((p) => p.text ?? "")
@@ -112,6 +150,18 @@ function MethodologyWorkspace() {
   const [uploading, setUploading] = useState(false);
   const [mobilePane, setMobilePane] = useState<"caderno" | "spec">("caderno");
   const [scanIndex, setScanIndex] = useState(0);
+  const [openPanel, setOpenPanel] = useState<"corpus" | "links" | null>(null);
+
+  const lastReply = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const message = messages[i];
+      if (message && message.role !== "user") {
+        const text = cleanMethodologyReply(entryText(message));
+        if (text) return splitMethodReply(text);
+      }
+    }
+    return null;
+  }, [messages]);
 
   const availableArticles = useMemo(
     () => myArticles.filter((a) => !articles.some((linked) => linked.id === a.id)),
@@ -513,7 +563,10 @@ function MethodologyWorkspace() {
               <div className="method-log">
                 {messages.map((m, i) => {
                   const isUser = m.role === "user";
-                  const text = entryText(m);
+                  // a última fala do Pracinha aparece fixa no card “pergunta atual”
+                  if (!isUser && i === messages.length - 1) return null;
+                  const raw = entryText(m);
+                  const text = isUser ? raw : cleanMethodologyReply(raw);
                   if (!text) return null;
                   return (
                     <article
@@ -525,14 +578,30 @@ function MethodologyWorkspace() {
                         <span className="method-entry__tag">{isUser ? "OBS" : "PROT"}</span>
                         <span>{String(i + 1).padStart(2, "0")}</span>
                         <span className="normal-case tracking-normal">
-                          {isUser ? "observação do pesquisador" : "protocolo do Pracinha"}
+                          {isUser ? "você" : "pracinha"}
                         </span>
                       </div>
                       <div className="method-entry__body">
                         {isUser ? (
                           <p className="whitespace-pre-wrap">{text}</p>
                         ) : (
-                          <MessageResponse>{text}</MessageResponse>
+                          (() => {
+                            const { context, question } = splitMethodReply(text);
+                            return (
+                              <>
+                                {context && (
+                                  <p className="text-[13px] leading-relaxed text-muted-foreground">
+                                    {context}
+                                  </p>
+                                )}
+                                {question && (
+                                  <p className="mt-1 font-serif text-[15px] leading-snug text-foreground">
+                                    {question}
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()
                         )}
                       </div>
                     </article>
@@ -557,6 +626,24 @@ function MethodologyWorkspace() {
           </div>
 
           <div className="border-t p-3">
+            {lastReply?.question && !sending && (
+              <div className="method-question mb-2">
+                <span className="method-kicker">
+                  pergunta atual · prot {messages.length.toString().padStart(2, "0")}
+                </span>
+                <p className="mt-1 font-serif text-[15px] leading-snug">{lastReply.question}</p>
+                {lastReply.context && (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-[11px] text-muted-foreground">
+                      por que o Pracinha perguntou isso
+                    </summary>
+                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                      {lastReply.context}
+                    </p>
+                  </details>
+                )}
+              </div>
+            )}
             <div className="method-composer px-2.5 py-2">
               <textarea
                 value={draft}
@@ -571,10 +658,23 @@ function MethodologyWorkspace() {
                 placeholder="Nova observação de método… (Enter registra, Shift+Enter quebra linha)"
                 className="max-h-40 w-full resize-none bg-transparent px-1 py-1 text-sm outline-none placeholder:text-muted-foreground/70"
               />
-              <div className="mt-1 flex items-center gap-2">
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  {draft.trim().length} car.
-                </span>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                {["Não sei ainda", "Pular esta pergunta"].map((hint) => (
+                  <button
+                    key={hint}
+                    type="button"
+                    className="rounded-full border border-border/70 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                    disabled={sending}
+                    onClick={() => void send(hint)}
+                  >
+                    {hint}
+                  </button>
+                ))}
+                {draft.trim().length > 0 && (
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    {draft.trim().length} car.
+                  </span>
+                )}
                 <Button
                   size="sm"
                   className="ml-auto h-8 gap-1.5"
@@ -657,24 +757,52 @@ function MethodologyWorkspace() {
                   <MessageResponse>{spec}</MessageResponse>
                 </div>
               ) : (
-                <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-2 px-6 text-center">
-                  <FlaskConical className="size-6 text-primary/60" />
-                  <p className="font-serif text-sm">Nenhuma spec ainda.</p>
-                  <p className="max-w-xs text-xs text-muted-foreground">
-                    Converse no registro de campo e clique em “Gerar spec” — ou escreva à mão no
-                    editor.
-                  </p>
+                <div className="flex h-full flex-col justify-center px-4 py-5">
+                  <div className="rounded-xl border border-border/70 bg-background/40 p-4">
+                    <p className="font-serif text-sm font-semibold">A spec nasce da entrevista</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Ela transforma o que você contou em um protocolo repetível de sete seções.
+                    </p>
+                    <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground sm:grid-cols-2">
+                      {METHODOLOGY_SPEC_SECTIONS.map((section, i) => (
+                        <li key={section} className="truncate">
+                          <span className="font-mono text-primary/70">{i + 1}</span> {section}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      size="sm"
+                      className="mt-3 h-8 gap-1.5"
+                      disabled={generating || sending || messages.length === 0}
+                      onClick={() => void generate()}
+                    >
+                      {generating ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-3.5" />
+                      )}
+                      Gerar spec
+                    </Button>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      {messages.length === 0
+                        ? "Registre a primeira observação ao lado."
+                        : "Ou escreva à mão no Editor."}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
 
             <footer className="border-t p-3">
+              <label className="method-kicker mb-1 block" htmlFor="methodology-title">
+                nome da metodologia
+              </label>
               <Input
+                id="methodology-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Título da metodologia"
+                placeholder="Ex.: Método Pracinha — estudo de caso instrumental"
                 className="h-8 w-full text-xs"
-                aria-label="Título da metodologia"
               />
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Button
@@ -726,13 +854,18 @@ function MethodologyWorkspace() {
                   Aprovar
                 </Button>
               </div>
-              <Input
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="O que ajustar na spec? (opcional, usado ao gerar)"
-                className="mt-2 h-8 text-xs"
-                aria-label="Ajuste pedido para a spec"
-              />
+              <details className="mt-2">
+                <summary className="cursor-pointer text-[11px] text-muted-foreground">
+                  Ajustar antes de gerar (opcional)
+                </summary>
+                <Input
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Ex.: o corpus é só de fontes primárias"
+                  className="mt-1.5 h-8 text-xs"
+                  aria-label="Ajuste pedido para a spec"
+                />
+              </details>
               {dirty && (
                 <p className="mt-1.5 text-[11px] text-star-amber">
                   Há alterações não salvas — a aprovação fica bloqueada até salvar.
@@ -741,13 +874,13 @@ function MethodologyWorkspace() {
             </footer>
           </section>
 
-          {/* 03 · Corpus */}
-          <section className="rounded-2xl border bg-card/40 p-3 backdrop-blur">
-            <div className="mb-2 flex items-center gap-2">
-              <Paperclip className="size-4 text-primary" />
-              <h2 className="font-serif text-sm font-semibold">Corpus e fontes</h2>
-              <span className="method-kicker ml-auto">{documents.length} anexos</span>
-            </div>
+          <Fold
+            icon={<Paperclip className="size-4 text-primary" />}
+            title="Corpus e fontes"
+            badge={`${documents.length} anexos`}
+            open={openPanel === "corpus"}
+            onToggle={() => setOpenPanel(openPanel === "corpus" ? null : "corpus")}
+          >
             <p className="mb-2 text-xs text-muted-foreground">
               Só o que está aqui pode ser citado na spec. Anexe os documentos primários que o método
               vai analisar.
@@ -838,14 +971,16 @@ function MethodologyWorkspace() {
                 </Button>
               </div>
             )}
-          </section>
+          </Fold>
 
           {/* 04 · Acoplamentos */}
-          <section className="rounded-2xl border bg-card/40 p-3 backdrop-blur">
-            <div className="mb-2 flex items-center gap-2">
-              <Link2 className="size-4 text-primary" />
-              <h2 className="font-serif text-sm font-semibold">Artigos acoplados</h2>
-            </div>
+          <Fold
+            icon={<Link2 className="size-4 text-primary" />}
+            title="Artigos acoplados"
+            badge={articles.length === 0 ? "nenhum" : `${articles.length} com este método`}
+            open={openPanel === "links"}
+            onToggle={() => setOpenPanel(openPanel === "links" ? null : "links")}
+          >
             {!approved && (
               <p className="mb-2 text-xs text-star-amber">
                 Aprove a spec para poder acoplar a um artigo.
@@ -912,7 +1047,7 @@ function MethodologyWorkspace() {
                 ))}
               </ul>
             )}
-          </section>
+          </Fold>
         </aside>
       </main>
 

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { base64ToBytes } from "@/lib/base64";
 import {
-  cleanInterviewReply,
+  cleanMethodologyReply,
   methodologyLinkError,
   methodologySectionText,
   METHODOLOGY_STATUS,
@@ -190,7 +190,7 @@ export const sendMethodologyMessage = createServerFn({ method: "POST" })
       700,
       interviewModelId(),
     );
-    const reply = cleanInterviewReply(raw);
+    const reply = cleanMethodologyReply(raw);
     if (!reply) throw new Error("A IA não retornou texto. Tente novamente.");
     await repo.addMethodologyMessage(context.user.id, data.methodologyId, "assistant", [
       { type: "text", text: reply },
@@ -315,10 +315,7 @@ export const createMethodologyFromArticle = createServerFn({ method: "POST" })
       .find((text): text is string => Boolean(text));
     if (!section) throw new Error("Este artigo ainda não tem uma seção Metodologia escrita");
 
-    const methodology = await repo.createMethodology(
-      userId,
-      article.title.trim().slice(0, 120),
-    );
+    const methodology = await repo.createMethodology(userId, article.title.trim().slice(0, 120));
     await repo.addMethodologyMessage(userId, methodology.id, "user", [
       {
         type: "text",

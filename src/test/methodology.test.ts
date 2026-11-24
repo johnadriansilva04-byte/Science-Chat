@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   cleanInterviewReply,
+  cleanMethodologyReply,
+  splitMethodReply,
   METHODOLOGY_SPEC_SECTIONS,
   methodologyLinkError,
   methodologyProtocolCode,
@@ -317,5 +319,74 @@ describe("methodologySectionText", () => {
 
   it("devolve null quando a página não tem seção de Metodologia", () => {
     expect(methodologySectionText("## 2. Fundamentação teórica\n\nTexto.")).toBeNull();
+  });
+});
+
+describe("cleanMethodologyReply", () => {
+  it("remove a abertura de reconhecimento e a especulação", () => {
+    const raw =
+      "Entendi que você está trabalhando com um método algébrico. Isso me faz pensar que quer medir desvio. Qual é o corpus do estudo?";
+    const clean = cleanMethodologyReply(raw);
+    expect(clean.startsWith("Qual é o corpus do estudo?")).toBe(true);
+    expect(clean).not.toContain("Entendi");
+    expect(clean).not.toContain("Isso me faz pensar");
+  });
+
+  it("mantém uma pergunta só", () => {
+    const clean = cleanMethodologyReply(
+      "O corpus define o peso da prova. Qual é o corpus? E o procedimento?",
+    );
+    expect(clean).toContain("Qual é o corpus?");
+    expect(clean).not.toContain("E o procedimento?");
+  });
+
+  it("corta a devolução da fala do pesquisador", () => {
+    const raw =
+      "Você está considerando esses documentos como fontes primárias, pois são originais. Qual é o procedimento analítico que você seguirá?";
+    expect(cleanMethodologyReply(raw)).toBe("Qual é o procedimento analítico que você seguirá?");
+  });
+
+  it("mantém o contexto que explica a pergunta", () => {
+    const raw =
+      "Ainda não está claro como a análise será feita. Você tem um protocolo para decompor as variáveis B?";
+    const clean = cleanMethodologyReply(raw);
+    expect(clean).toContain("Ainda não está claro");
+    expect(clean).toContain("Você tem um protocolo");
+  });
+
+  it("limpa uma resposta real recheada de eco", () => {
+    const raw =
+      "Com essa decomposição, você está separando claramente o fato incontestável do documento (A) das variáveis administrativas (B) que afetam o resultado (D). Isso me faz pensar que você está utilizando uma abordagem estruturada para analisar os dados. Qual é a categoria analítica que você utilizará para organizar e interpretar os resultados da decomposição A→B→D?";
+    const clean = cleanMethodologyReply(raw);
+    expect(clean).not.toContain("Isso me faz pensar");
+    expect(
+      clean.endsWith(
+        "Qual é a categoria analítica que você utilizará para organizar e interpretar os resultados da decomposição A→B→D?",
+      ),
+    ).toBe(true);
+  });
+
+  it("nunca devolve texto vazio", () => {
+    expect(cleanMethodologyReply("Entendi.")).toBe("Entendi.");
+  });
+
+  it("preserva a pergunta quando não há abertura de reconhecimento", () => {
+    expect(cleanMethodologyReply("Qual é o instrumento analítico?")).toBe(
+      "Qual é o instrumento analítico?",
+    );
+  });
+});
+
+describe("splitMethodReply", () => {
+  it("separa contexto e pergunta", () => {
+    const { context, question } = splitMethodReply(
+      "O corpus precisa ser primário. Qual é o corpus que você vai analisar?",
+    );
+    expect(context).toBe("O corpus precisa ser primário.");
+    expect(question).toBe("Qual é o corpus que você vai analisar?");
+  });
+
+  it("sem pergunta, tudo é pergunta (nada se perde)", () => {
+    expect(splitMethodReply("Anotado.").question).toBe("Anotado.");
   });
 });

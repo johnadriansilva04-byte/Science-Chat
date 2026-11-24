@@ -297,3 +297,50 @@ export function methodologySectionText(content: string): string | null {
   const body = next ? after.slice(0, next.index) : after;
   return `${heading[0]}\n${body}`.trim();
 }
+
+const META_ANYWHERE =
+  /^(?:isso me faz pensar|pelo que entendi|ao que parece|parece que voc|ou seja|resumindo|isso indica que|em outras palavras|nesse sentido, voc)/i;
+
+const ECHO_SENTENCE =
+  /^(?:entendi|perfeito|ótimo|otimo|certo|compreendi|excelente|interessante|beleza|ok\b|bom\b|isso me faz pensar|pelo que entendi|ao que parece|parece que|ou seja|resumindo|voc[eê](?:\s|$))/i;
+
+/**
+ * O modelo leve abre todo turno com "Entendi que você…", devolve a fala do
+ * pesquisador em outras palavras ("Você está considerando…") e às vezes emenda
+ * duas perguntas. Isso deixa o registro ilegível. Cortamos essas aberturas e as
+ * perguntas extras, preservando a pergunta final.
+ */
+export function cleanMethodologyReply(raw: string): string {
+  const text = cleanInterviewReply(raw);
+  const sentences = (text.match(SENTENCE) ?? []).map((s) => s.trim()).filter(Boolean);
+  let start = 0;
+  while (
+    start < sentences.length - 1 &&
+    start < 3 &&
+    !(sentences[start] ?? "").includes("?") &&
+    ECHO_SENTENCE.test(sentences[start] ?? "")
+  ) {
+    start += 1;
+  }
+  const kept = sentences
+    .slice(start)
+    .filter((sentence) => !META_ANYWHERE.test(sentence) || sentence.includes("?"));
+  const first = kept.findIndex((s) => s.includes("?"));
+  if (first < 0) return kept.join(" ").trim();
+  // fica com a primeira pergunta; perguntas emendadas depois dela são cortadas
+  const tail = kept.slice(first + 1).filter((s) => !s.includes("?"));
+  return [...kept.slice(0, first + 1), ...tail].join(" ").trim();
+}
+
+const SENTENCE = /[^.!?]+[.!?]+|[^.!?]+$/g;
+
+/** Separa a fala em contexto (o porquê) e a pergunta final, que é o que o pesquisador responde. */
+export function splitMethodReply(text: string): { context: string; question: string } {
+  const sentences = (text.match(SENTENCE) ?? []).map((s) => s.trim()).filter(Boolean);
+  const index = sentences.map((s) => s.includes("?")).lastIndexOf(true);
+  if (index <= 0) return { context: "", question: text.trim() };
+  return {
+    context: sentences.slice(0, index).join(" ").trim(),
+    question: sentences.slice(index).join(" ").trim(),
+  };
+}

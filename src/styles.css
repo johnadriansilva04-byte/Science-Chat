@@ -2903,6 +2903,18 @@
   }
 }
 
+.method-question {
+  border: 1px solid color-mix(in oklab, var(--color-primary) 34%, transparent);
+  border-radius: 0.9rem;
+  padding: 0.55rem 0.7rem 0.6rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-primary) 9%, transparent),
+    color-mix(in oklab, var(--color-card) 70%, transparent)
+  );
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-primary) 18%, transparent);
+}
+
 .method-composer {
   border: 1px solid color-mix(in oklab, var(--color-foreground) 16%, transparent);
   border-radius: 0.9rem;
