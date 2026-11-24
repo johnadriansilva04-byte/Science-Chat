@@ -2,8 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   ROOM_CODE_ALPHABET,
+  ROOM_POINTS,
+  ROOM_TOTAL_ROUNDS,
   STOP_ROOM_LIMITS,
   drawRandomConfig,
+  drawRoundLetter,
+  isSpectatorOfRound,
+  normalizeAnswer,
+  roomMatchOver,
+  settleRoomRound,
+  validateRoomFields,
   fieldsFromCategoryIds,
   hostActionError,
   makeRoomCode,
@@ -178,5 +186,98 @@ describe("quem manda na sala", () => {
     expect(hostActionError({ ...base, status: "finished", action: "start" })).toContain(
       "já foi encerrada",
     );
+  });
+});
+
+describe("letra sorteada pelo sistema", () => {
+  it("nunca repete uma letra já usada na partida", () => {
+    const used = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      expect(used).not.toContain(drawRoundLetter(used));
+    }
+  });
+
+  it("sorteia dez letras diferentes numa partida de dez rodadas", () => {
+    const used: string[] = [];
+    for (let round = 0; round < ROOM_TOTAL_ROUNDS; round += 1) {
+      const letter = drawRoundLetter(used);
+      expect(used).not.toContain(letter);
+      used.push(letter);
+    }
+    expect(new Set(used).size).toBe(ROOM_TOTAL_ROUNDS);
+  });
+});
+
+describe("placar do Stop (10 pontos, 5 se repetir)", () => {
+  const verdict = (valid: boolean) => [{ valid }, { valid }, { valid }];
+
+  it("resposta válida e inédita vale 10", () => {
+    const [ana] = settleRoomRound([
+      { userId: "ana", answers: ["Manaus", "Macaco", "Mônica"], verdicts: verdict(true) },
+    ]);
+    expect(ana?.fields).toEqual([10, 10, 10]);
+    expect(ana?.total).toBe(30);
+  });
+
+  it("palavra repetida vale 5 para os dois lados", () => {
+    const settled = settleRoomRound([
+      { userId: "ana", answers: ["Manaus", "Macaco", "Mônica"], verdicts: verdict(true) },
+      { userId: "bia", answers: ["manaus", "Mico", "Mônica"], verdicts: verdict(true) },
+    ]);
+    expect(settled[0]?.fields).toEqual([ROOM_POINTS.duplicate, 10, ROOM_POINTS.duplicate]);
+    expect(settled[1]?.fields).toEqual([ROOM_POINTS.duplicate, 10, ROOM_POINTS.duplicate]);
+    expect(settled[0]?.total).toBe(20);
+  });
+
+  it("ignora acento e caixa ao comparar repetidas", () => {
+    expect(normalizeAnswer("  Mônica ")).toBe("monica");
+    const settled = settleRoomRound([
+      { userId: "ana", answers: ["Mônica"], verdicts: verdict(true) },
+      { userId: "bia", answers: ["MONICA"], verdicts: verdict(true) },
+    ]);
+    expect(settled[1]?.fields[0]).toBe(ROOM_POINTS.duplicate);
+  });
+
+  it("resposta inválida ou em branco não pontua", () => {
+    const settled = settleRoomRound([
+      {
+        userId: "ana",
+        answers: ["Manaus", "", "Mônica"],
+        verdicts: [{ valid: true }, { valid: false }, { valid: false }],
+      },
+    ]);
+    expect(settled[0]?.fields).toEqual([10, 0, 0]);
+  });
+});
+
+describe("partida de dez rodadas", () => {
+  it("termina exatamente na décima", () => {
+    expect(roomMatchOver(9)).toBe(false);
+    expect(roomMatchOver(10)).toBe(true);
+    expect(ROOM_TOTAL_ROUNDS).toBe(10);
+  });
+
+  it("quem entra no meio só assiste até a próxima rodada", () => {
+    expect(isSpectatorOfRound(3, 3)).toBe(true);
+    expect(isSpectatorOfRound(3, 4)).toBe(false);
+    expect(isSpectatorOfRound(0, 1)).toBe(false);
+  });
+});
+
+describe("perguntas sem letra (a letra vem do sistema)", () => {
+  const fields = [
+    { label: "Nome", hint: "" },
+    { label: "Cidade", hint: "" },
+    { label: "Animal", hint: "" },
+  ];
+
+  it("aceita de três a oito perguntas", () => {
+    const ok = validateRoomFields({ seconds: 90, fields });
+    expect(ok.ok).toBe(true);
+  });
+
+  it("recusa rodada com poucas perguntas", () => {
+    const bad = validateRoomFields({ seconds: 90, fields: fields.slice(0, 2) });
+    expect(bad.ok).toBe(false);
   });
 });

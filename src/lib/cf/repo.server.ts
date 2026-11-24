@@ -1327,6 +1327,9 @@ export type StopRoomRow = {
   categories: string | null;
   auto: number;
   deadline_at: string | null;
+  total_rounds: number;
+  letters_used: string | null;
+  settled_round: number;
   created_at: string;
   updated_at: string;
 };
@@ -1341,14 +1344,24 @@ export type StopRoomPlayerRow = {
   answers: string | null;
   verdicts: string | null;
   round_score: number | null;
+  joined_round: number;
   joined_at: string;
   display_name?: string | null;
 };
 
+export type StopRoomMessageRow = {
+  id: string;
+  room_id: string;
+  user_id: string;
+  name: string;
+  body: string;
+  created_at: string;
+};
+
 const STOP_ROOM_COLUMNS =
-  "id, code, host_id, status, round, letter, seconds, categories, auto, deadline_at, created_at, updated_at";
+  "id, code, host_id, status, round, letter, seconds, categories, auto, deadline_at, total_rounds, letters_used, settled_round, created_at, updated_at";
 const STOP_ROOM_PLAYER_COLUMNS =
-  "room_id, user_id, name, total, played, submitted_round, answers, verdicts, round_score, joined_at";
+  "room_id, user_id, name, total, played, submitted_round, answers, verdicts, round_score, joined_round, joined_at";
 
 export async function createStopRoom(input: {
   hostId: string;
@@ -1388,19 +1401,21 @@ export async function listStopRoomPlayers(roomId: string): Promise<StopRoomPlaye
   return results;
 }
 
-/** Entrar de novo na mesma sala não duplica a pessoa: só atualiza o apelido. */
+/** Entrar de novo na mesma sala não duplica a pessoa: só atualiza o apelido.
+ *  `joinedRound` fixa a rodada de estreia — quem entra no meio assiste até a próxima. */
 export async function upsertStopRoomPlayer(input: {
   roomId: string;
   userId: string;
   name: string;
+  joinedRound?: number;
 }): Promise<StopRoomPlayerRow> {
   const ts = nowIso();
   await requireDb()
     .prepare(
-      `insert into stop_room_players (room_id, user_id, name, joined_at) values (?, ?, ?, ?)
+      `insert into stop_room_players (room_id, user_id, name, joined_round, joined_at) values (?, ?, ?, ?, ?)
        on conflict(room_id, user_id) do update set name = excluded.name`,
     )
-    .bind(input.roomId, input.userId, input.name, ts)
+    .bind(input.roomId, input.userId, input.name, input.joinedRound ?? 0, ts)
     .run();
   const row = await requireDb()
     .prepare(
@@ -1420,6 +1435,8 @@ export type StopRoomPatch = {
   categories?: string | null;
   auto?: number;
   deadlineAt?: string | null;
+  lettersUsed?: string | null;
+  settledRound?: number;
 };
 
 export async function updateStopRoom(roomId: string, patch: StopRoomPatch): Promise<void> {
@@ -1436,6 +1453,8 @@ export async function updateStopRoom(roomId: string, patch: StopRoomPatch): Prom
   if (patch.categories !== undefined) push("categories", patch.categories);
   if (patch.auto !== undefined) push("auto", patch.auto);
   if (patch.deadlineAt !== undefined) push("deadline_at", patch.deadlineAt);
+  if (patch.lettersUsed !== undefined) push("letters_used", patch.lettersUsed);
+  if (patch.settledRound !== undefined) push("settled_round", patch.settledRound);
   push("updated_at", nowIso());
 
   await requireDb()
@@ -1454,32 +1473,106 @@ export async function resetStopRoomRound(roomId: string): Promise<void> {
     .run();
 }
 
+/** Guarda respostas e veredictos da rodada. Os pontos só entram no placar
+ *  quando a rodada fecha, porque dependem das respostas dos outros jogadores. */
 export async function saveStopRoomSubmission(input: {
   roomId: string;
   userId: string;
   round: number;
   answers: string;
   verdicts: string;
-  score: number;
 }): Promise<void> {
   await requireDb()
     .prepare(
       `update stop_room_players
-          set submitted_round = ?, answers = ?, verdicts = ?, round_score = ?,
-              total = total + ?, played = played + 1
+          set submitted_round = ?, answers = ?, verdicts = ?, round_score = null
         where room_id = ? and user_id = ? and (submitted_round is null or submitted_round <> ?)`,
     )
-    .bind(
-      input.round,
-      input.answers,
-      input.verdicts,
-      input.score,
-      input.score,
-      input.roomId,
-      input.userId,
-      input.round,
-    )
+    .bind(input.round, input.answers, input.verdicts, input.roomId, input.userId, input.round)
     .run();
+}
+
+/** Reserva o fechamento da rodada. Só a primeira chamada aplica o placar,
+ *  então dois navegadores lendo a sala ao mesmo tempo não somam em dobro. */
+export async function claimStopRoomSettlement(roomId: string, round: number): Promise<boolean> {
+  const result = await requireDb()
+    .prepare(
+      "update stop_rooms set settled_round = ?, updated_at = ? where id = ? and settled_round < ?",
+    )
+    .bind(round, nowIso(), roomId, round)
+    .run();
+  return Number(result.meta['changes'] ?? 0) > 0;
+}
+
+/** Grava o placar da rodada: 10 por resposta inédita, 5 quando repete com alguém. */
+export async function applyStopRoomScores(input: {
+  roomId: string;
+  scores: { userId: string; total: number }[];
+}): Promise<void> {
+  for (const score of input.scores) {
+    await requireDb()
+      .prepare(
+        `update stop_room_players
+            set round_score = ?, total = total + ?, played = played + 1
+          where room_id = ? and user_id = ?`,
+      )
+      .bind(score.total, score.total, input.roomId, score.userId)
+      .run();
+  }
+}
+
+/** Quem entrou no meio da rodada assiste; quem entrou antes joga. */
+export async function markStopRoomSpectator(input: {
+  roomId: string;
+  userId: string;
+  round: number;
+  answers: string;
+  verdicts: string;
+}): Promise<void> {
+  await requireDb()
+    .prepare(
+      `update stop_room_players set submitted_round = ?, answers = ?, verdicts = ?
+        where room_id = ? and user_id = ?`,
+    )
+    .bind(input.round, input.answers, input.verdicts, input.roomId, input.userId)
+    .run();
+}
+
+export async function listStopRoomMessages(
+  roomId: string,
+  limit = 40,
+): Promise<StopRoomMessageRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select id, room_id, user_id, name, body, created_at from stop_room_messages
+        where room_id = ? order by created_at desc limit ?`,
+    )
+    .bind(roomId, limit)
+    .all<StopRoomMessageRow>();
+  return [...results].reverse();
+}
+
+export async function addStopRoomMessage(input: {
+  roomId: string;
+  userId: string;
+  name: string;
+  body: string;
+}): Promise<StopRoomMessageRow> {
+  const id = newId();
+  await requireDb()
+    .prepare(
+      "insert into stop_room_messages (id, room_id, user_id, name, body, created_at) values (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(id, input.roomId, input.userId, input.name, input.body, nowIso())
+    .run();
+  const row = await requireDb()
+    .prepare(
+      "select id, room_id, user_id, name, body, created_at from stop_room_messages where id = ?",
+    )
+    .bind(id)
+    .first<StopRoomMessageRow>();
+  if (!row) throw new Error("Não foi possível enviar a mensagem.");
+  return row;
 }
 
 export async function removeStopRoomPlayer(roomId: string, userId: string): Promise<void> {

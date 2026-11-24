@@ -87,6 +87,36 @@ export function drawRandomConfig(random: () => number = Math.random): StopRoundC
   return { letter: pick([...RANDOM_LETTERS], random), seconds: 90, fields, auto: true };
 }
 
+/** Campos escolhidos pelo anfitrião (a letra é sempre sorteada pelo sistema). */
+export type RoomFieldsResult =
+  | { ok: true; seconds: number; fields: StopRoundField[]; auto: boolean }
+  | { ok: false; error: string };
+
+export function validateRoomFields(input: unknown): RoomFieldsResult {
+  const result = validateRoundConfig({ ...(input as Record<string, unknown>), letter: "A" });
+  if (!result.ok) return { ok: false, error: result.error };
+  return {
+    ok: true,
+    seconds: result.config.seconds,
+    fields: result.config.fields,
+    auto: result.config.auto,
+  };
+}
+
+/** Sorteia só as perguntas; a letra entra na largada da rodada. */
+export function drawRandomFields(random: () => number = Math.random): {
+  seconds: number;
+  fields: StopRoundField[];
+} {
+  const drawn = drawRandomConfig(random);
+  return { seconds: drawn.seconds, fields: drawn.fields };
+}
+
+/** Quem entrou na rodada corrente (ou depois) só assiste: a estreia é na próxima. */
+export function isSpectatorOfRound(joinedRound: number, round: number): boolean {
+  return joinedRound >= round;
+}
+
 function readField(value: unknown): StopRoundField | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
@@ -212,4 +242,95 @@ export function hostActionError(input: {
 export function playerName(raw: string | null | undefined, fallback = "Pesquisador"): string {
   const clean = (raw ?? "").trim().replace(/\s+/g, " ");
   return clean ? clean.slice(0, 24) : fallback;
+}
+
+/* ------------------------------------------------------------------ *
+ * Regras de partida: letra sorteada, 10 rodadas, 10 pontos (5 repetido)
+ * ------------------------------------------------------------------ */
+
+/** Uma sala é uma partida fechada: dez letras, dez rodadas. */
+export const ROOM_TOTAL_ROUNDS = 10;
+
+export const ROOM_POINTS = { unique: 10, duplicate: 5 } as const;
+
+/** Letras boas para resposta, sem Q, X, Y, Z, K e W. */
+const PLAYABLE_LETTERS = "ABCDEFGHJLMPRSTV";
+
+/** Compara respostas sem caixa, acento ou espaço sobrando. */
+export function normalizeAnswer(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * A letra nunca é escolhida por ninguém: o sistema sorteia uma letra que ainda
+ * não saiu nesta partida, então dez rodadas nunca repetem a mesma letra.
+ */
+export function drawRoundLetter(
+  used: readonly string[] = [],
+  random: () => number = Math.random,
+): string {
+  const taken = new Set(used.map((letter) => letter.trim().toUpperCase()));
+  const available = [...PLAYABLE_LETTERS].filter((letter) => !taken.has(letter));
+  const pool = available.length > 0 ? available : [...PLAYABLE_LETTERS];
+  return pick(pool, random);
+}
+
+export type RoomSubmission = {
+  userId: string;
+  answers: string[];
+  verdicts: { valid: boolean }[];
+};
+
+export type RoomSettled = {
+  userId: string;
+  /** Pontos por campo: 10 (inédito), 5 (repetido) ou 0 (inválido/branco). */
+  fields: number[];
+  total: number;
+};
+
+/**
+ * Placar real do Stop: cada resposta válida vale 10, mas se outra pessoa da
+ * sala escreveu a mesma palavra no mesmo campo, vale 5 para os dois.
+ */
+export function settleRoomRound(submissions: RoomSubmission[]): RoomSettled[] {
+  const fieldCount = submissions.reduce(
+    (max, submission) => Math.max(max, submission.answers.length),
+    0,
+  );
+
+  const points = submissions.map(() => new Array<number>(fieldCount).fill(0));
+
+  for (let field = 0; field < fieldCount; field += 1) {
+    const seen = new Map<string, number[]>();
+    submissions.forEach((submission, index) => {
+      const answer = normalizeAnswer(submission.answers[field] ?? "");
+      const valid = Boolean(submission.verdicts[field]?.valid);
+      if (!valid || !answer) return;
+      const owners = seen.get(answer) ?? [];
+      owners.push(index);
+      seen.set(answer, owners);
+    });
+
+    for (const owners of seen.values()) {
+      const value = owners.length > 1 ? ROOM_POINTS.duplicate : ROOM_POINTS.unique;
+      for (const owner of owners) points[owner]![field] = value;
+    }
+  }
+
+  return submissions.map((submission, index) => ({
+    userId: submission.userId,
+    fields: points[index]!,
+    total: points[index]!.reduce((sum, value) => sum + value, 0),
+  }));
+}
+
+/** A partida acabou quando a décima rodada foi jogada. */
+export function roomMatchOver(round: number, totalRounds = ROOM_TOTAL_ROUNDS): boolean {
+  return round >= totalRounds;
 }

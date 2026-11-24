@@ -7,7 +7,10 @@ import {
   Copy,
   Crown,
   Dices,
+  Eye,
   Flag,
+  MessageCircle,
+  Send,
   LogIn,
   Play,
   Plus,
@@ -34,8 +37,10 @@ import {
   getStopRoomState,
   joinStopRoom,
   leaveStopRoom,
+  sendStopRoomMessage,
   startStopRoomRound,
   submitStopRoomAnswers,
+  type StopRoomMessageView,
   type StopRoomView,
 } from "@/lib/stop-room.functions";
 
@@ -73,13 +78,10 @@ function RoomPage() {
   const [busy, setBusy] = useState(false);
   const [syncedAt, setSyncedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
-  const [draft, setDraft] = useState<{ letter: string; seconds: number; fields: StopRoundField[] }>(
-    {
-      letter: "",
-      seconds: 90,
-      fields: [],
-    },
-  );
+  const [draft, setDraft] = useState<{ seconds: number; fields: StopRoundField[] }>({
+    seconds: 90,
+    fields: [],
+  });
   const [dirty, setDirty] = useState(false);
   const lastRound = useRef(-1);
 
@@ -139,11 +141,7 @@ function RoomPage() {
 
   useEffect(() => {
     if (dirty || !state?.config) return;
-    setDraft({
-      letter: state.config.letter,
-      seconds: state.config.seconds,
-      fields: state.config.fields,
-    });
+    setDraft({ seconds: state.config.seconds, fields: state.config.fields });
   }, [configKey, dirty, state?.config]);
 
   const self = useMemo(() => state?.players.find((player) => player.isSelf) ?? null, [state]);
@@ -212,7 +210,13 @@ function RoomPage() {
   const config = state.config;
   const fields = config?.fields ?? [];
   const selfSubmitted = Boolean(self?.submitted);
-  const showBoard = state.status === "playing" && !state.roundClosed && !selfSubmitted && config;
+  const showBoard =
+    state.status === "playing" &&
+    !state.roundClosed &&
+    !selfSubmitted &&
+    state.selfPlaying &&
+    config;
+  const spectating = state.status === "playing" && !state.roundClosed && state.selfSpectator;
 
   return (
     <RoomShell code={code} onCopy={() => void copyCode()}>
@@ -238,7 +242,9 @@ function RoomPage() {
             <Users className="size-3" aria-hidden />
             {state.players.length}/{STOP_ROOM_LIMITS.maxPlayers}
           </span>
-          {state.round > 0 && <span className="room-chip">rodada {state.round}</span>}
+          <span className="room-chip">
+            rodada {state.round}/{state.totalRounds}
+          </span>
           {state.status === "playing" && !state.roundClosed && (
             <span className={`room-timer ${remaining <= 15 ? "is-warn" : ""}`}>
               <Timer className="size-3.5" aria-hidden />
@@ -317,7 +323,10 @@ function RoomPage() {
                   preenchidos
                 </span>
                 <span>
-                  letra <strong>{config.letter}</strong>
+                  letra <strong>{config.letter}</strong> sorteada
+                </span>
+                <span>
+                  rodada <strong>{state.round}</strong>/{state.totalRounds}
                 </span>
               </div>
               <button
@@ -333,6 +342,38 @@ function RoomPage() {
         </section>
       )}
 
+      {spectating && config && (
+        <section className="room-spectate">
+          <p className="room-spectate__tag">
+            <Eye className="size-3.5" aria-hidden />
+            Modo espectador
+          </p>
+          <h2 className="room-spectate__title">
+            Você entrou no meio da rodada — joga a partir da rodada {state.round + 1}
+          </h2>
+          <p className="room-spectate__lead">
+            Assiste essa de camarote: mesma letra, mesmas perguntas, mesmo relógio. As respostas dos
+            outros só aparecem no placar.
+          </p>
+          <div className="room-spectate__board" aria-hidden>
+            <span className="room-spectate__letter">{config.letter}</span>
+            <ul>
+              {fields.map((field, index) => (
+                <li key={`${field.label}-${index}`}>
+                  <strong>{field.label}</strong>
+                  {field.hint && <em>{field.hint}</em>}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="room-spectate__status">
+            {state.players.filter((player) => player.submitted).length}/
+            {state.players.filter((player) => !player.spectator).length} entregaram ·{" "}
+            <strong>{remaining}s</strong> no relógio
+          </p>
+        </section>
+      )}
+
       {state.status === "playing" && !state.roundClosed && selfSubmitted && (
         <section className="room-wait">
           <div className="room-wait__pulse" aria-hidden>
@@ -342,21 +383,24 @@ function RoomPage() {
           </div>
           <h2 className="room-wait__title">Resposta entregue</h2>
           <p className="room-wait__lead">
-            {state.players.filter((player) => player.submitted).length}/{state.players.length}{" "}
-            jogadores já entregaram. O placar abre quando todos fecharem — ou quando o tempo acabar.
+            {state.players.filter((player) => player.submitted).length}/
+            {state.players.filter((player) => !player.spectator).length} jogadores já entregaram. O
+            placar abre quando todos fecharem — ou quando o tempo acabar.
           </p>
           <ul className="room-wait__list">
-            {state.players.map((player) => (
-              <li key={player.userId} className={player.submitted ? "is-in" : ""}>
-                {player.submitted ? (
-                  <Check className="size-3" aria-hidden />
-                ) : (
-                  <Timer className="size-3" aria-hidden />
-                )}
-                {player.name}
-                {player.isHost && <Crown className="size-3" aria-label="anfitrião" />}
-              </li>
-            ))}
+            {state.players
+              .filter((player) => !player.spectator)
+              .map((player) => (
+                <li key={player.userId} className={player.submitted ? "is-in" : ""}>
+                  {player.submitted ? (
+                    <Check className="size-3" aria-hidden />
+                  ) : (
+                    <Timer className="size-3" aria-hidden />
+                  )}
+                  {player.name}
+                  {player.isHost && <Crown className="size-3" aria-label="anfitrião" />}
+                </li>
+              ))}
           </ul>
         </section>
       )}
@@ -374,10 +418,17 @@ function RoomPage() {
                     {fields.map((field, index) => {
                       const verdict = self.verdicts?.[index];
                       const answer = self.answers?.[index] ?? "";
+                      const points = self.fields[index] ?? 0;
                       return (
                         <li
                           key={`${field.label}-${index}`}
-                          className={verdict?.valid ? "stop-verdict is-ok" : "stop-verdict is-no"}
+                          className={
+                            points > 0
+                              ? points === 10
+                                ? "stop-verdict is-ok"
+                                : "stop-verdict is-dup"
+                              : "stop-verdict is-no"
+                          }
                         >
                           <span className="stop-verdict__icon" aria-hidden>
                             {verdict?.valid ? (
@@ -388,9 +439,13 @@ function RoomPage() {
                           </span>
                           <span className="stop-verdict__label">{field.label}</span>
                           <span className="stop-verdict__answer">{answer.trim() || "—"}</span>
-                          {!verdict?.valid && verdict?.reason && (
+                          {points === 5 && <em className="stop-verdict__repeat">repetiu: 5</em>}
+                          {points === 0 && verdict?.reason && (
                             <em className="stop-verdict__reason">{verdict.reason}</em>
                           )}
+                          <span className="stop-verdict__points">
+                            {points > 0 ? `+${points}` : "0"}
+                          </span>
                         </li>
                       );
                     })}
@@ -508,6 +563,8 @@ function RoomPage() {
                 draft={draft}
                 dirty={dirty}
                 busy={busy}
+                round={state.round}
+                totalRounds={state.totalRounds}
                 onChange={(next) => {
                   setDraft(next);
                   setDirty(true);
@@ -524,7 +581,6 @@ function RoomPage() {
                     await configureStopRoom({
                       data: {
                         code,
-                        letter: draft.letter,
                         seconds: draft.seconds,
                         fields: draft.fields,
                         auto: false,
@@ -538,7 +594,6 @@ function RoomPage() {
                     await configureStopRoom({
                       data: {
                         code,
-                        letter: draft.letter,
                         seconds: draft.seconds,
                         fields: draft.fields,
                         auto: false,
@@ -554,8 +609,14 @@ function RoomPage() {
                 {config ? (
                   <>
                     <p className="room-preview__letter">
-                      Letra <strong>{config.letter}</strong> · {config.seconds}s
-                      {config.auto && <span className="room-preview__tag">sorteada</span>}
+                      {config.seconds}s por rodada ·{" "}
+                      <strong>
+                        {state.round}/{state.totalRounds}
+                      </strong>{" "}
+                      rodadas
+                      {config.auto && (
+                        <span className="room-preview__tag">perguntas sorteadas</span>
+                      )}
                     </p>
                     <ul className="room-preview__fields">
                       {config.fields.map((field, index) => (
@@ -619,7 +680,79 @@ function RoomPage() {
           </div>
         </section>
       )}
+
+      <RoomChat code={code} messages={state.messages} />
     </RoomShell>
+  );
+}
+
+function RoomChat({ code, messages }: { code: string; messages: StopRoomMessageView[] }) {
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages.length]);
+
+  const send = async () => {
+    const text = body.trim();
+    if (!text || sending) return;
+    setSending(true);
+    try {
+      await sendStopRoomMessage({ data: { code, body: text } });
+      setBody("");
+    } catch (caught) {
+      toast.error(errorMessage(caught));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section className="room-chat">
+      <h2 className="room-section-title">
+        <MessageCircle className="size-4" aria-hidden />
+        Resenha da sala
+      </h2>
+      <div className="room-chat__list" ref={listRef} role="log" aria-live="polite">
+        {messages.length === 0 ? (
+          <p className="room-chat__empty">
+            Ninguém falou nada ainda. Manda um “boa sorte” enquanto a rodada não abre.
+          </p>
+        ) : (
+          messages.map((message) => (
+            <p
+              key={message.id}
+              className={message.isSelf ? "room-chat__row is-self" : "room-chat__row"}
+            >
+              <strong>{message.isSelf ? "você" : message.name}</strong>
+              <span>{message.body}</span>
+            </p>
+          ))
+        )}
+      </div>
+      <form
+        className="room-chat__form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void send();
+        }}
+      >
+        <input
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          placeholder="Escreve pra galera…"
+          aria-label="Mensagem da sala"
+          maxLength={240}
+          autoComplete="off"
+        />
+        <button type="submit" disabled={sending || !body.trim()} aria-label="Enviar mensagem">
+          <Send className="size-4" aria-hidden />
+        </button>
+      </form>
+    </section>
   );
 }
 
@@ -675,16 +808,20 @@ function HostSetup({
   draft,
   dirty,
   busy,
+  round,
+  totalRounds,
   onChange,
   onDraw,
   onApply,
   onStart,
   onResetDirty,
 }: {
-  draft: { letter: string; seconds: number; fields: StopRoundField[] };
+  draft: { seconds: number; fields: StopRoundField[] };
   dirty: boolean;
   busy: boolean;
-  onChange: (next: { letter: string; seconds: number; fields: StopRoundField[] }) => void;
+  round: number;
+  totalRounds: number;
+  onChange: (next: { seconds: number; fields: StopRoundField[] }) => void;
   onDraw: () => void;
   onApply: () => void;
   onStart: () => void;
@@ -721,26 +858,10 @@ function HostSetup({
 
   const full = draft.fields.length >= STOP_ROOM_LIMITS.maxFields;
   const enough = draft.fields.length >= STOP_ROOM_LIMITS.minFields;
-  const letterOk = /^[A-Z]$/.test(draft.letter);
 
   return (
     <div className="room-setup">
       <div className="room-setup__row">
-        <label className="room-setup__letter">
-          <span>Letra</span>
-          <select
-            value={draft.letter}
-            onChange={(event) => onChange({ ...draft, letter: event.target.value })}
-          >
-            <option value="">—</option>
-            {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => (
-              <option key={letter} value={letter}>
-                {letter}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <label className="room-setup__seconds">
           <span>Tempo</span>
           <select
@@ -762,9 +883,15 @@ function HostSetup({
           className="room-ghost room-setup__draw"
         >
           <Dices className="size-4" aria-hidden />
-          Sortear tudo
+          Sortear perguntas
         </button>
       </div>
+
+      <p className="room-setup__hint">
+        <Dices className="size-3.5" aria-hidden /> A letra é sorteada pelo sistema a cada rodada —
+        nenhuma letra se repete nesta partida. Rodada {Math.min(round + 1, totalRounds)} de{" "}
+        {totalRounds}.
+      </p>
 
       <fieldset className="room-setup__catalog">
         <legend>Categorias do catálogo</legend>
@@ -841,12 +968,7 @@ function HostSetup({
       </div>
 
       <div className="room-actions">
-        <button
-          type="button"
-          onClick={onStart}
-          disabled={busy || !enough || !letterOk}
-          className="room-cta"
-        >
+        <button type="button" onClick={onStart} disabled={busy || !enough} className="room-cta">
           <Play className="size-4" aria-hidden />
           Começar rodada
         </button>
