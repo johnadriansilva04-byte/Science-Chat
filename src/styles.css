@@ -8413,6 +8413,17 @@
   background: color-mix(in oklab, white 5%, transparent);
 }
 
+.cover-door__mark {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.9rem;
+  width: 8rem;
+  height: 8rem;
+  color: currentColor;
+  opacity: 0.045;
+  pointer-events: none;
+}
+
 .cover-door__kicker {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.55rem;
@@ -9522,5 +9533,422 @@
   .journey__stop-rival {
     grid-area: meta;
     max-width: none;
+  }
+}
+
+/* ============ STOP — MOVIMENTO ============ */
+@keyframes stopRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stopFloat {
+  0%,
+  100% {
+    transform: translateY(-3px);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@keyframes stopGrid {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      44px 44px,
+      44px 44px;
+  }
+}
+
+@keyframes stopAurora {
+  0% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+}
+
+@keyframes stopHalo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 color-mix(in oklab, var(--stop-amber) 45%, transparent),
+      inset 0 0 22px color-mix(in oklab, var(--stop-amber) 14%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px color-mix(in oklab, var(--stop-amber) 0%, transparent),
+      inset 0 0 26px color-mix(in oklab, var(--stop-amber) 20%, transparent);
+  }
+}
+
+@keyframes stopBreathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes stopSheen {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(230%) skewX(-18deg);
+  }
+}
+
+@keyframes stopTwinkle {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes stopShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes stopBar {
+  0% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(60%);
+  }
+}
+
+@keyframes stopIconGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 0.85;
+  }
+  50% {
+    box-shadow: 0 0 22px -4px currentColor;
+    opacity: 1;
+  }
+}
+
+@keyframes stopEmbers {
+  from {
+    background-position:
+      0 0,
+      40px 60px,
+      17px 33px;
+  }
+  to {
+    background-position:
+      173px -149px,
+      -57px -71px,
+      24px -56px;
+  }
+}
+
+@keyframes stopTagPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--stop-amber) 40%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px color-mix(in oklab, var(--stop-amber) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stop-page__sky::before {
+    content: "";
+    position: absolute;
+    inset: -18% -10%;
+    background:
+      radial-gradient(
+        34rem 22rem at 22% 30%,
+        color-mix(in oklab, var(--stop-cyan) 16%, transparent),
+        transparent 68%
+      ),
+      radial-gradient(
+        30rem 20rem at 74% 66%,
+        color-mix(in oklab, var(--stop-violet) 18%, transparent),
+        transparent 70%
+      );
+    filter: blur(28px);
+    animation: stopAurora 26s ease-in-out infinite;
+  }
+
+  .stop-page__sky::after {
+    animation: stopGrid 32s linear infinite;
+  }
+
+  .stop-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.32;
+    background-image:
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--stop-amber) 70%, transparent) 0 1.3px,
+        transparent 1.7px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--stop-cyan) 70%, transparent) 0 1.1px,
+        transparent 1.5px
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in oklab, white 55%, transparent) 0 0.9px,
+        transparent 1.3px
+      );
+    background-size:
+      173px 149px,
+      97px 131px,
+      61px 89px;
+    animation: stopEmbers 90s linear infinite;
+  }
+
+  .cover__head {
+    animation: stopRise 0.5s ease both;
+  }
+
+  .cover-door {
+    position: relative;
+    overflow: hidden;
+    animation: stopRise 0.55s ease both;
+  }
+
+  .cover-door:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .cover-door__icon {
+    animation: stopFloat 6s ease-in-out infinite;
+  }
+
+  .cover-door::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+    opacity: 0.55;
+    animation: stopBar 5s ease-in-out infinite alternate;
+  }
+
+  .cover-door.is-campanha {
+    color: var(--stop-amber);
+  }
+
+  .cover-door.is-amigos {
+    color: var(--stop-violet);
+  }
+
+  .cover-door__icon {
+    animation:
+      stopFloat 6s ease-in-out infinite,
+      stopIconGlow 4s ease-in-out infinite;
+  }
+
+  .cover-door__title {
+    color: color-mix(in oklab, white 94%, transparent);
+  }
+
+  .cover-door__mark {
+    animation: stopFloat 9s ease-in-out infinite;
+  }
+
+  .cover-door:hover .cover-door__mark {
+    opacity: 0.09;
+    transition: opacity 300ms ease;
+  }
+
+  .cover-door::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, white 12%, transparent),
+      transparent
+    );
+    transform: translateX(-130%) skewX(-18deg);
+    pointer-events: none;
+  }
+
+  .cover-door:hover::after {
+    animation: stopSheen 0.9s ease;
+  }
+
+  .run {
+    animation: stopRise 0.45s ease both;
+  }
+
+  .saga {
+    animation: stopRise 0.5s ease both;
+  }
+
+  .saga__act {
+    animation: stopBreathe 5s ease-in-out infinite;
+  }
+
+  .run__play {
+    animation: stopBreathe 4.5s ease-in-out infinite;
+  }
+
+  .journey__chip {
+    transition:
+      border-color 160ms ease,
+      background 160ms ease,
+      transform 160ms ease;
+  }
+
+  .journey__chip:hover {
+    transform: translateY(-2px);
+  }
+
+  .journey__plaque {
+    position: relative;
+  }
+
+  .journey__stop.is-current .journey__plaque {
+    animation: stopHalo 2.8s ease-out infinite;
+  }
+
+  .journey__stop.is-current .journey__letter {
+    animation: stopBreathe 3.2s ease-in-out infinite;
+  }
+
+  .journey__stop.is-locked .journey__plaque {
+    animation: stopFloat 7s ease-in-out infinite;
+  }
+
+  .journey__tag {
+    animation: stopTagPulse 2.4s ease-out infinite;
+  }
+
+  .journey__star.is-on {
+    animation: stopTwinkle 3.4s ease-in-out infinite;
+  }
+
+  .journey__star.is-on:nth-child(2) {
+    animation-delay: 0.25s;
+  }
+
+  .journey__star.is-on:nth-child(3) {
+    animation-delay: 0.5s;
+  }
+
+  .stop-rival {
+    animation: stopRise 0.4s ease both;
+  }
+
+  .stop-rival__quote {
+    animation: stopBreathe 6s ease-in-out infinite;
+  }
+
+  .stop-duel.is-win::after,
+  .lobby-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, white 14%, transparent),
+      transparent
+    );
+    transform: translateX(-130%) skewX(-18deg);
+    pointer-events: none;
+  }
+
+  .stop-duel {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stop-duel.is-win::after {
+    animation: stopSheen 1.1s ease 0.15s;
+  }
+
+  .stop-duel.is-loss {
+    animation: stopShake 0.45s ease 1;
+  }
+
+  .lobby {
+    animation: stopRise 0.45s ease both;
+  }
+
+  .lobby-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lobby-card:hover::after {
+    animation: stopSheen 0.9s ease;
+  }
+
+  .lobby-card__icon {
+    animation: stopFloat 6.5s ease-in-out infinite;
+  }
+
+  .lobby__rules li {
+    animation: stopRise 0.45s ease both;
+  }
+
+  .lobby__rules li:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  .lobby__rules li:nth-child(3) {
+    animation-delay: 0.16s;
   }
 }

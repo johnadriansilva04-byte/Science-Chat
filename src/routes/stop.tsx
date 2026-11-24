@@ -46,6 +46,7 @@ function StopCover() {
             <strong className="cover-door__title">Expedição Stop</strong>
             <span className="cover-door__meta">15 fases · estrelas e XP · solo</span>
             <span className="cover-door__cta">Entrar</span>
+            <Flame className="cover-door__mark" size={180} aria-hidden />
           </Link>
 
           <Link to="/stop/amigos" className="cover-door is-amigos">
@@ -56,6 +57,7 @@ function StopCover() {
             <strong className="cover-door__title">Sala online</strong>
             <span className="cover-door__meta">Até 12 pessoas · mesma letra e tempo</span>
             <span className="cover-door__cta">Entrar</span>
+            <Users className="cover-door__mark" size={180} aria-hidden />
           </Link>
         </div>
       </main>
