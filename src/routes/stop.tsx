@@ -77,7 +77,7 @@ function StopPage() {
   const [playing, setPlaying] = useState<StopLevel | null>(null);
   const [ready, setReady] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [intro, setIntro] = useState(false);
+  const [intro, setIntro] = useState(true);
 
   useEffect(() => {
     if (loading) return;
@@ -111,9 +111,9 @@ function StopPage() {
   useEffect(() => {
     if (!ready) return;
     try {
-      if (!window.localStorage.getItem(INTRO_KEY)) setIntro(true);
+      if (window.localStorage.getItem(INTRO_KEY)) setIntro(false);
     } catch {
-      setIntro(true);
+      // Sem storage: a abertura continua visível.
     }
   }, [ready]);
 
