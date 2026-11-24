@@ -1,7 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireUser } from "@/lib/cf/auth-middleware";
 import { base64ToBytes } from "@/lib/base64";
-import { cleanInterviewReply, methodologyLinkError, METHODOLOGY_STATUS } from "@/lib/methodology";
+import {
+  cleanInterviewReply,
+  methodologyLinkError,
+  methodologySectionText,
+  METHODOLOGY_STATUS,
+} from "@/lib/methodology";
 import * as repo from "@/lib/cf/repo.server";
 
 type Part = { type: string; text?: string };
@@ -289,6 +294,68 @@ export const linkMethodologyToArticle = createServerFn({ method: "POST" })
     if (error) throw new Error(error);
     await repo.setArticleMethodology(context.user.id, data.articleId, data.methodologyId);
     return { ok: true };
+  });
+
+/**
+ * Cria a metodologia já a partir de um artigo existente: a seção de Metodologia
+ * do artigo vira a primeira observação da entrevista. Serve para quem escreveu
+ * o método à mão e agora quer a entidade separada, sem reescrever nada.
+ */
+export const createMethodologyFromArticle = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { articleId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const userId = context.user.id;
+    const article = await repo.getArticle(userId, data.articleId);
+    if (!article) throw new Error("Artigo não encontrado");
+
+    const pages = await repo.listPages(userId, data.articleId);
+    const section = pages
+      .map((page) => methodologySectionText(page.content ?? ""))
+      .find((text): text is string => Boolean(text));
+    if (!section) throw new Error("Este artigo ainda não tem uma seção Metodologia escrita");
+
+    const methodology = await repo.createMethodology(
+      userId,
+      article.title.trim().slice(0, 120),
+    );
+    await repo.addMethodologyMessage(userId, methodology.id, "user", [
+      {
+        type: "text",
+        text: `Seção Metodologia que eu já escrevi no artigo "${article.title}" — é minha redação original, use como base:\n\n${section}`,
+      },
+    ]);
+    return { id: methodology.id };
+  });
+
+/**
+ * Traz para a entrevista de método a seção de Metodologia que o pesquisador já
+ * escreveu em um artigo. É a redação original dele: a spec passa a ser reescrita
+ * a partir dela, em vez de nascer do zero.
+ */
+export const importMethodologyFromArticle = createServerFn({ method: "POST" })
+  .middleware([requireUser])
+  .validator((d: { methodologyId: string; articleId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const userId = context.user.id;
+    const methodology = await repo.getMethodology(userId, data.methodologyId);
+    if (!methodology) throw new Error("Metodologia não encontrada");
+    const article = await repo.getArticle(userId, data.articleId);
+    if (!article) throw new Error("Artigo não encontrado");
+
+    const pages = await repo.listPages(userId, data.articleId);
+    const section = pages
+      .map((page) => methodologySectionText(page.content ?? ""))
+      .find((text): text is string => Boolean(text));
+    if (!section) throw new Error("Este artigo ainda não tem uma seção Metodologia escrita");
+
+    await repo.addMethodologyMessage(userId, data.methodologyId, "user", [
+      {
+        type: "text",
+        text: `Seção Metodologia que eu já escrevi no artigo "${article.title}" — importada como minha redação original, para a spec não inventar outro método:\n\n${section}`,
+      },
+    ]);
+    return { ok: true, chars: section.length, title: article.title };
   });
 
 export const uploadMethodologyDocument = createServerFn({ method: "POST" })

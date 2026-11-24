@@ -280,3 +280,20 @@ export function parseMethodologyCommand(text: string): string | null {
     .trim();
   return referenceTokens(ref).length > 0 ? ref : null;
 }
+
+const METHODOLOGY_SECTION_HEADING = /^#{1,3}[ \t]*(?:\d+\.?[ \t]*)?Metodologia\b[^\n]*$/gim;
+
+/**
+ * Recorta a seção de Metodologia de uma página do artigo, do título até o
+ * próximo título de nível igual ou superior. Usado para importar a redação
+ * original do pesquisador como fonte da spec.
+ */
+export function methodologySectionText(content: string): string | null {
+  const heading = new RegExp(METHODOLOGY_SECTION_HEADING.source, "im").exec(content);
+  if (!heading) return null;
+  const level = (heading[0].match(/^#+/) ?? ["#"])[0].length;
+  const after = content.slice(heading.index + heading[0].length);
+  const next = new RegExp(`^#{1,${level}}[ \\t]\\S`, "m").exec(after);
+  const body = next ? after.slice(0, next.index) : after;
+  return `${heading[0]}\n${body}`.trim();
+}

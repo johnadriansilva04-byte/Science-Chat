@@ -24,7 +24,11 @@ import {
   type WorkspaceMethodology,
   type WorkspacePage,
 } from "@/lib/article.functions";
-import { linkMethodologyToArticle, listMyMethodologies } from "@/lib/methodology.functions";
+import {
+  createMethodologyFromArticle,
+  linkMethodologyToArticle,
+  listMyMethodologies,
+} from "@/lib/methodology.functions";
 import type { UIMessage } from "ai";
 
 export const Route = createFileRoute("/a/$articleId")({
@@ -68,6 +72,7 @@ function ArticleWorkspace() {
   const [methodologies, setMethodologies] = useState<
     { id: string; title: string; status: string }[]
   >([]);
+  const [creatingMethodology, setCreatingMethodology] = useState(false);
   const [linkedMethodology, setLinkedMethodology] = useState<WorkspaceMethodology | null>(null);
   const isMobile = useIsMobile();
   // No celular o chat e o documento ocupam a tela inteira, alternáveis por abas.
@@ -146,6 +151,20 @@ function ArticleWorkspace() {
       active = false;
     };
   }, [user]);
+
+  async function createFromArticle() {
+    setCreatingMethodology(true);
+    try {
+      const { id } = await createMethodologyFromArticle({ data: { articleId } });
+      navigate({ to: "/metodologia/$id", params: { id } });
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Não foi possível criar a metodologia do artigo",
+      );
+    } finally {
+      setCreatingMethodology(false);
+    }
+  }
 
   async function changeMethodology(value: string) {
     try {
@@ -324,6 +343,19 @@ function ArticleWorkspace() {
             </Link>
           )}
         </label>
+        {!article.methodology_id && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1.5 text-xs"
+            disabled={creatingMethodology}
+            onClick={() => void createFromArticle()}
+            title="Cria a metodologia a partir da seção Metodologia deste artigo"
+          >
+            <FlaskConical className="size-3.5" />
+            <span className="hidden sm:inline">Criar do artigo</span>
+          </Button>
+        )}
         <Button
           size="sm"
           variant="outline"

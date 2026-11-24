@@ -36,6 +36,7 @@ import {
   deleteMethodologyDocument,
   generateMethodologySpec,
   getMethodologyWorkspace,
+  importMethodologyFromArticle,
   linkMethodologyToArticle,
   saveMethodologySpec,
   sendMethodologyMessage,
@@ -93,7 +94,8 @@ function MethodologyWorkspace() {
   const [documents, setDocuments] = useState<MethodologyDocumentView[]>([]);
   const [articles, setArticles] = useState<LinkedArticle[]>([]);
   const [myArticles, setMyArticles] = useState<ArticleOption[]>([]);
-  const [pickArticleId, setPickArticleId] = useState("");
+  const [sourceArticleId, setSourceArticleId] = useState("");
+  const [importing, setImporting] = useState(false);
   const [linking, setLinking] = useState(false);
   const [spec, setSpec] = useState("");
   const [savedSpec, setSavedSpec] = useState("");
@@ -322,6 +324,24 @@ function MethodologyWorkspace() {
     }
   }
 
+  async function importSource(articleId: string) {
+    if (!articleId) return;
+    setImporting(true);
+    try {
+      const res = await importMethodologyFromArticle({ data: { methodologyId: id, articleId } });
+      const data = await load();
+      setMessages(data.messages);
+      setSourceArticleId("");
+      toast.success(
+        `Metodologia de "${res.title}" importada (${res.chars.toLocaleString("pt-BR")} caracteres)`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível importar a seção");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   async function removeDocument(documentId: string) {
     try {
       await deleteMethodologyDocument({ data: { methodologyId: id, documentId } });
@@ -347,7 +367,6 @@ function MethodologyWorkspace() {
     try {
       await linkMethodologyToArticle({ data: { articleId, methodologyId: id } });
       await load();
-      setPickArticleId("");
       toast.success("Metodologia acoplada ao artigo");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível acoplar");
@@ -788,6 +807,37 @@ function MethodologyWorkspace() {
                 Anexar
               </Button>
             </div>
+            {myArticles.length > 0 && (
+              <div className="mt-1.5 flex flex-col gap-1.5 sm:flex-row">
+                <select
+                  value={sourceArticleId}
+                  onChange={(e) => setSourceArticleId(e.target.value)}
+                  aria-label="Importar a seção Metodologia de um artigo"
+                  className="h-8 min-w-0 flex-1 rounded-lg border border-input bg-background/70 px-2 text-xs outline-none focus:border-primary"
+                >
+                  <option value="">Importar metodologia de um artigo…</option>
+                  {myArticles.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.title}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 shrink-0 gap-1.5"
+                  disabled={importing || !sourceArticleId}
+                  onClick={() => void importSource(sourceArticleId)}
+                >
+                  {importing ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <BookOpen className="size-3.5" />
+                  )}
+                  Importar
+                </Button>
+              </div>
+            )}
           </section>
 
           {/* 04 · Acoplamentos */}
@@ -801,42 +851,37 @@ function MethodologyWorkspace() {
                 Aprove a spec para poder acoplar a um artigo.
               </p>
             )}
-            {approved && (
-              <div className="mb-2.5 flex flex-col gap-1.5 sm:flex-row">
-                <select
-                  value={pickArticleId}
-                  onChange={(e) => setPickArticleId(e.target.value)}
-                  aria-label="Artigo para acoplar esta metodologia"
-                  className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background/70 px-2 text-xs outline-none focus:border-primary"
-                  disabled={availableArticles.length === 0}
-                >
-                  {availableArticles.length === 0 ? (
-                    <option value="">
-                      {myArticles.length === 0
-                        ? "Você ainda não tem artigos"
-                        : "Todos os seus artigos já usam esta metodologia"}
-                    </option>
-                  ) : (
-                    <>
-                      <option value="">Escolha um artigo…</option>
-                      {availableArticles.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.title}
-                        </option>
-                      ))}
-                    </>
-                  )}
-                </select>
-                <Button
-                  size="sm"
-                  className="h-9 shrink-0 gap-1.5 rounded-lg"
-                  disabled={!pickArticleId || linking}
-                  onClick={() => void linkTo(pickArticleId)}
-                >
-                  {linking ? <Loader2 className="animate-spin" /> : <Link2 />}
-                  Acoplar
-                </Button>
-              </div>
+            {approved && availableArticles.length > 0 && (
+              <ul className="mb-2.5 space-y-1.5">
+                {availableArticles.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center gap-2 rounded-lg border bg-background/40 px-2 py-1.5"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-xs">{a.title}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 shrink-0 gap-1.5 rounded-md px-2 text-[11px]"
+                      disabled={linking}
+                      onClick={() => void linkTo(a.id)}
+                      aria-label={`Acoplar esta metodologia ao artigo ${a.title}`}
+                    >
+                      {linking ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <Link2 className="size-3" />
+                      )}
+                      Acoplar
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {approved && myArticles.length > 0 && availableArticles.length === 0 && (
+              <p className="mb-2 text-xs text-muted-foreground">
+                Todos os seus artigos já usam esta metodologia.
+              </p>
             )}
             {articles.length === 0 ? (
               <p className="text-xs text-muted-foreground">

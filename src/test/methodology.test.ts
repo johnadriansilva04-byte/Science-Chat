@@ -6,6 +6,7 @@ import {
   METHODOLOGY_SPEC_SECTIONS,
   methodologyLinkError,
   methodologyProtocolCode,
+  methodologySectionText,
   methodologySpecBlock,
   methodologyTitleFromSeed,
   matchMethodologyReference,
@@ -288,5 +289,33 @@ describe("parseMethodologyCommand", () => {
   it("ignora conversa que só menciona metodologia", () => {
     expect(parseMethodologyCommand("minha metodologia é qualitativa, e agora?")).toBeNull();
     expect(parseMethodologyCommand("use a metodologia")).toBeNull();
+  });
+});
+
+describe("methodologySectionText", () => {
+  const page = [
+    "## 3. Metodologia",
+    "",
+    "Estudo de caso instrumental, conforme Stake.",
+    "",
+    "### Corpus",
+    "",
+    "Certidões com selo digital.",
+    "",
+    "## 4. Resultados",
+    "",
+    "Não deve entrar.",
+  ].join("\n");
+
+  it("recorta do título de Metodologia até o próximo título de mesmo nível", () => {
+    const section = methodologySectionText(page);
+    expect(section).toContain("## 3. Metodologia");
+    expect(section).toContain("Certidões com selo digital.");
+    expect(section).not.toContain("Resultados");
+    expect(section).not.toContain("Não deve entrar");
+  });
+
+  it("devolve null quando a página não tem seção de Metodologia", () => {
+    expect(methodologySectionText("## 2. Fundamentação teórica\n\nTexto.")).toBeNull();
   });
 });
