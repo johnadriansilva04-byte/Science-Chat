@@ -93,7 +93,6 @@ function MuseumPage() {
   return (
     <div className="lab-bg min-h-screen">
       <AppHeader />
-      <div className="lab-rule" aria-hidden />
 
       <main className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <div className="flex items-center gap-3">
@@ -104,7 +103,7 @@ function MuseumPage() {
         </div>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           As obras que mudaram o mundo — de Einstein a Turing — e a ciência que mostra como o poder
-          exclui. Fontes reais, com DOI. Achou uma? Mande para o Pracinha: ela entra no seu artigo.
+          exclui. Fontes reais, com DOI.
         </p>
 
         <div className="relative mt-6">
@@ -247,8 +246,7 @@ function MuseumPage() {
 
         <p className="mt-10 text-xs text-muted-foreground">
           Metadados verificados em Crossref e OpenAlex. As notas são leitura da ScienceChat; o texto
-          é dos autores. Publique seu artigo aqui e, após a revisão por pares, ele pode entrar no
-          acervo — com sua autoria preservada.
+          é dos autores.
         </p>
       </main>
       <BrandFooter />

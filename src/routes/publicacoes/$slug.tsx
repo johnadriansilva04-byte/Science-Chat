@@ -6,6 +6,7 @@ import { getPublicPublication } from "@/lib/publication.functions";
 import { publicationCitation, contentHasAbstract, yearOf } from "@/lib/publication";
 import { ACERVO_HOMAGES } from "@/lib/acervo";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { AppHeader } from "@/components/app/AppHeader";
 import { BookReader } from "@/components/app/BookReader";
 import { Button } from "@/components/ui/button";
 import { BrandFooter } from "@/components/app/BrandFooter";
@@ -40,6 +41,8 @@ function PublicationPage() {
         if (row) {
           setPub(row);
           setState("ok");
+          // Ler um artigo é abrir o livro: a ficha fica atrás, para citação e metadados.
+          setReading(true);
         } else {
           setState("missing");
         }
@@ -82,40 +85,41 @@ function PublicationPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex flex-wrap items-center gap-2 border-b px-4 py-3 print:hidden">
-        <Link
-          to="/publicacoes"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Publicações
-        </Link>
-        {/* Três botões em linha estouravam a tela no celular (472px numa
-            viewport de 390px) e criavam rolagem horizontal na página inteira. */}
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={() => setReading(true)}>
-            <BookOpen />
-            Ler como livro
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              navigator.clipboard?.writeText(citation).then(
-                () => toast.success("Citação copiada"),
-                () => toast.error("Não foi possível copiar"),
-              );
-            }}
+      <AppHeader />
+      <div className="border-b bg-card/60 print:hidden">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-6 py-2">
+          <Link
+            to="/publicacoes"
+            className="inline-flex min-h-9 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
-            <Copy />
-            Citar
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
-            <Printer />
-            Imprimir / PDF
-          </Button>
+            <ArrowLeft className="size-4" />
+            Publicações
+          </Link>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+            <Button size="sm" onClick={() => setReading(true)}>
+              <BookOpen />
+              Ler como livro
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                navigator.clipboard?.writeText(citation).then(
+                  () => toast.success("Citação copiada"),
+                  () => toast.error("Não foi possível copiar"),
+                );
+              }}
+            >
+              <Copy />
+              Citar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => window.print()}>
+              <Printer />
+              Imprimir
+            </Button>
+          </div>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-3xl px-6 pb-20 pt-10">
         <div className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
@@ -173,7 +177,19 @@ function PublicationPage() {
           </section>
         )}
 
-        <article className="prose-sciencechat mt-8 max-w-none">
+        <div className="mt-8 flex flex-wrap items-center gap-3 print:hidden">
+          <Button size="lg" onClick={() => setReading(true)}>
+            <BookOpen />
+            Abrir em modo livro
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Leitura em tela cheia, uma folha por vez.
+          </span>
+        </div>
+
+        {/* Na tela, o artigo vive no modo livro; este bloco existe para a
+            impressão/PDF sair com o texto integral. */}
+        <article className="prose-sciencechat mt-8 hidden max-w-none print:block">
           <MessageResponse>{pub.content}</MessageResponse>
         </article>
 

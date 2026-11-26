@@ -9,7 +9,6 @@ import {
   Landmark,
   ScrollText,
   Search,
-  Sparkles,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -109,14 +108,9 @@ function AcervoPage() {
           </div>
         </div>
 
-        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Uma só estante, três coleções. Os{" "}
-          <strong className="text-foreground">clássicos do Museu</strong> são obras que reescreveram
-          o que era possível pensar — metadados reais, com DOI, dignos de reverência. Os{" "}
-          <strong className="text-foreground">revisados por pares</strong> são artigos cujo autor
-          comprovou a revisão feita pela revista ou universidade. Os{" "}
-          <strong className="text-foreground">ainda não revisados</strong> estão publicados, mas sem
-          essa comprovação — a plataforma não revisa.
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Clássicos do Museu, artigos com revisão comprovada e trabalhos publicados sem essa
+          comprovação — na mesma estante, com fontes reais.
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -213,17 +207,14 @@ function AcervoPage() {
           </div>
         )}
 
-        <div className="mt-14 rounded-xl border border-primary/25 bg-accent/30 p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <Sparkles className="size-5 text-primary" />
-            <p className="text-sm text-muted-foreground">
-              Publicou seu artigo? Ele entra na coletânea na hora. Tem o comprovante da revisão por
-              pares? Ele ganha o selo de revisado.
-            </p>
-            <Button asChild className="ml-auto">
-              <Link to="/">Criar meu artigo</Link>
-            </Button>
-          </div>
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t pt-6">
+          <p className="text-sm text-muted-foreground">
+            Publicou seu artigo? Ele entra na coletânea na hora — com o comprovante de revisão,
+            ganha o selo.
+          </p>
+          <Button asChild variant="outline">
+            <Link to="/">Criar meu artigo</Link>
+          </Button>
         </div>
       </main>
       <BrandFooter />
@@ -339,7 +330,7 @@ function HomageBanner({ item }: { item: AcervoItem }) {
           <ArrowRight className="size-4" />
         </button>
         <Link to="/publicacoes/$slug" params={{ slug: item.slug! }} className="acervo-homage__link">
-          Ver ficha completa
+          Ficha e citação
         </Link>
       </div>
       {reading && content && (

@@ -84,9 +84,13 @@ export function BookReader({
   const atEnd = index === leaves.length - 1;
   if (!leaf) return null;
 
+  const sectionTitle =
+    leaf.kind === "page" ? (leaf.content.match(/^#{1,6}\s+(.+)$/m)?.[1]?.trim() ?? "") : "";
+  const progress = leaves.length > 1 ? (index / (leaves.length - 1)) * 100 : 0;
+
   return (
     <div
-      className="book-overlay fixed inset-0 z-50 overflow-y-auto bg-neutral-900/90 p-3 backdrop-blur-sm"
+      className="book-overlay fixed inset-0 z-50 overflow-y-auto bg-neutral-900/90 p-2 backdrop-blur-sm print:hidden sm:p-3"
       role="dialog"
       aria-modal="true"
       aria-label={`Leitura do artigo ${title}`}
@@ -96,19 +100,41 @@ export function BookReader({
         className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-2 flex w-full items-center justify-between text-neutral-200">
-          <span className="text-xs">
-            {index + 1} / {leaves.length}
-          </span>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="text-neutral-200 hover:bg-neutral-700 hover:text-white"
-            onClick={onClose}
-            aria-label="Fechar leitura"
-          >
-            <X />
-          </Button>
+        <div className="mb-2 flex w-full items-center justify-between gap-3 text-neutral-200">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium">{title}</p>
+            {sectionTitle && (
+              <p className="truncate text-[11px] text-neutral-400">{sectionTitle}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-xs tabular-nums">
+              {index + 1} / {leaves.length}
+            </span>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-neutral-200 hover:bg-neutral-700 hover:text-white"
+              onClick={onClose}
+              aria-label="Fechar leitura"
+            >
+              <X />
+            </Button>
+          </div>
+        </div>
+
+        <div
+          className="mb-2 h-0.5 w-full overflow-hidden rounded-full bg-neutral-700"
+          role="progressbar"
+          aria-label="Progresso da leitura"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
+        >
+          <div
+            className="h-full rounded-full bg-neutral-100 transition-[width] duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
 
         <div className="book-stage relative w-full">
@@ -127,6 +153,11 @@ export function BookReader({
                 <span className="paper-muted text-sm italic">
                   Uma criação <span className="font-serif font-semibold not-italic">Variant</span>
                 </span>
+                {!atEnd && (
+                  <Button variant="secondary" className="mt-2" onClick={() => go("next")}>
+                    Começar a leitura
+                  </Button>
+                )}
               </div>
             )}
 
@@ -140,6 +171,9 @@ export function BookReader({
               <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
                 <p className="paper-muted text-sm">Fim</p>
                 <p className="variant-signature">{ARTICLE_SIGNATURE}</p>
+                <Button variant="outline" className="mt-2" onClick={onClose}>
+                  Voltar à ficha
+                </Button>
               </div>
             )}
           </article>
@@ -155,7 +189,7 @@ export function BookReader({
           >
             <ChevronLeft className="size-5" />
           </button>
-          <div className="flex items-center justify-center gap-1.5">
+          <div className="flex max-w-full items-center justify-center gap-1.5 overflow-x-auto px-1">
             {leaves.map((_, i) => (
               <button
                 key={i}
