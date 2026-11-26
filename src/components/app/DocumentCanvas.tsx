@@ -24,6 +24,7 @@ import { A4Measure, A4Sheet } from "@/components/app/A4Sheet";
 import { BookReader } from "@/components/app/BookReader";
 import { DocumentsPanel } from "@/components/app/DocumentsPanel";
 import { PagePanel } from "@/components/app/PagePanel";
+import { hasPagePendingMarkers } from "@/lib/article-pending";
 import { PlanPanel } from "@/components/app/PlanPanel";
 import { TraceabilityPanel } from "@/components/app/TraceabilityPanel";
 import { AuditPanel } from "@/components/app/AuditPanel";
@@ -239,6 +240,13 @@ export function DocumentCanvas({
   const approvedPages = useMemo(
     () =>
       pages.filter((p) => p.status === "approved").sort((a, b) => a.page_number - b.page_number),
+    [pages],
+  );
+
+  // Páginas com `[PENDENTE]`/referência a confirmar: visíveis na aba Produção,
+  // para o pesquisador resolver antes de aprovar e levar a lacuna ao documento.
+  const pendingPages = useMemo(
+    () => pages.filter((p) => hasPagePendingMarkers(p.content)).map((p) => p.page_number),
     [pages],
   );
 
@@ -663,7 +671,7 @@ export function DocumentCanvas({
               {(
                 [
                   { id: "plan", icon: ListChecks, label: "Plano" },
-                  { id: "pages", icon: FileDown, label: "Produção" },
+                  { id: "pages", icon: FileDown, label: "Produção", badge: pendingPages.length },
                   { id: "docs", icon: Paperclip, label: "Anexos", badge: documents.length },
                   { id: "trace", icon: Link2, label: "Rastreabilidade" },
                   { id: "audit", icon: ScanSearch, label: "Auditoria" },
@@ -711,16 +719,33 @@ export function DocumentCanvas({
                   onApproved={onPlanApproved}
                 />
               ) : panelTab === "pages" ? (
-                <PagePanel
-                  articleId={articleId}
-                  page={currentPage}
-                  pageNumber={currentNumber}
-                  isVirtualNext={isVirtualNext}
-                  methodology={methodology}
-                  onChanged={onPagesChanged}
-                  onApproved={handlePageApproved}
-                  onOpenMethodology={() => setPanelTab("methodology")}
-                />
+                <div className="flex h-full min-h-0 flex-col">
+                  {pendingPages.length > 0 && (
+                    <div className="border-b bg-amber-500/5 px-3 py-2 text-xs">
+                      <p className="font-medium text-foreground">
+                        {pendingPages.length === 1
+                          ? `Página com pendência: ${pendingPages[0]}`
+                          : `Páginas com pendências: ${pendingPages.join(", ")}`}
+                      </p>
+                      <p className="mt-0.5 text-muted-foreground">
+                        Resolva as marcações antes de aprovar para não levar lacunas ao documento
+                        final.
+                      </p>
+                    </div>
+                  )}
+                  <div className="min-h-0 flex-1">
+                    <PagePanel
+                      articleId={articleId}
+                      page={currentPage}
+                      pageNumber={currentNumber}
+                      isVirtualNext={isVirtualNext}
+                      methodology={methodology}
+                      onChanged={onPagesChanged}
+                      onApproved={handlePageApproved}
+                      onOpenMethodology={() => setPanelTab("methodology")}
+                    />
+                  </div>
+                </div>
               ) : panelTab === "docs" ? (
                 <DocumentsPanel
                   articleId={articleId}

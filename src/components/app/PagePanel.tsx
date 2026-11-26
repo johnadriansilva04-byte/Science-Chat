@@ -15,8 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { stripMarkers } from "@/lib/article-marker";
+import { pagePendingMarkers } from "@/lib/article-pending";
 import { MIN_PAGE_WORDS } from "@/lib/article-page";
 import { quotaRestMessage } from "@/lib/ai/quota";
 import type { WorkspaceMethodology, WorkspacePage } from "@/lib/article.functions";
@@ -55,11 +66,13 @@ export function PagePanel({
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [confirmPending, setConfirmPending] = useState(false);
 
   useEffect(() => {
     setEditing(false);
     setFeedback("");
     setDraftText(page?.content ?? "");
+    setConfirmPending(false);
   }, [page?.id, page?.content, pageNumber]);
 
   async function run(action: () => Promise<unknown>, okMessage: string) {
@@ -89,11 +102,23 @@ export function PagePanel({
       page ? `Página ${pageNumber} refeita` : `Página ${pageNumber} escrita`,
     );
 
-  const approve = () =>
+  const pending = pagePendingMarkers(page?.content);
+
+  const approveNow = () =>
     run(async () => {
       await approvePage({ data: { articleId, pageNumber } });
       onApproved?.(pageNumber);
     }, `Página ${pageNumber} aprovada`);
+
+  // Aprovar com `[PENDENTE: …]` no texto deixa a lacuna entrar no documento
+  // mestre. O aviso é explícito e a confirmação é do pesquisador.
+  const approve = () => {
+    if (pending.length > 0) {
+      setConfirmPending(true);
+      return;
+    }
+    void approveNow();
+  };
 
   const reopen = () =>
     run(
@@ -187,6 +212,30 @@ export function PagePanel({
           </p>
         )}
 
+        {isDraft && pending.length > 0 && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
+            <p className="font-medium text-foreground">
+              {pending.length === 1
+                ? "1 pendência antes de aprovar"
+                : `${pending.length} pendências antes de aprovar`}
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+              {pending.slice(0, 5).map((item) => (
+                <li key={item} className="break-words">
+                  {item}
+                </li>
+              ))}
+            </ul>
+            {pending.length > 5 && (
+              <p className="mt-1 text-muted-foreground">…e mais {pending.length - 5}.</p>
+            )}
+            <p className="mt-2 text-muted-foreground">
+              Preencha com o pesquisador ou peça a correção à IA. Aprovar assim mesmo deixa a lacuna
+              no documento final.
+            </p>
+          </div>
+        )}
+
         {page && !isApproved && (
           <Textarea
             value={feedback}
@@ -275,6 +324,28 @@ export function PagePanel({
           </>
         )}
       </div>
+
+      <AlertDialog open={confirmPending} onOpenChange={setConfirmPending}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aprovar com pendências?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta página ainda tem{" "}
+              {pending.length === 1
+                ? "1 marcação de pendência"
+                : `${pending.length} marcações de pendência`}{" "}
+              — dados ou referências que a IA não conseguiu confirmar. Aprovar agora leva essas
+              lacunas para o documento final.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Revisar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void approveNow()}>
+              Aprovar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

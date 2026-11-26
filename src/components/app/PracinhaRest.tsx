@@ -32,7 +32,7 @@ export function PracinhaRest({
       <div className="flex items-start gap-3">
         <PracinhaAvatar state="tired" size={40} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">O Pracinha cansou 😴</p>
+          <p className="text-sm font-medium">O Pracinha cansou</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Acabaram os neurônios do dia. Vou descansar e estudar mais sobre a sua tese — amanhã
             volto com fôlego novo.

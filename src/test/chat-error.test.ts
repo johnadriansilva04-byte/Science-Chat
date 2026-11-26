@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chatErrorAction } from "@/lib/ai/chat-error";
+import { chatErrorAction, chatErrorFix } from "@/lib/ai/chat-error";
 
 describe("chatErrorAction", () => {
   it("cota esgotada manda o Pracinha descansar", () => {
@@ -38,5 +38,18 @@ describe("chatErrorAction", () => {
       message: "Não foi possível enviar. Tente de novo.",
     });
     expect(chatErrorAction(undefined, undefined).kind).toBe("toast");
+  });
+});
+
+describe("chatErrorFix", () => {
+  it("sessão expirada leva ao login e artigo ausente ao início", () => {
+    expect(chatErrorFix(401)).toBe("auth");
+    expect(chatErrorFix(404)).toBe("home");
+  });
+
+  it("erros transitórios oferecem tentar de novo", () => {
+    expect(chatErrorFix(500)).toBe("retry");
+    expect(chatErrorFix(429)).toBe("retry");
+    expect(chatErrorFix(undefined)).toBe("retry");
   });
 });

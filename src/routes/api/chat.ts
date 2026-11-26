@@ -28,6 +28,7 @@ import { errorTextStream } from "@/lib/ai/error-stream";
 import { cleanAssistantText, collectAssistantSentences } from "@/lib/ai/anti-repeat";
 import { isQuotaError, QUOTA_MARKER } from "@/lib/ai/quota";
 import { windowHistory } from "@/lib/ai/history-window";
+import { clipText } from "@/lib/ai/context-budget";
 import { pickForcedTool } from "@/lib/ai/tool-intent";
 import {
   parsePageCommand,
@@ -74,7 +75,12 @@ async function documentContext(userId: string, articleId: string): Promise<strin
     .sort((a, b) => a.page_number - b.page_number)
     .map((p) => `### Página ${p.page_number} [${p.status}]\n${p.content.trim()}`)
     .join("\n\n");
-  return `\n\nDOCUMENTO ATUAL (é isto que existe hoje — preserve o que não foi pedido para mudar):\n${body}`;
+  // Teto de contexto: um artigo longo não pode reenviar o documento inteiro em
+  // cada mensagem, ou a cota diária acaba em poucos turnos.
+  return `\n\nDOCUMENTO ATUAL (é isto que existe hoje — preserve o que não foi pedido para mudar):\n${clipText(
+    body,
+    16_000,
+  )}`;
 }
 
 /** Metodologia ativa do artigo, quando houver (contrato de forma do texto). */

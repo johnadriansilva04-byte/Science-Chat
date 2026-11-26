@@ -42,7 +42,7 @@ Definidos em `wrangler.toml`:
 
 ## Desenvolvimento
 
-Requer Node.js 20+.
+Requer Node.js 24+.
 
 ```sh
 npm install

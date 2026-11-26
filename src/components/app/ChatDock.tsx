@@ -62,7 +62,7 @@ import { cleanQuestion } from "@/lib/interview-notes";
 import { asksForOrcid, suggestReplies } from "@/lib/chat-suggestions";
 import { toolFailed, toolLabel, toolOutputText, toolSucceeded } from "@/lib/tool-trace";
 import { nextQuotaReset, turnRestState } from "@/lib/ai/quota";
-import { chatErrorAction } from "@/lib/ai/chat-error";
+import { chatErrorAction, chatErrorFix } from "@/lib/ai/chat-error";
 import { clearInbox, inboxToMessage, readInbox, type InboxWork } from "@/lib/pracinha-inbox";
 import { DEFAULT_DOCK_PREFS, clampDockSize, readDockPrefs, writeDockPrefs } from "@/lib/dock-prefs";
 import { useVoice } from "@/hooks/useVoice";
@@ -271,18 +271,24 @@ export function ChatDock({
       }),
     [articleId],
   );
-  const { messages, sendMessage, status, stop } = useChat({
+  const { messages, sendMessage, status, stop, error, clearError, regenerate } = useChat({
     id: articleId,
     messages: initialMessages,
     transport,
     onError: (e) => {
+      // Cota esgotada tem o cartão próprio (PracinhaRest). Os demais erros
+      // viram um aviso persistente com a ação certa, logo acima do campo —
+      // um toast de 4 segundos não dizia o que fazer depois.
       const action = chatErrorAction(e.message, (e as { statusCode?: number }).statusCode);
       if (action.kind === "rest") setRestedAt(nextQuotaReset());
-      else toast.error(action.message);
     },
     onFinish: () => onActivity(),
   });
   const busy = status === "submitted" || status === "streaming";
+  const errorStatus = (error as { statusCode?: number } | undefined)?.statusCode;
+  const errorAction = error ? chatErrorAction(error.message, errorStatus) : null;
+  const errorFix = chatErrorFix(errorStatus);
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
   const resting = restedAt !== null;
   const planApproved = phase === "writing" || phase === "done";
 
@@ -476,6 +482,7 @@ export function ChatDock({
     // retorno: limpa o aviso e tenta. Se a cota continuar esgotada, o erro
     // recoloca o aviso — mas o campo nunca fica travado.
     if (resting) setRestedAt(null);
+    if (error) clearError();
     voice.stopSpeaking();
     replyInAudio.current = viaVoice;
     lastSent.current = text;
@@ -721,6 +728,53 @@ export function ChatDock({
                 </Message>
               ))
             )}
+            {errorAction?.kind === "toast" && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs"
+              >
+                <p className="font-medium text-foreground">
+                  {offline ? "Sem conexão com a internet." : errorAction.message}
+                </p>
+                {offline && (
+                  <p className="mt-1 text-muted-foreground">
+                    Verifique a rede e tente de novo. O histórico não foi perdido.
+                  </p>
+                )}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (errorFix === "auth") {
+                        window.location.assign("/auth");
+                        return;
+                      }
+                      if (errorFix === "home") {
+                        window.location.assign("/");
+                        return;
+                      }
+                      clearError();
+                      if (messages.length > 0) void regenerate();
+                    }}
+                  >
+                    {errorFix === "auth"
+                      ? "Entrar novamente"
+                      : errorFix === "home"
+                        ? "Ir para o início"
+                        : "Tentar de novo"}
+                  </Button>
+                  <button
+                    type="button"
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                    onClick={clearError}
+                  >
+                    Dispensar
+                  </button>
+                </div>
+              </div>
+            )}
+
             {busy && (
               <div className="flex items-center gap-2">
                 <PracinhaAvatar state={avatarState} size={24} />

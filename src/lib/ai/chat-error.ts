@@ -13,6 +13,15 @@ import { isQuotaError, retryAfterFromBody } from "@/lib/ai/quota";
 
 export type ChatErrorAction = { kind: "rest" } | { kind: "toast"; message: string };
 
+/** O botão do aviso inline: cada erro pede uma correção diferente. */
+export type ChatErrorFix = "auth" | "home" | "retry";
+
+export function chatErrorFix(statusCode?: number): ChatErrorFix {
+  if (statusCode === 401) return "auth";
+  if (statusCode === 404) return "home";
+  return "retry";
+}
+
 export function chatErrorAction(
   message: string | undefined | null,
   statusCode?: number,

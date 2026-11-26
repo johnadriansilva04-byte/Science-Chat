@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
 import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@/lib/article-page";
 import { base64ToBytes } from "@/lib/base64";
+import { clipText } from "@/lib/ai/context-budget";
 import {
   parseLegend,
   toPromptMethodology,
@@ -62,9 +63,16 @@ function parseParts(raw: string): Part[] {
   }
 }
 
+/**
+ * Transcrição da entrevista para o prompt de geração. Entrevistas longas
+ * cresciam sem limite e estouravam a cota da IA; o corte preserva a abertura
+ * (tese e decisões iniciais) e o fim (o que acabou de ser dito).
+ */
+const TRANSCRIPT_BUDGET = 16_000;
+
 async function loadTranscript(userId: string, articleId: string): Promise<string> {
   const msgs = await repo.listMessages(userId, articleId);
-  return msgs
+  const transcript = msgs
     .map((m) => {
       const text = parseParts(m.parts)
         .map((p) => p.text ?? "")
@@ -72,6 +80,7 @@ async function loadTranscript(userId: string, articleId: string): Promise<string
       return `${m.role === "user" ? "PESQUISADOR" : "SCIENCECHAT"}: ${text}`;
     })
     .join("\n\n");
+  return clipText(transcript, TRANSCRIPT_BUDGET);
 }
 
 export const listArticles = createServerFn({ method: "POST" })

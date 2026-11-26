@@ -69,7 +69,7 @@ export function countdownLabel(resetAt: number, now: number = Date.now()): strin
  */
 export function quotaRestMessage(message: string | undefined | null): string | null {
   if (!isQuotaError(message)) return null;
-  return `O Pracinha cansou 😴 — os neurônios do dia acabaram. Ele volta às ${formatResetTime(
+  return `O Pracinha cansou — os neurônios do dia acabaram. Ele volta às ${formatResetTime(
     nextQuotaReset(),
   )}.`;
 }
