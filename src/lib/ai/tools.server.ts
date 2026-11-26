@@ -18,6 +18,8 @@ export const TOOL_NAMES = [
   "editar_pagina",
   "acrescentar_na_pagina",
   "anexar_documento_em_pagina",
+  "listar_metodologias",
+  "aplicar_metodologia",
 ] as const;
 
 /** Lê o texto de um anexo: usa o texto salvo ou tenta OCR/visão sob demanda. */
@@ -220,6 +222,46 @@ export function buildTools(ctx: ToolContext) {
           orcid: normalized,
         });
         return `ORCID ${normalized} registrado na identificação do trabalho (folha de rosto).`;
+      },
+    }),
+
+    listar_metodologias: tool({
+      description:
+        "Lista as metodologias salvas pelo pesquisador (nome e fórmula) e diz qual está aplicada ao artigo. Use quando ele perguntar sobre metodologia, fórmula ou quiser aplicá-la.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const rows = await repo.listMethodologies(ctx.userId);
+        const active = await repo.getArticleMethodology(ctx.userId, ctx.articleId);
+        const status = active
+          ? `Metodologia ativa: ${active.name} (${active.formula}).`
+          : "Nenhuma metodologia aplicada ao artigo.";
+        if (!rows.length) return `${status} O pesquisador ainda não salvou nenhuma metodologia.`;
+        return `${status}\nMetodologias salvas:\n${rows
+          .map((r) => `- ${r.name}: ${r.formula}`)
+          .join("\n")}`;
+      },
+    }),
+
+    aplicar_metodologia: tool({
+      description:
+        "Aplica uma metodologia salva ao artigo, para que as próximas páginas geradas sigam a fórmula, a legenda e a estrutura. Use quando o pesquisador pedir para aplicar uma metodologia pelo nome.",
+      inputSchema: z.object({
+        nome: z.string().min(1).describe("Nome da metodologia salva."),
+      }),
+      execute: async ({ nome }) => {
+        const rows = await repo.listMethodologies(ctx.userId);
+        const wanted = nome.trim().toLowerCase();
+        const target =
+          rows.find((r) => r.name.toLowerCase() === wanted) ??
+          rows.find((r) => r.name.toLowerCase().includes(wanted));
+        if (!target) {
+          return rows.length
+            ? `Não encontrei a metodologia "${nome}". Disponíveis: ${rows.map((r) => r.name).join(", ")}.`
+            : `Não há metodologias salvas. Crie uma pelo botão "Aplicar metodologia" na produção.`;
+        }
+        const ok = await repo.setArticleMethodology(ctx.userId, ctx.articleId, target.id);
+        if (!ok) return `Não consegui aplicar a metodologia "${target.name}".`;
+        return `Metodologia "${target.name}" aplicada (${target.formula}). As próximas páginas seguirão essa fórmula, a legenda e a estrutura.`;
       },
     }),
 

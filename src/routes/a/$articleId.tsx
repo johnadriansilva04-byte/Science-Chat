@@ -21,6 +21,7 @@ import {
   type WorkspaceArticle,
   type WorkspaceDocument,
   type WorkspaceMessage,
+  type WorkspaceMethodology,
   type WorkspacePage,
 } from "@/lib/article.functions";
 import type { UIMessage } from "ai";
@@ -50,6 +51,7 @@ function ArticleWorkspace() {
   const [article, setArticle] = useState<WorkspaceArticle | null>(null);
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
+  const [methodology, setMethodology] = useState<WorkspaceMethodology | null>(null);
   const [liveMessages, setLiveMessages] = useState<UIMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [pages, setPages] = useState<WorkspacePage[]>([]);
@@ -87,6 +89,7 @@ function ArticleWorkspace() {
       setMessages(data.messages);
       setPages(data.pages);
       setDocuments(data.documents);
+      setMethodology(data.methodology);
       setLoadError(null);
       return data;
     } catch (e) {
@@ -109,6 +112,7 @@ function ArticleWorkspace() {
         setMessages(data.messages);
         setPages(data.pages);
         setDocuments(data.documents);
+        setMethodology(data.methodology);
       })
       .catch((e) => {
         if (!active) return;
@@ -281,6 +285,7 @@ function ArticleWorkspace() {
           pages={pages}
           documents={documents}
           messages={canvasMessages}
+          methodology={methodology}
           liveWriting={busy && pages.length === 0}
           phase={article.phase}
           currentPage={currentPage}
@@ -290,6 +295,7 @@ function ArticleWorkspace() {
           panelOpen={panelOpen}
           onPanelOpenChange={setPanelOpen}
           onPagesChanged={() => void reload()}
+          onMethodologyChanged={() => void reload()}
           onPlanChanged={() => {
             setAutoBuild(false);
             void reload();

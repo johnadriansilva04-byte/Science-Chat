@@ -11,6 +11,8 @@ export type Article = {
   title: string;
   phase: string;
   plan: string | null;
+  /** Metodologia ativa aplicada à produção (nullable). */
+  methodology_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -41,7 +43,7 @@ function nowIso() {
 export async function listArticles(userId: string): Promise<Article[]> {
   const { results } = await requireDb()
     .prepare(
-      "select id, user_id, title, phase, plan, created_at, updated_at from articles where user_id = ? order by updated_at desc",
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where user_id = ? order by updated_at desc",
     )
     .bind(userId)
     .all<Article>();
@@ -51,7 +53,7 @@ export async function listArticles(userId: string): Promise<Article[]> {
 export async function getArticle(userId: string, articleId: string): Promise<Article | null> {
   return requireDb()
     .prepare(
-      "select id, user_id, title, phase, plan, created_at, updated_at from articles where id = ? and user_id = ?",
+      "select id, user_id, title, phase, plan, methodology_id, created_at, updated_at from articles where id = ? and user_id = ?",
     )
     .bind(articleId, userId)
     .first<Article>();
@@ -73,6 +75,7 @@ export async function createArticle(userId: string, title?: string): Promise<Art
     title: cleanTitle,
     phase: "interview",
     plan: null,
+    methodology_id: null,
     created_at: ts,
     updated_at: ts,
   };
@@ -1029,4 +1032,175 @@ export async function upsertEditorialConfig(
     created_at: ts,
     updated_at: ts,
   };
+}
+
+/** Metodologia do pesquisador (fórmula, legenda e estrutura são dados, não código). */
+export type MethodologyRow = {
+  id: string;
+  user_id: string;
+  article_id: string | null;
+  name: string;
+  description: string | null;
+  formula: string;
+  /** JSON: [{ "symbol": "A", "meaning": "realidade factual" }] */
+  legend: string | null;
+  structure_hint: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const METHODOLOGY_COLUMNS =
+  "id, user_id, article_id, name, description, formula, legend, structure_hint, created_at, updated_at";
+
+export async function listMethodologies(userId: string): Promise<MethodologyRow[]> {
+  const { results } = await requireDb()
+    .prepare(
+      `select ${METHODOLOGY_COLUMNS} from methodologies where user_id = ? order by updated_at desc`,
+    )
+    .bind(userId)
+    .all<MethodologyRow>();
+  return results;
+}
+
+export async function getMethodology(
+  userId: string,
+  methodologyId: string,
+): Promise<MethodologyRow | null> {
+  return requireDb()
+    .prepare(`select ${METHODOLOGY_COLUMNS} from methodologies where id = ? and user_id = ?`)
+    .bind(methodologyId, userId)
+    .first<MethodologyRow>();
+}
+
+export async function createMethodology(
+  userId: string,
+  fields: {
+    articleId?: string | null;
+    name: string;
+    description?: string | null;
+    formula: string;
+    legend: string;
+    structureHint?: string | null;
+  },
+): Promise<MethodologyRow> {
+  const id = newId();
+  const ts = nowIso();
+  const row: MethodologyRow = {
+    id,
+    user_id: userId,
+    article_id: fields.articleId ?? null,
+    name: fields.name,
+    description: fields.description ?? null,
+    formula: fields.formula,
+    legend: fields.legend,
+    structure_hint: fields.structureHint ?? null,
+    created_at: ts,
+    updated_at: ts,
+  };
+  await requireDb()
+    .prepare(
+      `insert into methodologies (id, user_id, article_id, name, description, formula, legend, structure_hint, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      row.id,
+      row.user_id,
+      row.article_id,
+      row.name,
+      row.description,
+      row.formula,
+      row.legend,
+      row.structure_hint,
+      row.created_at,
+      row.updated_at,
+    )
+    .run();
+  return row;
+}
+
+export async function updateMethodology(
+  userId: string,
+  methodologyId: string,
+  fields: {
+    name: string;
+    description?: string | null;
+    formula: string;
+    legend: string;
+    structureHint?: string | null;
+  },
+): Promise<MethodologyRow | null> {
+  const existing = await getMethodology(userId, methodologyId);
+  if (!existing) return null;
+  const ts = nowIso();
+  await requireDb()
+    .prepare(
+      `update methodologies set name = ?, description = ?, formula = ?, legend = ?, structure_hint = ?, updated_at = ?
+       where id = ? and user_id = ?`,
+    )
+    .bind(
+      fields.name,
+      fields.description ?? null,
+      fields.formula,
+      fields.legend,
+      fields.structureHint ?? null,
+      ts,
+      methodologyId,
+      userId,
+    )
+    .run();
+  return {
+    ...existing,
+    name: fields.name,
+    description: fields.description ?? null,
+    formula: fields.formula,
+    legend: fields.legend,
+    structure_hint: fields.structureHint ?? null,
+    updated_at: ts,
+  };
+}
+
+export async function deleteMethodology(userId: string, methodologyId: string): Promise<void> {
+  // A FK em articles.methodology_id é `on delete set null`: os artigos ficam
+  // intactos e apenas deixam de ter metodologia ativa.
+  await requireDb()
+    .prepare("delete from methodologies where id = ? and user_id = ?")
+    .bind(methodologyId, userId)
+    .run();
+}
+
+/**
+ * Aplica (ou limpa) a metodologia ativa do artigo. A posse da metodologia é
+ * conferida antes: o D1 não tem RLS e o usuário não pode ativar a de outro.
+ */
+export async function setArticleMethodology(
+  userId: string,
+  articleId: string,
+  methodologyId: string | null,
+): Promise<boolean> {
+  if (methodologyId) {
+    const own = await getMethodology(userId, methodologyId);
+    if (!own) return false;
+  }
+  await requireDb()
+    .prepare("update articles set methodology_id = ?, updated_at = ? where id = ? and user_id = ?")
+    .bind(methodologyId, nowIso(), articleId, userId)
+    .run();
+  return true;
+}
+
+/** Metodologia ativa do artigo, se houver. */
+export async function getArticleMethodology(
+  userId: string,
+  articleId: string,
+): Promise<MethodologyRow | null> {
+  return requireDb()
+    .prepare(
+      `select m.id, m.user_id, m.article_id, m.name, m.description, m.formula, m.legend,
+              m.structure_hint, m.created_at, m.updated_at
+       from articles a
+       join methodologies m on m.id = a.methodology_id and m.user_id = a.user_id
+       where a.id = ? and a.user_id = ?`,
+    )
+    .bind(articleId, userId)
+    .first<MethodologyRow>();
 }

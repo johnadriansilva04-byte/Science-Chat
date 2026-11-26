@@ -16,6 +16,11 @@ import {
   WRITING_CHAT_INSTRUCTIONS,
 } from "@/lib/ai/prompts";
 import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@/lib/article-page";
+import {
+  buildMethodologyPromptBlock,
+  toPromptMethodology,
+  withMethodologyPrompt,
+} from "@/lib/methodology";
 import { stripMarkers } from "@/lib/article-marker";
 import { buildTools, TOOL_NAMES } from "@/lib/ai/tools.server";
 import { stripLeakedToolCalls, stripToolNameMentions } from "@/lib/ai/leaked-tool-call";
@@ -70,6 +75,13 @@ async function documentContext(userId: string, articleId: string): Promise<strin
     .map((p) => `### Página ${p.page_number} [${p.status}]\n${p.content.trim()}`)
     .join("\n\n");
   return `\n\nDOCUMENTO ATUAL (é isto que existe hoje — preserve o que não foi pedido para mudar):\n${body}`;
+}
+
+/** Metodologia ativa do artigo, quando houver (contrato de forma do texto). */
+async function methodologyContext(userId: string, articleId: string): Promise<string> {
+  const methodology = await repo.getArticleMethodology(userId, articleId);
+  if (!methodology) return "";
+  return `\n\n${buildMethodologyPromptBlock(toPromptMethodology(methodology), { stage: "page" })}`;
 }
 
 /**
@@ -200,7 +212,7 @@ function runPageRewrite(
         const ordered = [...all].sort((a, b) => a.page_number - b.page_number);
         const prev = ordered.filter((p) => p.page_number < request.pagina).pop();
         const next = ordered.find((p) => p.page_number > request.pagina);
-        const prompt = [
+        const basePrompt = [
           `PLANO APROVADO:\n${plan}`,
           title ? `TÍTULO DO ARTIGO (use exatamente este no H1, se houver H1): ${title}` : "",
           prev
@@ -217,6 +229,10 @@ function runPageRewrite(
         ]
           .filter(Boolean)
           .join("\n\n");
+        const methodology = await repo.getArticleMethodology(userId, articleId);
+        const prompt = methodology
+          ? withMethodologyPrompt(basePrompt, toPromptMethodology(methodology), { stage: "page" })
+          : basePrompt;
         finalContent = normalizePageText(await generateFinalText(prompt, PAGE_INSTRUCTIONS));
         if (countWords(stripMarkers(finalContent)) < MIN_PAGE_WORDS) {
           const retryPrompt = `${prompt}\n\nATENÇÃO: a versão anterior ficou curta demais (menos de ${MIN_PAGE_WORDS} palavras). Escreva novamente a PÁGINA ${request.pagina} com pelo menos ${MIN_PAGE_WORDS} palavras, em 4 a 6 parágrafos separados por linha em branco, sem repetir ideias.`;
@@ -290,7 +306,7 @@ async function handle(request: Request) {
       : `${WRITING_CHAT_INSTRUCTIONS}\n\nPLANO:\n${article.plan ?? ""}${await documentContext(
           user.id,
           article.id,
-        )}`;
+        )}${await methodologyContext(user.id, article.id)}`;
 
   const sanitized = sanitizeMessages(body.messages);
   // Recorta o histórico ANTES de tudo que lê a última mensagem: sem a janela, o

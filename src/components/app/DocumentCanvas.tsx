@@ -4,6 +4,7 @@ import {
   Check,
   Download,
   FileDown,
+  FlaskConical,
   Landmark,
   ListChecks,
   Link2,
@@ -27,6 +28,7 @@ import { PlanPanel } from "@/components/app/PlanPanel";
 import { TraceabilityPanel } from "@/components/app/TraceabilityPanel";
 import { AuditPanel } from "@/components/app/AuditPanel";
 import { EditorialPanel } from "@/components/app/EditorialPanel";
+import { MethodologyPanel } from "@/components/app/MethodologyPanel";
 import { ExportDialog } from "@/components/app/ExportDialog";
 import {
   blockText,
@@ -49,6 +51,7 @@ import {
   updateTitle,
   type WorkspacePage,
   type WorkspaceDocument,
+  type WorkspaceMethodology,
 } from "@/lib/article.functions";
 
 /** Bloco do documento com a página (unidade de produção) que o originou. */
@@ -136,6 +139,7 @@ export function DocumentCanvas({
   pages,
   documents,
   messages,
+  methodology = null,
   liveWriting = false,
   phase,
   currentPage,
@@ -145,6 +149,7 @@ export function DocumentCanvas({
   panelOpen,
   onPanelOpenChange,
   onPagesChanged,
+  onMethodologyChanged,
   onPlanChanged,
   onPlanApproved,
   onPageApproved,
@@ -155,6 +160,7 @@ export function DocumentCanvas({
   pages: WorkspacePage[];
   documents: WorkspaceDocument[];
   messages: { role: string; parts: { type: string; text?: string }[] }[];
+  methodology?: WorkspaceMethodology | null;
   liveWriting?: boolean;
   phase: string;
   currentPage: WorkspacePage | null;
@@ -164,6 +170,7 @@ export function DocumentCanvas({
   panelOpen: boolean;
   onPanelOpenChange: (open: boolean) => void;
   onPagesChanged: () => void;
+  onMethodologyChanged: () => void;
   onPlanChanged: () => void;
   onPlanApproved: () => void;
   onPageApproved: (pageNumber: number) => void;
@@ -174,7 +181,7 @@ export function DocumentCanvas({
   const [exportOpen, setExportOpen] = useState(false);
   const [celebrateFirst, setCelebrateFirst] = useState(false);
   const [panelTab, setPanelTab] = useState<
-    "plan" | "pages" | "docs" | "trace" | "audit" | "editorial"
+    "plan" | "pages" | "docs" | "trace" | "audit" | "editorial" | "methodology"
   >("plan");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -661,6 +668,7 @@ export function DocumentCanvas({
                   { id: "trace", icon: Link2, label: "Rastreabilidade" },
                   { id: "audit", icon: ScanSearch, label: "Auditoria" },
                   { id: "editorial", icon: Landmark, label: "Editorial" },
+                  { id: "methodology", icon: FlaskConical, label: "Metodologia" },
                 ] as const
               ).map((tab) => (
                 <button
@@ -708,8 +716,10 @@ export function DocumentCanvas({
                   page={currentPage}
                   pageNumber={currentNumber}
                   isVirtualNext={isVirtualNext}
+                  methodology={methodology}
                   onChanged={onPagesChanged}
                   onApproved={handlePageApproved}
+                  onOpenMethodology={() => setPanelTab("methodology")}
                 />
               ) : panelTab === "docs" ? (
                 <DocumentsPanel
@@ -725,9 +735,17 @@ export function DocumentCanvas({
                 <div className="p-3">
                   <AuditPanel articleId={articleId} />
                 </div>
-              ) : (
+              ) : panelTab === "editorial" ? (
                 <div className="p-3">
                   <EditorialPanel articleId={articleId} />
+                </div>
+              ) : (
+                <div className="p-3">
+                  <MethodologyPanel
+                    articleId={articleId}
+                    onApplied={onMethodologyChanged}
+                    onOpenProduction={() => setPanelTab("pages")}
+                  />
                 </div>
               )}
             </div>

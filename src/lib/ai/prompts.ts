@@ -145,6 +145,8 @@ Passos numerados, um por parte, na ordem em que vamos construir o artigo. Em cad
 ## Informações pendentes
 O que falta e o que isso afeta.
 
+METODOLOGIA DO PESQUISADOR (quando houver): se o pedido trouxer um bloco "METODOLOGIA DO PESQUISADOR", ele é obrigatório. Organize a "Estrutura do artigo" e o "Plano página por página" segundo a fórmula e a estrutura indicadas: reserve página/bloco próprio para a fórmula com a legenda posicional, a subseção de replicação com exemplos do corpus documental e o fechamento indicado. A fórmula é dado — nunca a troque pelo modelo padrão da plataforma.
+
 REGRA SOBRE O TÍTULO E AS PALAVRAS-CHAVE (autoria): use o título que o pesquisador já informou. Se ele NÃO informou título na entrevista, NÃO invente um: escreva no lugar do H1 exatamente \`# Título a definir com o pesquisador\` e liste "título do artigo" em "Informações pendentes". Do mesmo modo, no passo das palavras-chave, ofereça 2 ou 3 EXEMPLOS como sugestão e deixe claro que a escolha é do pesquisador — nunca imponha palavras-chave.`;
 
 export const PAGE_INSTRUCTIONS = `${BASE}
@@ -160,6 +162,7 @@ Você escreve UMA página do artigo por vez, seguindo o plano aprovado.
 - PROIBIDO REPETIR: não reafirme a mesma ideia com outras palavras. Não repita frases como "este artigo visa…", "a pesquisa será realizada…", "os resultados serão apresentados…". Cada parágrafo traz informação NOVA (um argumento, um dado, uma transição). Se você já disse, avance — não reescreva.
 - FLUXO DA INTRODUÇÃO: funil em parágrafos distintos — (1) contexto/tema; (2) o problema e a lacuna; (3) a tese e o objetivo; (4) a justificativa e a relevância. Um parágrafo por movimento.
 - Não inclua comentários para o pesquisador, apenas o texto da página.
+- METODOLOGIA DO PESQUISADOR (quando houver): se o pedido trouxer um bloco "METODOLOGIA DO PESQUISADOR", ele é obrigatório. Use a fórmula e a legenda EXATAMENTE como estão, com os mesmos símbolos em todas as seções em que o argumento se repete; nomeie cada confronto; reserve bloco próprio da fórmula com a legenda abaixo; aplica a fórmula a exemplos reais do corpus documental; e encerre com o fechamento indicado. Cada afirmação factual ancorada na página/seção exata da fonte primária. A fórmula é dado: nunca a substitua por um modelo fixo nem invente símbolo fora da legenda.
 - Se esta for a última página do plano, termine com a linha <!--ULTIMA-->.`;
 
 export const PEER_REVIEW_INSTRUCTIONS = `Você é um revisor científico independente e rigoroso da plataforma ${PLATFORM_NAME}. Você NÃO escreve nem reescreve o artigo: você o avalia e emite um PARECER (peer review) em português do Brasil.

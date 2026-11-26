@@ -3,6 +3,12 @@ import { requireUser } from "@/lib/cf/auth-middleware";
 import { isLastPage, stripMarkers } from "@/lib/article-marker";
 import { countWords, MIN_PAGE_WORDS, normalizePageText, pickLongerText } from "@/lib/article-page";
 import { base64ToBytes } from "@/lib/base64";
+import {
+  parseLegend,
+  toPromptMethodology,
+  withMethodologyPrompt,
+  type MethodologySymbol,
+} from "@/lib/methodology";
 import * as repo from "@/lib/cf/repo.server";
 
 type Part = { type: string; text?: string };
@@ -20,6 +26,17 @@ export type WorkspaceArticle = {
   title: string;
   phase: string;
   plan: string | null;
+  updated_at: string;
+};
+
+/** Metodologia ativa do artigo, no formato que a UI consome. */
+export type WorkspaceMethodology = {
+  id: string;
+  name: string;
+  description: string | null;
+  formula: string;
+  legend: MethodologySymbol[];
+  structureHint: string | null;
   updated_at: string;
 };
 
@@ -101,6 +118,7 @@ export const getWorkspace = createServerFn({ method: "POST" })
     if (!article) throw new Error("Artigo não encontrado");
     const messages = await repo.listMessages(context.user.id, data.articleId);
     const pages = await repo.listPages(context.user.id, data.articleId);
+    const methodology = await repo.getArticleMethodology(context.user.id, data.articleId);
 
     return {
       article: {
@@ -122,6 +140,17 @@ export const getWorkspace = createServerFn({ method: "POST" })
         status: p.status,
         created_at: p.created_at,
       })) as WorkspacePage[],
+      methodology: methodology
+        ? ({
+            id: methodology.id,
+            name: methodology.name,
+            description: methodology.description,
+            formula: methodology.formula,
+            legend: parseLegend(methodology.legend),
+            structureHint: methodology.structure_hint,
+            updated_at: methodology.updated_at,
+          } as WorkspaceMethodology)
+        : null,
       documents: (await repo.listDocuments(context.user.id, data.articleId)).map((d) => ({
         id: d.id,
         seq: d.seq,
@@ -258,7 +287,11 @@ export const generatePlan = createServerFn({ method: "POST" })
         ? `PLANO ANTERIOR:\n${article.plan}\n\nAJUSTE PEDIDO PELO PESQUISADOR: ${data.feedback}\n\nRefaça o plano aplicando o ajuste.`
         : "Monte o plano."
     }`;
-    const plan = await generateFinalText(prompt, PLAN_INSTRUCTIONS);
+    const methodology = await repo.getArticleMethodology(context.user.id, data.articleId);
+    const planPrompt = methodology
+      ? withMethodologyPrompt(prompt, toPromptMethodology(methodology), { stage: "plan" })
+      : prompt;
+    const plan = await generateFinalText(planPrompt, PLAN_INSTRUCTIONS);
     // O título pertence ao pesquisador: o plano apenas o propõe. Nunca sobrescrevemos
     // o título do artigo aqui — a aplicação é um ato explícito do usuário.
     const proposedTitle =
@@ -321,7 +354,7 @@ export const generatePage = createServerFn({ method: "POST" })
           )
           .join("\n")}\nQuando fizer sentido, cite os anexos no texto como [Anexo N].`
       : "";
-    const prompt = [
+    const basePrompt = [
       `PLANO APROVADO:\n${article.plan}`,
       `ENTREVISTA:\n${transcript}`,
       anexos,
@@ -335,6 +368,12 @@ export const generatePage = createServerFn({ method: "POST" })
     ]
       .filter(Boolean)
       .join("\n\n");
+    // A metodologia ativa do artigo é o contrato de forma do texto: entra no
+    // prompt (e no retry) para que os símbolos e o fechamento não se percam.
+    const methodology = await repo.getArticleMethodology(userId, data.articleId);
+    const prompt = methodology
+      ? withMethodologyPrompt(basePrompt, toPromptMethodology(methodology), { stage: "page" })
+      : basePrompt;
 
     const content = normalizePageText(await generateFinalText(prompt, PAGE_INSTRUCTIONS));
     // A página precisa preencher uma folha A4; uma resposta curta demais indica corte

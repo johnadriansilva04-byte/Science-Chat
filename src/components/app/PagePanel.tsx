@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Check, FileText, Pencil, RefreshCw, RotateCcw, Sparkles, Trash2, X } from "lucide-react";
+import {
+  Check,
+  FileText,
+  FlaskConical,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +19,7 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { stripMarkers } from "@/lib/article-marker";
 import { MIN_PAGE_WORDS } from "@/lib/article-page";
 import { quotaRestMessage } from "@/lib/ai/quota";
-import type { WorkspacePage } from "@/lib/article.functions";
+import type { WorkspaceMethodology, WorkspacePage } from "@/lib/article.functions";
 import {
   approvePage,
   deletePage,
@@ -27,15 +37,19 @@ export function PagePanel({
   page,
   pageNumber,
   isVirtualNext,
+  methodology = null,
   onChanged,
   onApproved,
+  onOpenMethodology,
 }: {
   articleId: string;
   page: WorkspacePage | null;
   pageNumber: number;
   isVirtualNext: boolean;
+  methodology?: WorkspaceMethodology | null;
   onChanged: () => void;
   onApproved?: (pageNumber: number) => void;
+  onOpenMethodology?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -120,6 +134,26 @@ export function PagePanel({
       </CardHeader>
 
       <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed p-2">
+          <p className="min-w-0 text-xs text-muted-foreground">
+            {methodology ? (
+              <>
+                Metodologia aplicada:{" "}
+                <span className="font-medium text-foreground">{methodology.name}</span>{" "}
+                <span className="font-mono">{methodology.formula}</span>
+              </>
+            ) : (
+              "Nenhuma metodologia aplicada ao artigo."
+            )}
+          </p>
+          {onOpenMethodology && (
+            <Button size="sm" variant="outline" onClick={onOpenMethodology}>
+              <FlaskConical className="size-3.5" />
+              Aplicar metodologia
+            </Button>
+          )}
+        </div>
+
         {!page && (
           <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
             Esta é a próxima unidade de produção. Escreva-a quando estiver pronto. Você poderá
